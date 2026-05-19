@@ -349,6 +349,9 @@ const App = {
                     window.location.replace(dash);
                 }
             } else if (isProfilePage) {
+                // Track user presence to prevent duplicate concurrent logins
+                this.trackPresence(this.user.id);
+
                 // If they landed on profile.html via browser back button from dashboard, lock them back to the dashboard
                 if (isBackForward) {
                     window.location.replace(dash);
@@ -454,6 +457,10 @@ const App = {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Active Sessions...';
             const checkChannel = supabaseClient.channel(`presence_${data.user.id}`);
             
+            checkChannel.on('presence', { event: 'sync' }, () => {
+                console.log('Active session presence check synced.');
+            });
+
             checkChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     // Wait 1.2 seconds for presence state to sync from Supabase Realtime
