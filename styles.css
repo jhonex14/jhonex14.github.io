@@ -199,6 +199,7 @@ body {
 .status-approved { background: #d1fae5; color: #059669; }
 .status-rejected { background: #fee2e2; color: #dc2626; }
 .status-completed { background: #e0e7ff; color: #4f46e5; }
+.status-cancelled { background: #e2e8f0; color: #475569; }
 
 /* Dashboard Cards */
 .dash-card {
