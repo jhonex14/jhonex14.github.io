@@ -462,7 +462,13 @@ const App = {
 
             // Before reloading, check if there's any active presence on another session
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Active Sessions...';
-            const checkChannel = supabaseClient.channel(`presence_${data.user.id}`);
+            const checkChannel = supabaseClient.channel(`presence_${data.user.id}`, {
+                config: {
+                    presence: {
+                        key: data.user.id
+                    }
+                }
+            });
             
             checkChannel.on('presence', { event: 'sync' }, () => {
                 console.log('Active session presence check synced.');
@@ -517,7 +523,13 @@ const App = {
                                 forceBtn.disabled = true;
 
                                 // Send broadcast to kick out other tab
-                                const forceChannel = supabaseClient.channel(`presence_${data.user.id}`);
+                                const forceChannel = supabaseClient.channel(`presence_${data.user.id}`, {
+                                    config: {
+                                        presence: {
+                                            key: data.user.id
+                                        }
+                                    }
+                                });
                                 await forceChannel.subscribe(async (status) => {
                                     if (status === 'SUBSCRIBED') {
                                         await forceChannel.send({
