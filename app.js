@@ -86,6 +86,7 @@ const App = {
         }
 
         this.routePage();
+        this.startHeaderClock();
     },
 
     toggleDarkMode: function() {
@@ -95,6 +96,34 @@ const App = {
         if (this.profile && this.profile.role === 'faculty') {
             this.fetchFacultyRequests();
         }
+    },
+
+    startHeaderClock: function() {
+        const dateEl = document.getElementById('headerDate');
+        const timeEl = document.getElementById('headerTime');
+        if (!dateEl || !timeEl) return;
+
+        const updateClock = () => {
+            const now = new Date();
+            
+            // Format Date: e.g. "Tuesday, May 19, 2026"
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+            dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+
+            // Format Time: e.g. "04:45:12 PM"
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const formattedHours = String(hours).padStart(2, '0');
+            
+            timeEl.textContent = `${formattedHours}:${minutes}:${seconds} ${ampm}`;
+        };
+
+        updateClock();
+        setInterval(updateClock, 1000);
     },
 
     listenersAttached: false,

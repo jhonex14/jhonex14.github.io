@@ -75,6 +75,14 @@
                 </div>
             </div>
             <div class="d-flex gap-3 align-items-center">
+                <!-- Real-time Clock and Calendar Widget -->
+                <div class="d-none d-md-flex align-items-center gap-2 bg-light border rounded-pill px-3 py-1.5 shadow-sm text-dark" style="font-size: 13px; font-weight: 500;">
+                    <i class="fa-regular fa-calendar-days text-primary"></i>
+                    <span id="headerDate">Loading date...</span>
+                    <span class="mx-1 text-muted">|</span>
+                    <i class="fa-regular fa-clock text-primary"></i>
+                    <span id="headerTime" class="fw-bold">00:00:00 AM</span>
+                </div>
                 <div class="dropdown">
                     <button class="btn btn-light rounded-circle position-relative p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
                         <i class="fa-regular fa-bell fs-5 text-dark"></i>
