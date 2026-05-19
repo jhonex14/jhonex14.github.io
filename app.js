@@ -1224,9 +1224,9 @@ const App = {
 
         // Sort and render optgroups
         Object.keys(groupedFaculty).sort().forEach(dept => {
-            let optgroup = `<optgroup label="${dept}">`;
+            let optgroup = `<optgroup label="${sanitizeHTML(dept)}">`;
             groupedFaculty[dept].forEach(fac => {
-                optgroup += `<option value="${fac.id}">${fac.full_name}</option>`;
+                optgroup += `<option value="${fac.id}">${sanitizeHTML(fac.full_name)}</option>`;
             });
             optgroup += `</optgroup>`;
             select.innerHTML += optgroup;
@@ -1473,8 +1473,8 @@ const App = {
                 let html = '<li><h6 class="dropdown-header fw-bold">Recent Notifications</h6></li><li><hr class="dropdown-divider"></li>';
                 recentUpdates.slice(0, 5).forEach(a => {
                     html += `<li><a class="dropdown-item py-2 border-bottom" href="#" onclick="document.getElementById('nav-dashboard').click()">
-                        <div class="fw-bold small text-dark text-capitalize">Appointment ${a.status}</div>
-                        <div class="text-muted" style="font-size: 12px;">With ${a.profiles.full_name}</div>
+                        <div class="fw-bold small text-dark text-capitalize">Appointment ${sanitizeHTML(a.status)}</div>
+                        <div class="text-muted" style="font-size: 12px;">With ${sanitizeHTML(a.profiles.full_name)}</div>
                     </a></li>`;
                 });
                 notifList.innerHTML = html;
@@ -1598,7 +1598,7 @@ const App = {
                 let html = '<li><h6 class="dropdown-header fw-bold">Recent Notifications</h6></li><li><hr class="dropdown-divider"></li>';
                 pendingAppts.slice(0, 5).forEach(a => {
                     html += `<li><a class="dropdown-item py-2 border-bottom" href="#" onclick="document.getElementById('nav-requests').click()">
-                        <div class="fw-bold small text-dark">${a.profiles.full_name}</div>
+                        <div class="fw-bold small text-dark">${sanitizeHTML(a.profiles.full_name)}</div>
                         <div class="text-muted" style="font-size: 12px;">Requested a consultation</div>
                     </a></li>`;
                 });
