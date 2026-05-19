@@ -14,6 +14,10 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -111,38 +115,93 @@
             
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#smartSchedulingModal">
                         <div class="card-body text-center">
                             <div class="feature-icon bg-primary-soft text-primary mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
                                 <i class="fa-solid fa-calendar-alt fs-2"></i>
                             </div>
-                            <h4 class="fw-bold mb-3">Smart Scheduling</h4>
+                            <h4 class="fw-bold mb-2">Smart Scheduling</h4>
+                            <span class="badge bg-primary-soft text-primary mb-3 px-2 py-1 rounded-pill small" style="font-size: 10px;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Try Simulator</span>
                             <p class="text-muted">Real-time availability sync prevents double-booking. Faculty can set their specific consultation hours easily.</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#instantUpdatesModal">
                         <div class="card-body text-center">
                             <div class="feature-icon bg-accent-soft text-accent mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
                                 <i class="fa-solid fa-bell fs-2"></i>
                             </div>
-                            <h4 class="fw-bold mb-3">Instant Updates</h4>
+                            <h4 class="fw-bold mb-2">Instant Updates</h4>
+                            <span class="badge bg-accent-soft text-accent mb-3 px-2 py-1 rounded-pill small" style="font-size: 10px;"><i class="fa-solid fa-bolt me-1"></i>Try Simulator</span>
                             <p class="text-muted">Get immediate status updates when an appointment is approved, rejected, or completed.</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 feature-card hover-lift transition-all p-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#cloudIntegratedModal">
                         <div class="card-body text-center">
                             <div class="feature-icon bg-success-soft text-success mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
                                 <i class="fa-solid fa-chart-line fs-2"></i>
                             </div>
-                            <h4 class="fw-bold mb-3">Cloud Integrated</h4>
+                            <h4 class="fw-bold mb-2">Cloud Integrated</h4>
+                            <span class="badge bg-success-soft text-success mb-3 px-2 py-1 rounded-pill small" style="font-size: 10px;"><i class="fa-solid fa-chart-pie me-1"></i>View Live Stats</span>
                             <p class="text-muted">Powered by modern cloud infrastructure ensuring your data is always accessible, secure, and blazing fast.</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-6 bg-white border-top">
+        <div class="container py-5">
+            <div class="text-center mb-5 max-w-700 mx-auto">
+                <span class="text-accent fw-bold text-uppercase tracking-wide">Three Simple Steps</span>
+                <h2 class="display-6 fw-bold mt-2 mb-3">How ConsulTime Works</h2>
+                <p class="text-muted lead">Get started in minutes with our streamlined booking workflow designed for both students and faculty.</p>
+            </div>
+            
+            <div class="row g-4 position-relative">
+                <!-- Connecting Line (only visible on md and up screens) -->
+                <div class="position-absolute top-50 start-0 translate-middle-y w-100 d-none d-md-block" style="height: 2px; background: linear-gradient(90deg, #dc3545 0%, #0d6efd 100%); opacity: 0.15; z-index: 0;"></div>
+                
+                <!-- Step 1 -->
+                <div class="col-md-4 z-index-1">
+                    <div class="card h-100 border-0 bg-light p-4 text-center rounded-4 shadow-sm hover-lift transition-all position-relative">
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-circle bg-danger d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; font-size: 16px;">1</span>
+                        <div class="feature-icon bg-danger-soft text-danger mb-4 mx-auto mt-2 rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
+                            <i class="fa-solid fa-user-plus fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Create Account</h5>
+                        <p class="text-muted small mb-0">Register as a Student or Faculty member using your university email credentials. Faculty requests are safely vetted by administrators.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="col-md-4 z-index-1">
+                    <div class="card h-100 border-0 bg-light p-4 text-center rounded-4 shadow-sm hover-lift transition-all position-relative">
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-circle bg-primary d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; font-size: 16px;">2</span>
+                        <div class="feature-icon bg-primary-soft text-primary mb-4 mx-auto mt-2 rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
+                            <i class="fa-regular fa-calendar-days fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Set or Pick Slots</h5>
+                        <p class="text-muted small mb-0">Faculty post their free days and times. Students search by course, department, or professor name to pick a matching free slot instantly.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="col-md-4 z-index-1">
+                    <div class="card h-100 border-0 bg-light p-4 text-center rounded-4 shadow-sm hover-lift transition-all position-relative">
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-circle bg-success d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; font-size: 16px;">3</span>
+                        <div class="feature-icon bg-success-soft text-success mb-4 mx-auto mt-2 rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
+                            <i class="fa-solid fa-circle-check fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Sync & Meet</h5>
+                        <p class="text-muted small mb-0">Get approved, receive status updates, and conduct the consultation session. Keep your academic calendar organized effortlessly.</p>
                     </div>
                 </div>
             </div>
@@ -161,9 +220,9 @@
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                     <div class="social-links d-flex justify-content-center justify-content-md-end gap-3">
-                        <a href="#" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-twitter"></i></a>
-                        <a href="#" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-github"></i></a>
+                        <a href="https://www.facebook.com/jhonex.sapalicio14" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://x.com" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary rounded-circle"><i class="fa-brands fa-github"></i></a>
                     </div>
                 </div>
             </div>
@@ -181,5 +240,191 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
+
+    <!-- Smart Scheduling Modal -->
+    <div class="modal fade" id="smartSchedulingModal" tabindex="-1" aria-labelledby="smartSchedulingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="smartSchedulingModalLabel"><i class="fa-solid fa-calendar-alt text-primary me-2"></i>Interactive Scheduling Simulator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted small">Experience how our real-time availability calendar works. Click on a day below to generate available consultation slots instantly:</p>
+                    
+                    <!-- Calendar Simulation -->
+                    <div class="bg-light p-3 rounded-4 border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-dark" id="simMonth">May 2026</span>
+                            <span class="badge bg-primary rounded-pill">Active Month</span>
+                        </div>
+                        <div class="row g-2 text-center text-muted fw-bold small mb-2">
+                            <div class="col">M</div><div class="col">T</div><div class="col">W</div><div class="col">T</div><div class="col">F</div>
+                        </div>
+                        <div class="row g-2 text-center">
+                            <div class="col"><button onclick="selectSimDate(18, 'Mon')" class="btn btn-sm btn-outline-primary w-100 rounded-3 py-2 fw-semibold">18</button></div>
+                            <div class="col"><button onclick="selectSimDate(19, 'Tue')" class="btn btn-sm btn-outline-primary w-100 rounded-3 py-2 fw-semibold">19</button></div>
+                            <div class="col"><button onclick="selectSimDate(20, 'Wed')" class="btn btn-sm btn-outline-primary w-100 rounded-3 py-2 fw-semibold">20</button></div>
+                            <div class="col"><button onclick="selectSimDate(21, 'Thu')" class="btn btn-sm btn-outline-primary w-100 rounded-3 py-2 fw-semibold">21</button></div>
+                            <div class="col"><button onclick="selectSimDate(22, 'Fri')" class="btn btn-sm btn-outline-primary w-100 rounded-3 py-2 fw-semibold">22</button></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Slots -->
+                    <div class="p-3 rounded-4 border bg-white shadow-sm" id="simSlotsContainer">
+                        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-clock text-warning me-2"></i>Consultation Slots:</h6>
+                        <p class="text-muted small mb-0">Select a date above to load available faculty hours.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold" data-bs-dismiss="modal">Close Simulator</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instant Updates Modal -->
+    <div class="modal fade" id="instantUpdatesModal" tabindex="-1" aria-labelledby="instantUpdatesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="instantUpdatesModalLabel"><i class="fa-solid fa-bell text-success me-2"></i>Real-time Alert Simulator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted small">ConsulTime immediately broadcasts status updates via persistent cloud notifications. Click "Test Notification" to send a simulated update:</p>
+                    
+                    <div class="bg-dark p-4 rounded-4 shadow-inner mb-3 text-white font-monospace text-start position-relative" style="min-height: 150px; overflow-y: auto;" id="simAlertContainer">
+                        <span class="text-success small d-block mb-2">[System Ready. Listening for alerts...]</span>
+                    </div>
+
+                    <button onclick="triggerSimAlert()" class="btn btn-success w-100 rounded-pill py-2.5 fw-bold shadow-sm"><i class="fa-solid fa-bolt me-2"></i>Test Notification Trigger</button>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light w-100 rounded-pill" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud Integrated Modal -->
+    <div class="modal fade" id="cloudIntegratedModal" tabindex="-1" aria-labelledby="cloudIntegratedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="cloudIntegratedModalLabel"><i class="fa-solid fa-chart-line text-info me-2"></i>Live Server Analytics</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted small">Our platform leverages high-capacity distributed clusters for real-time operations. View current live telemetry:</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border text-center">
+                                <span class="text-muted small d-block mb-1">DB Uptime</span>
+                                <span class="fw-bold text-success fs-5">99.998%</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border text-center">
+                                <span class="text-muted small d-block mb-1">API Response</span>
+                                <span class="fw-bold text-primary fs-5" id="livePingText">14.2 ms</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border text-center">
+                                <span class="text-muted small d-block mb-1">Cloud Region</span>
+                                <span class="fw-bold text-dark fs-5">AP-Southeast</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border text-center">
+                                <span class="text-muted small d-block mb-1">Security Layer</span>
+                                <span class="fw-bold text-danger fs-5">SSL + RLS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold" data-bs-dismiss="modal">Close Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulator Logic Scripts -->
+    <script>
+        // 1. Smart Scheduling Simulator
+        function selectSimDate(dayNum, dayName) {
+            const container = document.getElementById('simSlotsContainer');
+            // Remove active state from other day buttons
+            document.querySelectorAll('#smartSchedulingModal button.btn-outline-primary').forEach(btn => {
+                if (btn.innerText == dayNum) {
+                    btn.classList.add('btn-primary', 'text-white');
+                    btn.classList.remove('btn-outline-primary');
+                } else {
+                    btn.classList.remove('btn-primary', 'text-white');
+                    btn.classList.add('btn-outline-primary');
+                }
+            });
+
+            // Populate mock availability slots
+            let slotsHTML = `
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-clock text-warning me-2"></i>Slots for May ${dayNum} (${dayName}):</h6>
+                <div class="d-flex flex-column gap-2">
+            `;
+            
+            const mockSlots = [
+                { time: '09:00 AM - 10:00 AM', prof: 'Prof. Alan Turing', dept: 'Computer Science' },
+                { time: '01:30 PM - 02:30 PM', prof: 'Dr. Marie Curie', dept: 'Natural Science' },
+                { time: '03:00 PM - 04:00 PM', prof: 'Prof. Alan Turing', dept: 'Computer Science' }
+            ];
+
+            mockSlots.forEach(slot => {
+                slotsHTML += `
+                    <div class="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold text-dark d-block small">${slot.time}</span>
+                            <span class="text-muted text-xs d-block" style="font-size: 11px;">${slot.prof} (${slot.dept})</span>
+                        </div>
+                        <button onclick="alert('Simulation Successful! In the live system, clicking this lets you book the appointment instantly.')" class="btn btn-xs btn-accent rounded-pill px-3 py-1 font-semibold" style="font-size: 10px;">Book Slot</button>
+                    </div>
+                `;
+            });
+            slotsHTML += `</div>`;
+            container.innerHTML = slotsHTML;
+        }
+
+        // 2. Instant Notification Simulator
+        const alertMessages = [
+            "🔴 [Alert] Juan Dela Cruz submitted a consultation request for May 20th.",
+            "🟢 [System] Faculty verification request for Prof. Alan Turing APPROVED.",
+            "🔵 [Notice] Appointment #8843 confirmed for Today at 2:00 PM.",
+            "🟡 [Warning] Backup snapshot completed successfully."
+        ];
+        let alertIdx = 0;
+
+        function triggerSimAlert() {
+            const container = document.getElementById('simAlertContainer');
+            const alertMsg = alertMessages[alertIdx % alertMessages.length];
+            alertIdx++;
+
+            const newMsg = document.createElement('span');
+            newMsg.className = 'd-block mb-2 text-white small';
+            newMsg.style.animation = 'slideUp 0.3s ease forwards';
+            newMsg.innerText = alertMsg;
+            container.appendChild(newMsg);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 3. Live Server Analytics Ping updater
+        setInterval(() => {
+            const el = document.getElementById('livePingText');
+            if (el) {
+                const randomPing = (10 + Math.random() * 8).toFixed(1);
+                el.innerText = randomPing + ' ms';
+            }
+        }, 1500);
+    </script>
 </body>
 </html>

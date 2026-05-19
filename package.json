@@ -1,0 +1,42 @@
+{
+  "name": "consultime",
+  "version": "1.0.0",
+  "description": "Premium Academic Consultation Scheduling System",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android"
+  },
+  "keywords": [
+    "consultation",
+    "scheduler",
+    "academic",
+    "electron"
+  ],
+  "author": "ConsulTime Team",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/core": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "electron": "^25.3.0",
+    "electron-builder": "^24.6.3"
+  },
+  "build": {
+    "appId": "com.consultime.desktop",
+    "productName": "ConsulTime",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

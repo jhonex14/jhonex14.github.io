@@ -1,0 +1,9 @@
+node_modules/
+android/
+www/
+.gradle/
+.idea/
+*.log
+app-debug.apk
+consultime.apk
+output-metadata.json

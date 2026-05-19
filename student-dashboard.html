@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -62,9 +66,14 @@
     <div class="main-content">
         <!-- Top Header -->
         <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-            <div>
-                <h2 class="fw-bold mb-0 text-dark" id="pageTitle">My Dashboard</h2>
-                <p class="text-muted mb-0">Welcome back! Here's your consultation overview.</p>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none rounded-3 p-2 shadow-sm" id="sidebarToggle" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-bars fs-5"></i>
+                </button>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" id="pageTitle">My Dashboard</h2>
+                    <p class="text-muted mb-0">Welcome back! Here's your consultation overview.</p>
+                </div>
             </div>
             <div class="d-flex gap-3 align-items-center">
                 <div class="dropdown">

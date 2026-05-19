@@ -13,8 +13,24 @@ const App = {
     profile: null,
     charts: {},
 
+    get settingsVerified() {
+        return sessionStorage.getItem('ct_settings_verified') === 'true';
+    },
+    set settingsVerified(val) {
+        sessionStorage.setItem('ct_settings_verified', val ? 'true' : 'false');
+    },
+
     init: async function () {
         if (!supabaseClient) return;
+
+        // Register PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker registered successfully:', reg.scope))
+                    .catch(err => console.error('PWA Service Worker registration failed:', err));
+            });
+        }
 
         // Restore Dark Mode
         if (localStorage.getItem('darkMode') === 'true') {
@@ -22,6 +38,26 @@ const App = {
         }
 
         this.attachEventListeners();
+
+        // Check for password recovery hash (Supabase redirects to login.html#access_token=...&type=recovery)
+        if (window.location.hash && window.location.hash.includes('type=recovery')) {
+            const recoveryModalEl = document.getElementById('recoveryModal');
+            if (recoveryModalEl) {
+                const recoveryModal = new bootstrap.Modal(recoveryModalEl);
+                recoveryModal.show();
+            }
+        }
+        
+        // Check URL parameters for pending status alerts (on login page)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('pending') === 'true') {
+            const loginAlert = document.getElementById('loginAlert');
+            if (loginAlert) {
+                loginAlert.innerHTML = `<i class="fa-solid fa-clock me-2"></i><strong>Account Pending Approval:</strong> Your faculty registration was successful! An administrator must approve your account before you can log in.`;
+                loginAlert.classList.remove('d-none');
+            }
+        }
+
         await this.checkAuthStatus();
         
         // Initialize global components
@@ -42,12 +78,22 @@ const App = {
         }
     },
 
+    listenersAttached: false,
     attachEventListeners: function () {
+        if (this.listenersAttached) return;
+        this.listenersAttached = true;
+
         const loginForm = document.getElementById('loginForm');
         if (loginForm) loginForm.addEventListener('submit', (e) => this.handleLogin(e));
 
         const regForm = document.getElementById('registerForm');
         if (regForm) regForm.addEventListener('submit', (e) => this.handleRegister(e));
+
+        const forgotForm = document.getElementById('forgotForm');
+        if (forgotForm) forgotForm.addEventListener('submit', (e) => this.handleForgotPassword(e));
+
+        const recoveryForm = document.getElementById('recoveryForm');
+        if (recoveryForm) recoveryForm.addEventListener('submit', (e) => this.handlePasswordRecovery(e));
 
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', () => this.handleLogout());
@@ -67,7 +113,30 @@ const App = {
                 }
                 e.preventDefault();
                 const viewId = link.id.replace('nav-', '');
-                this.switchView(viewId);
+                
+                if (viewId === 'profile') {
+                    if (this.settingsVerified) {
+                        this.switchView('profile');
+                    } else {
+                        this.promptSettingsPassword(() => {
+                            this.switchView('profile');
+                        });
+                    }
+                } else {
+                    this.switchView(viewId);
+                }
+            });
+        });
+
+        // Intercept standalone profile.html links
+        document.querySelectorAll('a[href*="profile.html"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (!this.settingsVerified) {
+                    e.preventDefault();
+                    this.promptSettingsPassword(() => {
+                        window.location.href = link.href;
+                    });
+                }
             });
         });
 
@@ -97,6 +166,46 @@ const App = {
                 }
             });
         }
+        // Mobile Sidebar Drawer Toggle
+        const toggleBtn = document.getElementById('sidebarToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) {
+                    sidebar.classList.toggle('show-sidebar');
+                    this.toggleSidebarOverlay();
+                }
+            });
+        }
+    },
+
+    toggleSidebarOverlay: function() {
+        let overlay = document.getElementById('sidebarOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'sidebarOverlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.4)';
+            overlay.style.zIndex = '999';
+            overlay.style.display = 'none';
+            overlay.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) sidebar.classList.remove('show-sidebar');
+                overlay.style.display = 'none';
+            });
+            document.body.appendChild(overlay);
+        }
+
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('show-sidebar')) {
+            overlay.style.display = 'block';
+        } else {
+            overlay.style.display = 'none';
+        }
     },
 
     checkAuthStatus: async function () {
@@ -104,17 +213,54 @@ const App = {
 
         if (session) {
             this.user = session.user;
-            const { data: profile } = await supabaseClient
+            let { data: profile } = await supabaseClient
                 .from('profiles')
                 .select('*')
                 .eq('id', this.user.id)
                 .single();
+
+            // If profile is missing from database, fall back to user_metadata to prevent crash and loss of session
+            if (!profile && this.user.user_metadata) {
+                profile = {
+                    id: this.user.id,
+                    full_name: this.user.user_metadata.full_name || 'User',
+                    role: this.user.user_metadata.role || 'student',
+                    department: this.user.user_metadata.department || '',
+                    id_number: this.user.user_metadata.id_number || '',
+                    address: this.user.user_metadata.address || '',
+                    age: this.user.user_metadata.age || null,
+                    email: this.user.email,
+                    is_approved: true
+                };
+            }
+
+            // If account is pending administrator approval
+            if (profile && profile.is_approved === false) {
+                await supabaseClient.auth.signOut();
+                this.user = null;
+                this.profile = null;
+                
+                const loginAlert = document.getElementById('loginAlert');
+                if (loginAlert) {
+                    loginAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Approval Pending:</strong> Your faculty account has been registered but is currently pending administrator approval. Please wait for an administrator to activate your account.`;
+                    loginAlert.classList.remove('d-none');
+                } else {
+                    alert("Your faculty account is currently pending administrator approval. Please wait for an administrator to activate your account.");
+                }
+                
+                const path = window.location.pathname;
+                if (path.includes('dashboard.html') || path.includes('profile.html')) {
+                    window.location.replace('login.html?pending=true');
+                }
+                return;
+            }
+
             this.profile = profile;
 
             // Setup User Menu if on index
             const userMenu = document.getElementById('userMenu');
             if (userMenu) {
-                const dashboardLink = this.profile.role === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html';
+                const dashboardLink = this.profile.role === 'admin' ? 'admin-dashboard.html' : (this.profile.role === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
                 userMenu.innerHTML = `
                     <a href="${dashboardLink}" class="btn btn-outline-light me-2 rounded-pill px-4">Dashboard</a>
                     <button onclick="App.handleLogout()" class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm">Logout</button>
@@ -127,7 +273,7 @@ const App = {
                 if (oldUserName) oldUserName.textContent = this.profile.full_name;
                 const oldUserDept = document.getElementById('userDept');
                 if (oldUserDept) oldUserDept.textContent = this.profile.department || this.profile.role;
-                const initials = this.profile.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const initials = this.profile.full_name ? this.profile.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
                 
                 // Populate the new beautiful Sidebar Profile Card
                 const sidebarName = document.getElementById('sidebarUserName');
@@ -173,20 +319,101 @@ const App = {
         const isProfilePage = path.includes('profile.html');
 
         if (this.user) {
-            if (isAuthPage) {
-                const dash = this.profile.role === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html';
-                window.location.replace(dash);
-            } else if (isProfilePage) {
-                // Set back button destination
-                const backBtn = document.getElementById('backToDashboard');
-                if (backBtn) backBtn.href = this.profile.role === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html';
-                this.loadProfilePageStatsAndTimeline();
-            } else if (isDashboard) {
-                if (path.includes('student') && this.profile.role === 'faculty') window.location.replace('faculty-dashboard.html');
-                if (path.includes('faculty') && this.profile.role === 'student') window.location.replace('student-dashboard.html');
+            // Safe role detection fallback
+            const userRole = (this.profile && this.profile.role) || (this.user.user_metadata && this.user.user_metadata.role) || 'student';
+            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
 
-                if (this.profile.role === 'student') this.loadStudentDashboard();
-                if (this.profile.role === 'faculty') this.loadFacultyDashboard();
+            // Detect browser back/forward button clicks
+            const navEntries = window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation');
+            const isBackForward = navEntries && navEntries.length > 0 && navEntries[0].type === 'back_forward';
+
+            if (isAuthPage) {
+                // If they landed here via browser back/forward buttons, force redirect back to dashboard
+                if (isBackForward) {
+                    window.location.replace(dash);
+                } else if (document.referrer && document.referrer.includes('dashboard.html')) {
+                    window.location.replace('index.html');
+                } else {
+                    window.location.replace(dash);
+                }
+            } else if (isProfilePage) {
+                // If they landed on profile.html via browser back button from dashboard, lock them back to the dashboard
+                if (isBackForward) {
+                    window.location.replace(dash);
+                } else if (!this.settingsVerified) {
+                    // Show a fullscreen blur block to protect the profile details
+                    document.body.insertAdjacentHTML('afterbegin', `
+                        <div id="profile-blur-lock" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+                        </div>
+                    `);
+                    
+                    // Show the password prompt modal
+                    this.promptSettingsPassword(
+                        () => {
+                            // On success, remove the blur lock
+                            const lock = document.getElementById('profile-blur-lock');
+                            if (lock) lock.remove();
+                            
+                            // Initialize page details
+                            const backBtn = document.getElementById('backToDashboard');
+                            if (backBtn) {
+                                backBtn.href = dash;
+                                backBtn.onclick = (e) => {
+                                    if (document.referrer && document.referrer.includes('dashboard.html')) {
+                                        e.preventDefault();
+                                        window.history.back();
+                                    }
+                                };
+                            }
+                            this.loadProfilePageStatsAndTimeline();
+                        },
+                        () => {
+                            // On cancel/close, redirect back to dashboard
+                            window.location.replace(dash);
+                        }
+                    );
+                } else {
+                    // Set back button destination
+                    const backBtn = document.getElementById('backToDashboard');
+                    if (backBtn) {
+                        backBtn.href = dash;
+                        backBtn.onclick = (e) => {
+                            if (document.referrer && document.referrer.includes('dashboard.html')) {
+                                e.preventDefault();
+                                window.history.back();
+                            }
+                        };
+                    }
+                    this.loadProfilePageStatsAndTimeline();
+                }
+            } else if (isDashboard) {
+                if (path.includes('admin-dashboard.html') && userRole !== 'admin') {
+                    window.location.replace(userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+                }
+                if (path.includes('faculty-dashboard.html') && userRole !== 'faculty') {
+                    window.location.replace(userRole === 'admin' ? 'admin-dashboard.html' : 'student-dashboard.html');
+                }
+                if (path.includes('student-dashboard.html') && userRole !== 'student') {
+                    window.location.replace(userRole === 'admin' ? 'admin-dashboard.html' : 'faculty-dashboard.html');
+                }
+
+                // Prevent leaving the dashboard via browser Back button (locks them in dashboard UX)
+                if (window.history && window.history.pushState) {
+                    if (!window.history.state || window.history.state.locked !== true) {
+                        window.history.pushState({ locked: true }, null, window.location.href);
+                    }
+                    window.onpopstate = () => {
+                        window.history.pushState({ locked: true }, null, window.location.href);
+                        this.switchView('dashboard');
+                    };
+                }
+
+                // Track user presence to prevent duplicate concurrent logins
+                this.trackPresence(this.user.id);
+
+                if (userRole === 'student') this.loadStudentDashboard();
+                if (userRole === 'faculty') this.loadFacultyDashboard();
+                if (userRole === 'admin') this.loadAdminDashboard();
             }
         } else {
             if (isDashboard) {
@@ -204,14 +431,128 @@ const App = {
         const originalText = btn.innerHTML;
 
         try {
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Credentials...';
             btn.disabled = true;
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) throw error;
 
-            window.location.reload();
+            // Before reloading, check if there's any active presence on another session
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Active Sessions...';
+            const checkChannel = supabaseClient.channel(`presence_${data.user.id}`);
+            
+            checkChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Wait 1.2 seconds for presence state to sync from Supabase Realtime
+                    setTimeout(async () => {
+                        const state = checkChannel.presenceState();
+                        const activeSessions = [];
+                        
+                        // Parse presenceState
+                        Object.keys(state).forEach(key => {
+                            if (state[key]) {
+                                state[key].forEach(presence => {
+                                    activeSessions.push(presence);
+                                });
+                            }
+                        });
+
+                        // Unsubscribe check channel
+                        checkChannel.unsubscribe();
+
+                        if (activeSessions.length > 0) {
+                            // Account is already active elsewhere! Log out the new session
+                            await supabaseClient.auth.signOut();
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            
+                            // Display the prompt
+                            alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-2"></i>This account is already logged in on another device or tab.';
+                            alertBox.classList.remove('d-none');
+                        } else {
+                            // Proceed with login reload
+                            window.location.reload();
+                        }
+                    }, 1200);
+                }
+            });
+        } catch (error) {
+            alertBox.textContent = error.message;
+            alertBox.classList.remove('d-none');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    },
+
+    handleForgotPassword: async function (e) {
+        e.preventDefault();
+        const email = document.getElementById('forgotEmail').value;
+        const alertBox = document.getElementById('forgotAlert');
+        const successBox = document.getElementById('forgotSuccess');
+        const btn = document.getElementById('forgotSubmitBtn');
+        const originalText = btn.innerHTML;
+
+        alertBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        try {
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending Link...';
+            btn.disabled = true;
+
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + window.location.pathname
+            });
+
+            if (error) throw error;
+
+            successBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>A secure password reset link has been successfully sent to your email!';
+            successBox.classList.remove('d-none');
+            document.getElementById('forgotForm').reset();
+        } catch (error) {
+            alertBox.textContent = error.message;
+            alertBox.classList.remove('d-none');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    },
+
+    handlePasswordRecovery: async function (e) {
+        e.preventDefault();
+        const password = document.getElementById('recoveryPassword').value;
+        const confirm = document.getElementById('recoveryConfirmPassword').value;
+        const alertBox = document.getElementById('recoveryAlert');
+        const successBox = document.getElementById('recoverySuccess');
+        const btn = document.getElementById('recoverySubmitBtn');
+        const originalText = btn.innerHTML;
+
+        alertBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        if (password !== confirm) {
+            alertBox.textContent = "Passwords do not match.";
+            alertBox.classList.remove('d-none');
+            return;
+        }
+
+        try {
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating Password...';
+            btn.disabled = true;
+
+            const { error } = await supabaseClient.auth.updateUser({ password });
+
+            if (error) throw error;
+
+            successBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Password successfully updated! Redirecting to dashboard...';
+            successBox.classList.remove('d-none');
+            
+            // Clear URL Hash
+            window.history.replaceState(null, null, window.location.pathname);
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } catch (error) {
             alertBox.textContent = error.message;
             alertBox.classList.remove('d-none');
@@ -261,9 +602,13 @@ const App = {
 
             if (error) throw error;
 
-            // Note: Since Supabase triggers handle user profile creation, we just wait.
-            alert("Registration successful! Please check your email or login.");
-            window.location.replace('login.html');
+            if (role === 'faculty') {
+                alert("Registration successful! Your faculty account has been created and is currently pending administrator approval. You will be able to log in once an admin activates your account.");
+                window.location.replace('login.html?pending=true');
+            } else {
+                alert("Registration successful! Redirecting to login...");
+                window.location.replace('login.html');
+            }
         } catch (error) {
             alertBox.textContent = error.message;
             alertBox.classList.remove('d-none');
@@ -275,6 +620,148 @@ const App = {
     handleLogout: async function () {
         await supabaseClient.auth.signOut();
         window.location.replace('login.html');
+    },
+
+    trackPresence: function(userId) {
+        if (!userId) return;
+        
+        // Subscribe to a unique realtime presence channel for this user
+        this.presenceChannel = supabaseClient.channel(`presence_${userId}`, {
+            config: {
+                presence: {
+                    key: userId
+                }
+            }
+        });
+
+        this.presenceChannel
+            .on('presence', { event: 'sync' }, () => {
+                console.log('Presence sync completed.');
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Track this session with a unique session ID in sessionStorage
+                    let tabSessionId = sessionStorage.getItem('ct_session_id');
+                    if (!tabSessionId) {
+                        tabSessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+                        sessionStorage.setItem('ct_session_id', tabSessionId);
+                    }
+                    await this.presenceChannel.track({
+                        session_id: tabSessionId,
+                        online_at: new Date().toISOString()
+                    });
+                }
+            });
+    },
+
+    promptSettingsPassword: function(onSuccessCallback, onCancelCallback) {
+        let modal = document.getElementById('settingsAuthModal');
+        if (!modal) {
+            const modalHtml = `
+                <div class="modal fade" id="settingsAuthModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="background: #fff; color: #000;">
+                            <div class="modal-header border-bottom-0 pb-0 justify-content-between p-4" style="background: linear-gradient(135deg, #1a3b5c 0%, #1e3a8a 100%); color: #fff;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-shield-halved fs-4 text-warning"></i>
+                                    <h5 class="modal-title fw-bold mb-0">Security Verification</h5>
+                                </div>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="settingsAuthCloseBtn"></button>
+                            </div>
+                            <div class="modal-body p-4 text-center">
+                                <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%; background: #e0f2fe;">
+                                    <i class="fa-solid fa-lock text-primary fs-3"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-2" style="font-size: 16px;">Password Required</h6>
+                                <p class="text-muted small mb-4" style="font-size: 13px;">Please verify your password to access your account settings and personal details.</p>
+                                
+                                <form id="settingsAuthForm">
+                                    <div class="mb-3 text-start">
+                                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size: 11px;">Account Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-0"><i class="fa-solid fa-key text-muted"></i></span>
+                                            <input type="password" id="settingsAuthPassword" class="form-control bg-light border-0 py-2" placeholder="Enter your password" required style="font-size: 13px;">
+                                        </div>
+                                    </div>
+                                    <div id="settingsAuthAlert" class="alert alert-danger d-none py-2 px-3 small border-0 text-start" role="alert" style="font-size: 12px;">
+                                        <i class="fa-solid fa-circle-exclamation me-1"></i> Incorrect password. Please try again.
+                                    </div>
+                                    <button type="submit" id="settingsAuthConfirmBtn" class="btn btn-primary w-100 py-2 rounded-pill fw-bold mt-2 shadow-sm" style="font-size: 14px;">
+                                        Verify & Continue
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            modal = document.getElementById('settingsAuthModal');
+        }
+
+        // Initialize Bootstrap Modal
+        const bsModal = new bootstrap.Modal(modal);
+        
+        // Reset state
+        document.getElementById('settingsAuthPassword').value = '';
+        document.getElementById('settingsAuthAlert').classList.add('d-none');
+        const confirmBtn = document.getElementById('settingsAuthConfirmBtn');
+        confirmBtn.innerHTML = 'Verify & Continue';
+        confirmBtn.disabled = false;
+
+        // Submit listener
+        const form = document.getElementById('settingsAuthForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('settingsAuthPassword').value;
+            const alertBox = document.getElementById('settingsAuthAlert');
+            
+            try {
+                confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i>Verifying...';
+                confirmBtn.disabled = true;
+                alertBox.classList.add('d-none');
+
+                // Verify password by signing in with the user's email
+                const email = this.user.email;
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) throw error;
+
+                // Success! Set verification flag, hide modal, and show settings view!
+                this.settingsVerified = true;
+                bsModal.hide();
+                
+                if (onSuccessCallback) onSuccessCallback();
+
+            } catch (err) {
+                console.error("Verification error:", err);
+                confirmBtn.innerHTML = 'Verify & Continue';
+                confirmBtn.disabled = false;
+                alertBox.classList.remove('d-none');
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation me-1"></i> ${err.message || 'Incorrect password. Please try again.'}`;
+            }
+        };
+
+        // Cancel button / close listener
+        const closeBtn = document.getElementById('settingsAuthCloseBtn');
+        let cancelTriggered = false;
+        
+        const triggerCancel = () => {
+            if (cancelTriggered) return;
+            cancelTriggered = true;
+            bsModal.hide();
+            if (onCancelCallback) onCancelCallback();
+        };
+
+        closeBtn.onclick = triggerCancel;
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                triggerCancel();
+            }
+        });
+
+        bsModal.show();
     },
 
     switchView: function (viewId) {
@@ -315,16 +802,43 @@ const App = {
         const roleBadge = document.getElementById('profileRoleBadge');
         if (roleBadge) roleBadge.textContent = this.profile.role.toUpperCase();
 
-        if (this.profile.avatar) {
-            document.getElementById('profileAvatarPreview').src = this.profile.avatar;
-            document.getElementById('profileAvatarPreview').style.display = 'block';
-            document.getElementById('profileAvatarInitials').style.display = 'none';
-        } else {
-            const initialsEl = document.getElementById('sidebarUserInitials') || document.getElementById('userInitials');
-            const initials = initialsEl ? initialsEl.textContent.trim() : 'ST';
-            document.getElementById('profileAvatarInitials').textContent = initials;
-            document.getElementById('profileAvatarPreview').style.display = 'none';
-            document.getElementById('profileAvatarInitials').style.display = 'flex';
+        const preview = document.getElementById('profileAvatarPreview');
+        const initials = document.getElementById('profileAvatarInitials');
+        if (preview && initials) {
+            const isNested = initials.contains(preview);
+            if (this.profile.avatar) {
+                preview.src = this.profile.avatar;
+                preview.style.display = 'block';
+                preview.classList.remove('d-none');
+                
+                if (isNested) {
+                    const textSpan = document.getElementById('profileInitialsText');
+                    if (textSpan) textSpan.style.display = 'none';
+                } else {
+                    initials.classList.add('d-none');
+                    initials.classList.remove('d-flex');
+                    initials.style.setProperty('display', 'none', 'important');
+                }
+            } else {
+                const initialsEl = document.getElementById('sidebarUserInitials') || document.getElementById('userInitials');
+                const text = initialsEl ? initialsEl.textContent.trim() : 'ST';
+                
+                preview.style.display = 'none';
+                preview.classList.add('d-none');
+
+                if (isNested) {
+                    const textSpan = document.getElementById('profileInitialsText');
+                    if (textSpan) {
+                        textSpan.textContent = text;
+                        textSpan.style.display = 'inline';
+                    }
+                } else {
+                    initials.textContent = text;
+                    initials.classList.remove('d-none');
+                    initials.classList.add('d-flex');
+                    initials.style.setProperty('display', 'flex', 'important');
+                }
+            }
         }
     },
 
@@ -337,12 +851,23 @@ const App = {
         document.getElementById('heroName').textContent = p.full_name;
         document.getElementById('heroEmail').textContent = p.email;
         document.getElementById('heroBadge').textContent = p.role.toUpperCase();
-        document.getElementById('profileInitialsText').textContent = initials;
+        
+        const textSpan = document.getElementById('profileInitialsText');
+        if (textSpan) textSpan.textContent = initials;
 
-        if (p.avatar) {
-            document.getElementById('profileAvatarPreview').src = p.avatar;
-            document.getElementById('profileAvatarPreview').style.display = 'block';
-            document.getElementById('profileInitialsText').style.display = 'none';
+        const preview = document.getElementById('profileAvatarPreview');
+
+        if (preview) {
+            if (p.avatar) {
+                preview.src = p.avatar;
+                preview.style.display = 'block';
+                preview.classList.remove('d-none');
+                if (textSpan) textSpan.style.display = 'none';
+            } else {
+                preview.style.display = 'none';
+                preview.classList.add('d-none');
+                if (textSpan) textSpan.style.display = 'block';
+            }
         }
 
         // Info card
@@ -977,6 +1502,7 @@ const App = {
             .order('appointment_date', { ascending: true });
 
         if (error) return;
+        this.facultyRequests = data; // Cache the data globally for printing/exporting
 
         let pending = 0;
         let today = 0;
@@ -1070,6 +1596,261 @@ const App = {
                 notifList.innerHTML = '<li><h6 class="dropdown-header fw-bold">Notifications</h6></li><li><hr class="dropdown-divider"></li><li><span class="dropdown-item text-center text-muted small">No new notifications</span></li>';
             }
         }
+    },
+
+    exportFacultyReport: function() {
+        if (!this.facultyRequests || this.facultyRequests.length === 0) {
+            alert("No appointment requests found to export.");
+            return;
+        }
+
+        const facultyName = this.profile.full_name;
+        const facultyEmail = this.user.email;
+        const facultyDept = this.profile.department || 'ICT Department';
+        const dateGenerated = new Date().toLocaleString();
+
+        let pendingCount = 0;
+        let approvedCount = 0;
+        let completedCount = 0;
+        let totalCount = this.facultyRequests.length;
+
+        let tableRows = '';
+        this.facultyRequests.forEach((appt, index) => {
+            if (appt.status === 'pending') pendingCount++;
+            if (appt.status === 'approved') approvedCount++;
+            if (appt.status === 'completed') completedCount++;
+
+            const dateObj = new Date(appt.appointment_date);
+            const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+            const formatTime = (time) => new Date(`1970-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            tableRows += `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: 500; color: #1e293b;">${index + 1}</td>
+                    <td style="padding: 12px; font-weight: 600; color: #0f172a;">${appt.profiles.full_name}<br><small style="color: #64748b; font-weight: 400; font-size: 11px;">${appt.profiles.department || 'Student'}</small></td>
+                    <td style="padding: 12px; color: #334155; font-size: 13px;"><strong>${dateStr}</strong><br><small style="color: #64748b; font-size: 11px;">${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</small></td>
+                    <td style="padding: 12px; color: #475569; font-size: 12px; max-width: 250px; word-wrap: break-word;">${appt.purpose}</td>
+                    <td style="padding: 12px;"><span style="display: inline-block; padding: 4px 10px; font-size: 10px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; ${
+                        appt.status === 'approved' ? 'background: #d1fae5; color: #065f46;' :
+                        appt.status === 'completed' ? 'background: #dbeafe; color: #1e40af;' :
+                        appt.status === 'pending' ? 'background: #fef3c7; color: #92400e;' :
+                        'background: #fee2e2; color: #991b1b;'
+                    }">${appt.status}</span></td>
+                </tr>
+            `;
+        });
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Consultation Report - ConsulTime</title>
+                <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+                <style>
+                    body {
+                        font-family: 'Outfit', sans-serif;
+                        color: #1e293b;
+                        background: #fff;
+                        margin: 0;
+                        padding: 40px;
+                    }
+                    .header-container {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border-bottom: 3px solid #1e3a8a;
+                        padding-bottom: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .brand {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .brand-title {
+                        color: #1e3a8a;
+                        font-weight: 800;
+                        font-size: 28px;
+                        margin: 0;
+                        letter-spacing: 0.5px;
+                    }
+                    .report-tag {
+                        background: #eff6ff;
+                        color: #1e40af;
+                        font-weight: 700;
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                        font-size: 12px;
+                        letter-spacing: 1px;
+                        text-transform: uppercase;
+                    }
+                    .meta-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 20px;
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        padding: 20px;
+                        border-radius: 12px;
+                        margin-bottom: 30px;
+                    }
+                    .meta-item {
+                        font-size: 14px;
+                    }
+                    .meta-label {
+                        color: #64748b;
+                        font-weight: 500;
+                        margin-bottom: 4px;
+                        text-transform: uppercase;
+                        font-size: 11px;
+                        letter-spacing: 0.5px;
+                    }
+                    .meta-value {
+                        color: #0f172a;
+                        font-weight: 600;
+                        font-size: 15px;
+                    }
+                    .stats-container {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 15px;
+                        margin-bottom: 40px;
+                    }
+                    .stat-card {
+                        background: #fff;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 15px;
+                        text-align: center;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+                    }
+                    .stat-card.total { border-left: 4px solid #1e3a8a; }
+                    .stat-card.pending { border-left: 4px solid #d97706; }
+                    .stat-card.approved { border-left: 4px solid #10b981; }
+                    .stat-card.completed { border-left: 4px solid #3b82f6; }
+                    .stat-label {
+                        color: #64748b;
+                        font-size: 12px;
+                        font-weight: 500;
+                        margin-bottom: 5px;
+                    }
+                    .stat-value {
+                        color: #0f172a;
+                        font-size: 24px;
+                        font-weight: 700;
+                    }
+                    .table-title {
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #0f172a;
+                        margin-bottom: 15px;
+                    }
+                    .report-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        text-align: left;
+                    }
+                    .report-table th {
+                        background: #f1f5f9;
+                        color: #475569;
+                        font-weight: 700;
+                        padding: 12px;
+                        font-size: 12px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        border-bottom: 2px solid #cbd5e1;
+                    }
+                    .footer {
+                        margin-top: 60px;
+                        border-top: 1px solid #e2e8f0;
+                        padding-top: 20px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #94a3b8;
+                    }
+                    @media print {
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header-container">
+                    <div class="brand">
+                        <span style="font-size: 28px;">⏰</span>
+                        <h1 class="brand-title">ConsulTime</h1>
+                    </div>
+                    <span class="report-tag">Consultation Services Report</span>
+                </div>
+
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-label">Faculty Member</div>
+                        <div class="meta-value">${facultyName}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date Generated</div>
+                        <div class="meta-value">${dateGenerated}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Department</div>
+                        <div class="meta-value">${facultyDept}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Faculty Contact</div>
+                        <div class="meta-value">${facultyEmail}</div>
+                    </div>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-value">${totalCount}</div>
+                    </div>
+                    <div class="stat-card pending">
+                        <div class="stat-label">Pending Approval</div>
+                        <div class="stat-value">${pendingCount}</div>
+                    </div>
+                    <div class="stat-card approved">
+                        <div class="stat-label">Approved & Active</div>
+                        <div class="stat-value">${approvedCount}</div>
+                    </div>
+                    <div class="stat-card completed">
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-value">${completedCount}</div>
+                    </div>
+                </div>
+
+                <h2 class="table-title">Detailed Consultation Logs</h2>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">No.</th>
+                            <th>Student Details</th>
+                            <th>Schedule Date & Time</th>
+                            <th>Consultation Purpose</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                <div class="footer">
+                    This is an officially compiled academic report generated by the ConsulTime Consultation Scheduler System. All session records are protected by academic policy.
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    };
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
     },
 
     openActionModal: function (id, type) {
@@ -1443,6 +2224,343 @@ const App = {
             document.getElementById('chatbotOptions').style.pointerEvents = 'auto';
 
         }, 1200);
+    },
+
+    // --- ADMIN DASHBOARD LOGIC ---
+    loadAdminDashboard: async function() {
+        this.fetchAdminStats();
+        this.fetchPendingFaculty();
+        this.fetchManageUsers();
+        
+        // Add search event listener for managing users
+        const searchInput = document.getElementById('userSearchInput');
+        if (searchInput && !searchInput.dataset.listenerAdded) {
+            searchInput.addEventListener('input', () => this.filterUsersList());
+            searchInput.dataset.listenerAdded = 'true';
+        }
+        
+        const filterSelect = document.getElementById('userRoleFilter');
+        if (filterSelect && !filterSelect.dataset.listenerAdded) {
+            filterSelect.addEventListener('change', () => this.filterUsersList());
+            filterSelect.dataset.listenerAdded = 'true';
+        }
+    },
+
+    fetchAdminStats: async function() {
+        try {
+            const { count: studentCount, error: err1 } = await supabaseClient
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'student');
+
+            const { count: facultyCount, error: err2 } = await supabaseClient
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'faculty');
+
+            const { count: pendingCount, error: err3 } = await supabaseClient
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'faculty')
+                .eq('is_approved', false);
+
+            const { count: apptCount, error: err4 } = await supabaseClient
+                .from('appointments')
+                .select('*', { count: 'exact', head: true });
+
+            if (err1 || err2 || err3 || err4) throw (err1 || err2 || err3 || err4);
+
+            if (document.getElementById('stat-total-students')) document.getElementById('stat-total-students').textContent = studentCount || 0;
+            if (document.getElementById('stat-total-faculty')) document.getElementById('stat-total-faculty').textContent = facultyCount || 0;
+            if (document.getElementById('stat-pending-approvals')) {
+                const el = document.getElementById('stat-pending-approvals');
+                el.textContent = pendingCount || 0;
+                if (pendingCount > 0) {
+                    el.classList.add('text-danger', 'fw-bold');
+                } else {
+                    el.classList.remove('text-danger', 'fw-bold');
+                }
+            }
+            if (document.getElementById('stat-total-appointments')) document.getElementById('stat-total-appointments').textContent = apptCount || 0;
+
+        } catch (error) {
+            console.error("Admin stats error:", error);
+        }
+    },
+
+    fetchPendingFaculty: async function() {
+        const tableBody = document.getElementById('pendingFacultyTableBody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading requests...</td></tr>';
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('role', 'faculty')
+                .eq('is_approved', false)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-circle-check text-success fs-3 d-block mb-2"></i>No pending faculty approval requests.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            data.forEach(fac => {
+                const createdDate = fac.created_at ? new Date(fac.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                tableBody.innerHTML += `
+                    <tr>
+                        <td class="px-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 14px;">
+                                    ${fac.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-dark d-block">${fac.full_name}</span>
+                                    <span class="text-muted small" style="font-size: 11px;">ID: ${fac.id_number || '—'}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${fac.email}</td>
+                        <td><span class="badge bg-light text-primary border border-primary-subtle px-3 py-2 rounded-pill font-monospace" style="font-size:11px;">${fac.department || '—'}</span></td>
+                        <td>${createdDate}</td>
+                        <td class="text-end px-4">
+                            <button onclick="App.approveFaculty('${fac.id}')" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-semibold me-2 shadow-sm"><i class="fa-solid fa-check me-1"></i>Approve</button>
+                            <button onclick="App.rejectFaculty('${fac.id}')" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold"><i class="fa-solid fa-trash me-1"></i>Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+        } catch (error) {
+            console.error("Pending faculty error:", error);
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Unable to load pending requests.</td></tr>';
+        }
+    },
+
+    fetchManageUsers: async function() {
+        const tableBody = document.getElementById('usersTableBody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading directory...</td></tr>';
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .order('role', { ascending: false })
+                .order('full_name', { ascending: true });
+
+            if (error) throw error;
+
+            this.allUsers = data;
+            this.filterUsersList();
+
+        } catch (error) {
+            console.error("Manage users error:", error);
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Unable to load user directory.</td></tr>';
+        }
+    },
+
+    filterUsersList: function() {
+        const tableBody = document.getElementById('usersTableBody');
+        if (!tableBody || !this.allUsers) return;
+
+        const query = document.getElementById('userSearchInput').value.toLowerCase();
+        const roleFilter = document.getElementById('userRoleFilter').value;
+
+        const filtered = this.allUsers.filter(u => {
+            const matchesSearch = u.full_name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || (u.department && u.department.toLowerCase().includes(query));
+            const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+            return matchesSearch && matchesRole;
+        });
+
+        if (filtered.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fa-solid fa-user-slash fs-3 d-block mb-2 text-muted"></i>No users match the search criteria.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = '';
+        filtered.forEach(u => {
+            const badgeClass = u.role === 'admin' ? 'bg-danger' : (u.role === 'faculty' ? 'bg-primary' : 'bg-success');
+            const statusBadge = u.role === 'faculty' 
+                ? (u.is_approved ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-check-double me-1"></i>Active</span>' 
+                                 : '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Pending</span>')
+                : '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-check-double me-1"></i>Active</span>';
+
+            // Build the action buttons
+            // Admins shouldn't delete themselves to prevent locking themselves out of the portal
+            const deleteBtn = u.id === this.user.id 
+                ? `<button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" style="font-size:10px;" disabled><i class="fa-solid fa-ban"></i> Self</button>`
+                : `<button onclick="App.deleteUser('${u.id}', '${u.full_name.replace(/'/g, "\\'")}')" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+            
+            const editBtn = `<button onclick="App.showEditUserModal('${u.id}')" class="btn btn-sm btn-primary rounded-pill px-3 py-1 me-1 text-white shadow-sm" style="font-size:10px;"><i class="fa-solid fa-user-pen"></i> Edit</button>`;
+
+            tableBody.innerHTML += `
+                <tr>
+                    <td class="px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-light text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 14px;">
+                                ${u.avatar ? `<img src="${u.avatar}" class="w-100 h-100 rounded-circle object-fit-cover">` : u.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
+                            </div>
+                            <div>
+                                <span class="fw-bold text-dark d-block">${u.full_name}</span>
+                                <span class="text-muted small" style="font-size: 11px;">ID: ${u.id_number || '—'}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${u.email}</td>
+                    <td><span class="badge ${badgeClass} rounded-pill px-3 py-1.5 fw-bold text-uppercase" style="font-size:10px;">${u.role}</span></td>
+                    <td>${u.department || '—'}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-end px-4">
+                        <div class="d-inline-flex">
+                            ${editBtn}
+                            ${deleteBtn}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    },
+
+    approveFaculty: async function(facultyId) {
+        if (!confirm("Are you sure you want to approve this faculty member's registration?")) return;
+        
+        try {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ is_approved: true })
+                .eq('id', facultyId);
+
+            if (error) throw error;
+
+            this.showProfileToast("Faculty member approved successfully!", "success");
+            this.loadAdminDashboard(); // Refresh dashboard
+
+        } catch (error) {
+            console.error("Approve faculty error:", error);
+            this.showProfileToast("Failed to approve faculty member: " + error.message, "danger");
+        }
+    },
+
+    rejectFaculty: async function(facultyId) {
+        if (!confirm("Are you sure you want to reject and delete this registration? This action cannot be undone.")) return;
+
+        try {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .delete()
+                .eq('id', facultyId);
+
+            if (error) throw error;
+
+            this.showProfileToast("Registration request rejected and deleted.", "info");
+            this.loadAdminDashboard(); // Refresh dashboard
+
+        } catch (error) {
+            console.error("Reject faculty error:", error);
+            this.showProfileToast("Failed to reject registration: " + error.message, "danger");
+        }
+    },
+
+    showEditUserModal: function(userId) {
+        const user = this.allUsers.find(u => u.id === userId);
+        if (!user) return;
+
+        document.getElementById('editUserId').value = user.id;
+        document.getElementById('editUserFullName').value = user.full_name;
+        document.getElementById('editUserIdNumber').value = user.id_number || '';
+        document.getElementById('editUserDepartment').value = user.department || '';
+        document.getElementById('editUserRole').value = user.role;
+        document.getElementById('editUserIsApproved').checked = user.is_approved !== false;
+
+        this.toggleModalApprovalSwitch();
+
+        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        editModal.show();
+    },
+
+    toggleModalApprovalSwitch: function() {
+        const role = document.getElementById('editUserRole').value;
+        const container = document.getElementById('editFacultyApprovalContainer');
+        if (role === 'faculty') {
+            container.classList.remove('d-none');
+        } else {
+            container.classList.add('d-none');
+        }
+    },
+
+    saveEditedUser: async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editUserId').value;
+        const fullName = document.getElementById('editUserFullName').value;
+        const idNumber = document.getElementById('editUserIdNumber').value;
+        const department = document.getElementById('editUserDepartment').value;
+        const role = document.getElementById('editUserRole').value;
+        const isApproved = role === 'faculty' ? document.getElementById('editUserIsApproved').checked : true;
+
+        const btn = document.getElementById('saveEditedUserBtn');
+        const oldText = btn.innerHTML;
+
+        try {
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i>Saving...';
+            btn.disabled = true;
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({
+                    full_name: fullName,
+                    id_number: idNumber,
+                    department: department,
+                    role: role,
+                    is_approved: isApproved
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            this.showProfileToast("User profile updated successfully!", "success");
+            
+            // Hide modal
+            const modalEl = document.getElementById('editUserModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+
+            // Refresh dashboards
+            this.loadAdminDashboard();
+
+        } catch (error) {
+            console.error("Save edit user error:", error);
+            this.showProfileToast("Failed to update profile: " + error.message, "danger");
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    },
+
+    deleteUser: async function(userId, userName) {
+        if (!confirm(`WARNING: Are you sure you want to permanently delete user "${userName}"?\nThis will completely remove their account and all associated appointment records. This action cannot be undone.`)) return;
+
+        try {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .delete()
+                .eq('id', userId);
+
+            if (error) throw error;
+
+            this.showProfileToast(`User "${userName}" has been deleted.`, "info");
+            this.loadAdminDashboard(); // Refresh directory
+
+        } catch (error) {
+            console.error("Delete user error:", error);
+            this.showProfileToast("Failed to delete user: " + error.message, "danger");
+        }
     }
 };
 
@@ -1450,3 +2568,9 @@ const App = {
 document.head.insertAdjacentHTML('beforeend', '<style>@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }</style>');
 
 document.addEventListener('DOMContentLoaded', () => App.init());
+window.addEventListener('pageshow', () => {
+    // If the browser loaded the page from the Back/Forward Cache, re-check auth state instantly
+    if (typeof App !== 'undefined' && App.init) {
+        App.init();
+    }
+});

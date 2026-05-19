@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ConsulTime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar shadow-sm d-flex flex-column" style="overflow-y: auto;">
+        <div class="p-4 border-bottom d-flex align-items-center flex-shrink-0">
+            <i class="fa-solid fa-clock text-accent fs-3 me-2"></i>
+            <h4 class="fw-bold mb-0 text-primary">ConsulTime</h4>
+        </div>
+        
+        <!-- Profile Card in Sidebar -->
+        <div class="px-3 w-100 mt-3 mb-2 flex-shrink-0">
+            <div class="card bg-white p-0 text-center border-0 shadow-sm overflow-hidden rounded-4">
+                <div class="pt-3 pb-4 bg-danger" style="opacity: 0.85;"></div>
+                <div class="position-relative d-inline-block mx-auto mb-1" style="margin-top: -35px;">
+                    <div id="sidebarUserInitials" class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-3 border-white mx-auto" style="width: 65px; height: 65px; font-size: 24px; font-weight: bold;">
+                        AD
+                    </div>
+                </div>
+                <div class="card-body pt-0 pb-3 px-2">
+                    <h6 class="fw-bold text-dark mb-0" id="sidebarUserName" style="font-size: 13px;">Loading Admin...</h6>
+                    <p class="text-muted mb-2 text-truncate" id="sidebarUserEmail" style="font-size: 10px;">Loading...</p>
+                    <span class="badge bg-danger rounded-pill px-2 py-1 fw-bold w-100 text-uppercase mb-0" style="font-size: 10px;" id="sidebarUserRole">ADMIN</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Section -->
+        <div class="p-3 flex-grow-1 flex-shrink-0">
+            <p class="text-xs fw-bold text-muted text-uppercase tracking-wide mb-2 px-3">Administration</p>
+            <nav class="nav flex-column gap-1">
+                <a class="sidebar-link active" href="#" id="nav-dashboard"><i class="fa-solid fa-chart-line"></i> Overview</a>
+                <a class="sidebar-link" href="#" id="nav-pending"><i class="fa-solid fa-user-shield"></i> Faculty Approvals</a>
+                <a class="sidebar-link" href="#" id="nav-users"><i class="fa-solid fa-users"></i> User Directory</a>
+                <a class="sidebar-link" href="#" id="nav-profile"><i class="fa-solid fa-gears"></i> Portal Settings</a>
+            </nav>
+        </div>
+
+        <div class="p-3 border-top w-100 bg-white z-index-1 mt-auto flex-shrink-0">
+            <button class="btn btn-light w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 mb-2 border" onclick="App.toggleDarkMode()">
+                <i class="fa-solid fa-moon"></i> Dark Mode
+            </button>
+            <button class="btn btn-outline-danger w-100 rounded-pill d-flex align-items-center justify-content-center gap-2" id="logoutBtn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none rounded-3 p-2 shadow-sm" id="sidebarToggle" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-bars fs-5"></i>
+                </button>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" id="pageTitle">Admin Portal</h2>
+                    <p class="text-muted mb-0">System configuration, faculty verifications, and user audit controls.</p>
+                </div>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-light rounded-circle position-relative p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
+                        <i class="fa-regular fa-bell fs-5 text-dark"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" id="notifBadge" style="display:none; font-size: 0.65rem;">
+                            0
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" style="width: 300px; max-height: 400px; overflow-y: auto;" id="notificationList">
+                        <li><h6 class="dropdown-header fw-bold">Notifications</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item text-center text-muted small">No new system notices</span></li>
+                    </ul>
+                </div>
+                <a href="profile.html" class="btn btn-outline-danger rounded-pill px-3 fw-semibold d-none d-md-flex align-items-center gap-2" style="font-size:13px;">
+                    <i class="fa-solid fa-circle-user"></i> My Profile
+                </a>
+            </div>
+        </header>
+
+        <!-- Toast Notification Box -->
+        <div id="toastBox" class="toast-custom position-fixed bottom-0 end-0 m-4 p-3 rounded-4 shadow-lg border bg-white" style="display: none; z-index: 1050; min-width: 300px;">
+            <div class="d-flex align-items-center gap-2" id="toastBody">
+                <!-- Filled dynamically by App.showProfileToast -->
+            </div>
+        </div>
+
+        <!-- 1. Dashboard View -->
+        <div id="view-dashboard">
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="card dash-card bg-primary-custom text-white h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 position-relative overflow-hidden">
+                            <i class="fa-solid fa-graduation-cap position-absolute opacity-25" style="font-size: 5rem; right: -10px; bottom: -10px;"></i>
+                            <h6 class="fw-medium text-white-75 mb-3">Total Students</h6>
+                            <h2 class="fw-bold display-6 mb-0" id="stat-total-students">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 position-relative overflow-hidden">
+                            <i class="fa-solid fa-chalkboard-user position-absolute text-primary opacity-10" style="font-size: 5rem; right: -10px; bottom: -10px;"></i>
+                            <h6 class="fw-medium text-muted mb-3">Total Faculty</h6>
+                            <h2 class="fw-bold display-6 text-primary mb-0" id="stat-total-faculty">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 position-relative overflow-hidden">
+                            <i class="fa-solid fa-user-shield position-absolute text-warning opacity-10" style="font-size: 5rem; right: -10px; bottom: -10px;"></i>
+                            <h6 class="fw-medium text-muted mb-3">Pending Requests</h6>
+                            <h2 class="fw-bold display-6 text-warning mb-0" id="stat-pending-approvals">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 position-relative overflow-hidden">
+                            <i class="fa-solid fa-calendar-check position-absolute text-success opacity-10" style="font-size: 5rem; right: -10px; bottom: -10px;"></i>
+                            <h6 class="fw-medium text-muted mb-3">Total Consultations</h6>
+                            <h2 class="fw-bold display-6 text-success mb-0" id="stat-total-appointments">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-bell text-warning"></i> Quick Actions Required
+                    </h5>
+                    <div class="card dash-card bg-white border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark">Recent Faculty Approvals</h6>
+                            <button onclick="document.getElementById('nav-pending').click()" class="btn btn-sm btn-link text-primary text-decoration-none fw-bold p-0">View All</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0">
+                                    <tbody id="pendingFacultyShortcut">
+                                        <!-- Quick overview of pending approvals -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-shield-halved text-danger"></i> Portal Administration</h5>
+                    <div class="card dash-card bg-white border-0 shadow-sm rounded-4 p-4 text-center">
+                        <div class="bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:60px; height:60px;">
+                            <i class="fa-solid fa-lock fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2">Security Audit Active</h6>
+                        <p class="text-muted small mb-4">RLS & MFA Policies are fully enforced on Supabase. Registrations are automatically audited in real time.</p>
+                        <a href="https://supabase.com" target="_blank" class="btn btn-outline-danger w-100 rounded-pill fw-semibold"><i class="fa-solid fa-database me-1"></i> Open Database Console</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Faculty Approvals View -->
+        <div id="view-pending" class="d-none">
+            <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                <i class="fa-solid fa-user-check text-primary"></i> Pending Faculty Verification Requests
+            </h5>
+            <p class="text-muted">Review newly registered faculty accounts. Granting approval enables them to schedule consultations, access dashboards, and accept student meetings immediately.</p>
+            
+            <div class="card dash-card bg-white border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4">Faculty Member</th>
+                                    <th class="py-3">Email Address</th>
+                                    <th class="py-3">Course / Department</th>
+                                    <th class="py-3">Registered On</th>
+                                    <th class="py-3 text-end px-4">Verification Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingFacultyTableBody">
+                                <!-- Populated dynamically by App.fetchPendingFaculty -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. User Directory View -->
+        <div id="view-users" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-folder-open text-primary"></i> System User Directory
+                    </h5>
+                    <p class="text-muted mb-0">Audit and search all registered accounts across student, faculty, and administrator roles.</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="input-group" style="width: 250px;">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0 bg-white" id="userSearchInput" placeholder="Search name or email...">
+                    </div>
+                    <select class="form-select bg-white" id="userRoleFilter" style="width: 150px;">
+                        <option value="all">All Roles</option>
+                        <option value="student">Students</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="admin">Administrators</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card dash-card bg-white border-0 shadow-sm rounded-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4">User</th>
+                                    <th class="py-3">Email Address</th>
+                                    <th class="py-3">Role</th>
+                                    <th class="py-3">Course / Department</th>
+                                    <th class="py-3">Security Status</th>
+                                    <th class="py-3 text-end px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Populated dynamically by App.fetchManageUsers -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Profile Settings View -->
+        <div id="view-profile" class="d-none">
+            <h5 class="fw-bold mb-3 text-dark">Portal Settings</h5>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white p-0 text-center border-0 shadow-sm overflow-hidden rounded-4">
+                        <!-- Red Header Background -->
+                        <div class="pt-4 pb-5 position-relative bg-danger" style="opacity: 0.85;">
+                            <label for="avatarUpload" class="btn btn-sm btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="fa-solid fa-pen text-danger"></i>
+                            </label>
+                            <input type="file" id="avatarUpload" class="d-none" accept="image/*">
+                        </div>
+                        
+                        <!-- Overlapping Avatar -->
+                        <div class="position-relative d-inline-block mx-auto mb-2" style="margin-top: -50px;">
+                            <img id="profileAvatarPreview" src="" class="rounded-circle shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #fff; display: none;">
+                            <div id="profileAvatarInitials" class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto" style="width: 100px; height: 100px; font-size: 35px; border: 4px solid #fff;">
+                                AD
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="card-body pt-0 pb-4">
+                            <h5 class="fw-bold text-dark mb-1" id="profileNameDisplay">Loading...</h5>
+                            <p class="text-muted small mb-3" id="profileEmailDisplay">Loading...</p>
+                            <span class="badge bg-danger rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;" id="profileRoleBadge">ADMIN</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm rounded-4">
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <input type="text" class="form-control bg-light" id="profileName" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">ID Number</label>
+                                    <input type="text" class="form-control bg-light" id="profileIdNumber">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Course / Department</label>
+                                    <input type="text" class="form-control bg-light" id="profileDept">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-9 mb-3">
+                                    <label class="form-label fw-medium">Full Address</label>
+                                    <input type="text" class="form-control bg-light" id="profileAddress">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-medium">Age</label>
+                                    <input type="number" class="form-control bg-light" id="profileAge" min="15">
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Primary Email Address</label>
+                                <input type="email" class="form-control bg-light text-muted" id="profileEmail" disabled>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-danger px-4 py-2 rounded-pill fw-bold" id="saveProfileBtn">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Configuration
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm rounded-4 mt-4">
+                        <h6 class="fw-bold text-dark mb-4"><i class="fa-solid fa-key me-2 text-muted"></i>Change Portal Password</h6>
+                        <form id="passwordForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">New Password</label>
+                                    <input type="password" class="form-control bg-light" id="newPassword" required minlength="6" placeholder="••••••••">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Confirm New Password</label>
+                                    <input type="password" class="form-control bg-light" id="confirmNewPassword" required minlength="6" placeholder="••••••••">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger px-4 py-2 rounded-pill fw-bold mt-2" id="changePasswordBtn">
+                                <i class="fa-solid fa-key me-1"></i> Update Security Credentials
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Custom Admin shortcuts and quick UI events
+        const originalFetchPending = App.fetchPendingFaculty;
+        App.fetchPendingFaculty = async function() {
+            await originalFetchPending.call(App);
+            
+            // Populate the shortcut list on the main overview dashboard!
+            const shortcutBody = document.getElementById('pendingFacultyShortcut');
+            if (shortcutBody) {
+                const tableBody = document.getElementById('pendingFacultyTableBody');
+                if (tableBody && (tableBody.innerHTML.includes('No pending') || tableBody.innerHTML.includes('Unable to load'))) {
+                    shortcutBody.innerHTML = '<tr><td class="text-center py-4 text-muted"><i class="fa-solid fa-circle-check text-success me-2"></i>All faculty registrations verified!</td></tr>';
+                } else if (tableBody) {
+                    // Clone the first 3 rows of pending approvals to the dashboard overview for convenience
+                    const rows = Array.from(tableBody.querySelectorAll('tr'));
+                    shortcutBody.innerHTML = '';
+                    rows.slice(0, 3).forEach(row => {
+                        shortcutBody.appendChild(row.cloneNode(true));
+                    });
+                }
+            }
+        };
+    </script>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="editUserModalLabel"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit User Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editUserForm" onsubmit="App.saveEditedUser(event)">
+                    <div class="modal-body py-4">
+                        <input type="hidden" id="editUserId">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <input type="text" class="form-control bg-light border-0" id="editUserFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ID Number</label>
+                            <input type="text" class="form-control bg-light border-0" id="editUserIdNumber">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Course / Department</label>
+                            <input type="text" class="form-control bg-light border-0" id="editUserDepartment">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Access Role</label>
+                            <select class="form-select bg-light border-0" id="editUserRole" required onchange="App.toggleModalApprovalSwitch()">
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="editFacultyApprovalContainer">
+                            <div class="form-check form-switch bg-light p-3 rounded-3 d-flex align-items-center justify-content-between">
+                                <label class="form-check-label fw-semibold ms-0" for="editUserIsApproved">Account Approved / Verified</label>
+                                <input class="form-check-input me-0" type="checkbox" role="switch" id="editUserIsApproved">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0 gap-2">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="saveEditedUserBtn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
