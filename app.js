@@ -278,23 +278,26 @@ const App = {
                     address: this.user.user_metadata.address || '',
                     age: this.user.user_metadata.age || null,
                     email: this.user.email,
-                    is_approved: true
+                    is_approved: this.user.user_metadata.role !== 'faculty'
                 };
             }
 
             // If account is pending administrator approval
             if (profile && profile.is_approved === false) {
+                const fastLoader = document.getElementById('auth-fast-loader');
+                if (fastLoader) fastLoader.remove();
+
                 await supabaseClient.auth.signOut();
                 this.user = null;
                 this.profile = null;
                 
                 const loginAlert = document.getElementById('loginAlert');
                 if (loginAlert) {
-                    loginAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Approval Pending:</strong> Your faculty account has been registered but is currently pending administrator approval. Please wait for an administrator to activate your account.`;
+                    loginAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Account Not Approved:</strong> Your account is not approved yet. Please contact the administrator.`;
                     loginAlert.classList.remove('d-none');
-                } else {
-                    alert("Your faculty account is currently pending administrator approval. Please wait for an administrator to activate your account.");
                 }
+                
+                alert("Your account is not approved. Please contact the administrator.");
                 
                 const path = window.location.pathname;
                 if (path.includes('dashboard.html') || path.includes('profile.html')) {
@@ -357,6 +360,16 @@ const App = {
 
             // Always try to populate dedicated profile page (profile.html)
             this.populateProfilePage();
+        }
+
+        // Remove fast loader if session is null and staying on guest page
+        const fastLoader = document.getElementById('auth-fast-loader');
+        if (fastLoader) {
+            const path = window.location.pathname;
+            const isAuthPage = path.includes('login.html') || path.includes('register.html') || path === '/' || path.endsWith('/');
+            if (isAuthPage && !this.user) {
+                fastLoader.remove();
+            }
         }
     },
 
@@ -2420,9 +2433,30 @@ const App = {
 
             if (error) throw error;
 
+            const notifBadge = document.getElementById('notifBadge');
+            const notifList = document.getElementById('notificationList');
+
             if (data.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-circle-check text-success fs-3 d-block mb-2"></i>No pending faculty approval requests.</td></tr>';
+                if (notifBadge) notifBadge.style.display = 'none';
+                if (notifList) {
+                    notifList.innerHTML = '<li><h6 class="dropdown-header fw-bold">Notifications</h6></li><li><hr class="dropdown-divider"></li><li><span class="dropdown-item text-center text-muted small">No new system notices</span></li>';
+                }
                 return;
+            }
+
+            if (notifBadge && notifList) {
+                notifBadge.style.display = 'block';
+                notifBadge.textContent = data.length;
+                
+                let notifHtml = '<li><h6 class="dropdown-header fw-bold">Recent Notifications</h6></li><li><hr class="dropdown-divider"></li>';
+                data.forEach(fac => {
+                    notifHtml += `<li><a class="dropdown-item py-2 border-bottom" href="#" onclick="document.getElementById('nav-faculty-approvals').click()">
+                        <div class="fw-bold small text-dark">${sanitizeHTML(fac.full_name)}</div>
+                        <div class="text-muted" style="font-size: 12px;">Registered as Faculty (Approval Pending)</div>
+                    </a></li>`;
+                });
+                notifList.innerHTML = notifHtml;
             }
 
             tableBody.innerHTML = '';
@@ -2679,6 +2713,9 @@ const App = {
         }
     }
 };
+
+// Expose App object globally to allow inline HTML event handlers (e.g. onclick="App.approveFaculty()") to access it
+window.App = App;
 
 // Add keyframes animation for chatbot
 document.head.insertAdjacentHTML('beforeend', '<style>@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }</style>');
