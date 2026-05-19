@@ -8,6 +8,18 @@ if (window.supabase) {
     supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 }
 
+// XSS Sanitizer: escape any text coming from the database before inserting into innerHTML
+function sanitizeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\//g, '&#x2F;');
+}
+
 const App = {
     user: null,
     profile: null,
@@ -1122,39 +1134,39 @@ const App = {
                 
                 if (role === 'student') {
                     // Student timeline
-                    const partnerName = appt.profiles ? appt.profiles.full_name : 'Faculty';
+                    const partnerName = sanitizeHTML(appt.profiles ? appt.profiles.full_name : 'Faculty');
                     icon = appt.status === 'completed' ? 'fa-check' : (appt.status === 'approved' ? 'fa-calendar' : (appt.status === 'pending' ? 'fa-clock' : 'fa-xmark'));
                     
                     if (appt.status === 'completed') {
                         title = `Completed consultation with ${partnerName}`;
-                        desc = `Topic: "${appt.purpose}" successfully resolved.`;
+                        desc = `Topic: "${sanitizeHTML(appt.purpose)}" successfully resolved.`;
                     } else if (appt.status === 'approved') {
                         title = `Consultation scheduled with ${partnerName}`;
                         desc = `Confirmed for ${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}.`;
                     } else if (appt.status === 'pending') {
                         title = `Requested consultation with ${partnerName}`;
-                        desc = `Awaiting approval for the purpose: "${appt.purpose}".`;
+                        desc = `Awaiting approval for the purpose: "${sanitizeHTML(appt.purpose)}".`;
                     } else {
                         title = `Consultation with ${partnerName} rejected`;
-                        desc = appt.notes ? `Reason: "${appt.notes}"` : `The request was rejected or cancelled.`;
+                        desc = appt.notes ? `Reason: "${sanitizeHTML(appt.notes)}"` : `The request was rejected or cancelled.`;
                     }
                 } else {
                     // Faculty timeline
-                    const partnerName = appt.profiles ? appt.profiles.full_name : 'Student';
+                    const partnerName = sanitizeHTML(appt.profiles ? appt.profiles.full_name : 'Student');
                     icon = appt.status === 'completed' ? 'fa-check' : (appt.status === 'approved' ? 'fa-calendar' : (appt.status === 'pending' ? 'fa-clock' : 'fa-xmark'));
                     
                     if (appt.status === 'completed') {
                         title = `Completed consultation with ${partnerName}`;
-                        desc = `Resolved purpose: "${appt.purpose}".`;
+                        desc = `Resolved purpose: "${sanitizeHTML(appt.purpose)}".`;
                     } else if (appt.status === 'approved') {
                         title = `Scheduled consultation with ${partnerName}`;
                         desc = `Time: ${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}.`;
                     } else if (appt.status === 'pending') {
                         title = `New consultation request from ${partnerName}`;
-                        desc = `Requested a session for: "${appt.purpose}".`;
+                        desc = `Requested a session for: "${sanitizeHTML(appt.purpose)}".`;
                     } else {
                         title = `Consultation request with ${partnerName} rejected`;
-                        desc = appt.notes ? `Feedback provided: "${appt.notes}"` : `Request was declined.`;
+                        desc = appt.notes ? `Feedback provided: "${sanitizeHTML(appt.notes)}"` : `Request was declined.`;
                     }
                 }
 
@@ -1424,15 +1436,15 @@ const App = {
                             <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
                                 <i class="fa-solid fa-user-tie"></i>
                             </div>
-                            <span class="fw-medium">${appt.profiles.full_name}</span>
+                            <span class="fw-medium">${sanitizeHTML(appt.profiles.full_name)}</span>
                         </div>
                     </td>
                     <td>
                         <div class="fw-medium">${dateStr}</div>
                         <small class="text-muted">${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</small>
                     </td>
-                    <td class="text-wrap" style="max-width: 200px;">${appt.purpose}</td>
-                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${appt.status}</span></td>
+                    <td class="text-wrap" style="max-width: 200px;">${sanitizeHTML(appt.purpose)}</td>
+                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${sanitizeHTML(appt.status)}</span></td>
                     <td class="text-end px-4">
                         ${appt.status === 'pending' ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="App.cancelAppointment('${appt.id}')">Cancel</button>` : ''}
                         ${appt.status === 'approved' ? `<a href="https://meet.jit.si/ConsulTime_${appt.id}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"><i class="fa-solid fa-video me-1"></i> Join Call</a>` : ''}
@@ -1541,11 +1553,11 @@ const App = {
                     <td class="px-4">
                         <div class="d-flex align-items-center">
                             <div class="bg-accent-soft text-accent rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
-                                ${appt.profiles.full_name.charAt(0)}
+                                ${sanitizeHTML(appt.profiles.full_name.charAt(0))}
                             </div>
                             <div>
-                                <div class="fw-medium text-dark">${appt.profiles.full_name}</div>
-                                <div class="small text-muted" style="font-size: 11px;">${appt.profiles.department || 'Student'}</div>
+                                <div class="fw-medium text-dark">${sanitizeHTML(appt.profiles.full_name)}</div>
+                                <div class="small text-muted" style="font-size: 11px;">${sanitizeHTML(appt.profiles.department || 'Student')}</div>
                             </div>
                         </div>
                     </td>
@@ -1553,8 +1565,8 @@ const App = {
                         <div class="fw-medium">${dateStr}</div>
                         <small class="text-muted">${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</small>
                     </td>
-                    <td class="text-wrap text-muted small" style="max-width: 200px;">${appt.purpose}</td>
-                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${appt.status}</span></td>
+                    <td class="text-wrap text-muted small" style="max-width: 200px;">${sanitizeHTML(appt.purpose)}</td>
+                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${sanitizeHTML(appt.status)}</span></td>
                     <td class="text-end px-4">
                         ${actions}
                     </td>
@@ -2317,16 +2329,16 @@ const App = {
                         <td class="px-4">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 14px;">
-                                    ${fac.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                    ${sanitizeHTML(fac.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase())}
                                 </div>
                                 <div>
-                                    <span class="fw-bold text-dark d-block">${fac.full_name}</span>
-                                    <span class="text-muted small" style="font-size: 11px;">ID: ${fac.id_number || '—'}</span>
+                                    <span class="fw-bold text-dark d-block">${sanitizeHTML(fac.full_name)}</span>
+                                    <span class="text-muted small" style="font-size: 11px;">ID: ${sanitizeHTML(fac.id_number || '—')}</span>
                                 </div>
                             </div>
                         </td>
-                        <td>${fac.email}</td>
-                        <td><span class="badge bg-light text-primary border border-primary-subtle px-3 py-2 rounded-pill font-monospace" style="font-size:11px;">${fac.department || '—'}</span></td>
+                        <td>${sanitizeHTML(fac.email)}</td>
+                        <td><span class="badge bg-light text-primary border border-primary-subtle px-3 py-2 rounded-pill font-monospace" style="font-size:11px;">${sanitizeHTML(fac.department || '—')}</span></td>
                         <td>${createdDate}</td>
                         <td class="text-end px-4">
                             <button onclick="App.approveFaculty('${fac.id}')" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-semibold me-2 shadow-sm"><i class="fa-solid fa-check me-1"></i>Approve</button>
@@ -2396,7 +2408,7 @@ const App = {
             // Admins shouldn't delete themselves to prevent locking themselves out of the portal
             const deleteBtn = u.id === this.user.id 
                 ? `<button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" style="font-size:10px;" disabled><i class="fa-solid fa-ban"></i> Self</button>`
-                : `<button onclick="App.deleteUser('${u.id}', '${u.full_name.replace(/'/g, "\\'")}')" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+                : `<button onclick="App.deleteUser('${u.id}', '${sanitizeHTML(u.full_name.replace(/'/g, "\\'"))}')" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size:10px;"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
             
             const editBtn = `<button onclick="App.showEditUserModal('${u.id}')" class="btn btn-sm btn-primary rounded-pill px-3 py-1 me-1 text-white shadow-sm" style="font-size:10px;"><i class="fa-solid fa-user-pen"></i> Edit</button>`;
 
@@ -2405,17 +2417,17 @@ const App = {
                     <td class="px-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-light text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 14px;">
-                                ${u.avatar ? `<img src="${u.avatar}" class="w-100 h-100 rounded-circle object-fit-cover">` : u.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
+                                ${u.avatar ? `<img src="${u.avatar}" class="w-100 h-100 rounded-circle object-fit-cover">` : sanitizeHTML(u.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase())}
                             </div>
                             <div>
-                                <span class="fw-bold text-dark d-block">${u.full_name}</span>
-                                <span class="text-muted small" style="font-size: 11px;">ID: ${u.id_number || '—'}</span>
+                                <span class="fw-bold text-dark d-block">${sanitizeHTML(u.full_name)}</span>
+                                <span class="text-muted small" style="font-size: 11px;">ID: ${sanitizeHTML(u.id_number || '—')}</span>
                             </div>
                         </div>
                     </td>
-                    <td>${u.email}</td>
-                    <td><span class="badge ${badgeClass} rounded-pill px-3 py-1.5 fw-bold text-uppercase" style="font-size:10px;">${u.role}</span></td>
-                    <td>${u.department || '—'}</td>
+                    <td>${sanitizeHTML(u.email)}</td>
+                    <td><span class="badge ${badgeClass} rounded-pill px-3 py-1.5 fw-bold text-uppercase" style="font-size:10px;">${sanitizeHTML(u.role)}</span></td>
+                    <td>${sanitizeHTML(u.department || '—')}</td>
                     <td>${statusBadge}</td>
                     <td class="text-end px-4">
                         <div class="d-inline-flex">
