@@ -212,6 +212,96 @@ const App = {
         }
     },
 
+    showAboutModal: function() {
+        let modalEl = document.getElementById('aboutModal');
+        if (!modalEl) {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const themeClass = isDarkMode ? 'bg-dark text-white border-secondary' : 'bg-white text-dark';
+            const closeBtnClass = isDarkMode ? 'btn-close-white' : '';
+            
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true" style="font-family: 'Outfit', sans-serif;">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content ${themeClass}" style="border-radius: 20px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
+                            <div class="modal-header border-0 pb-0">
+                                <button type="button" class="btn-close ${closeBtnClass}" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
+                            </div>
+                            <div class="modal-body text-center px-4 pb-4 pt-0">
+                                <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle shadow-sm mb-3" style="width: 70px; height: 70px;">
+                                    <i class="fa-solid fa-clock fs-2"></i>
+                                </div>
+                                <h4 class="fw-bold mb-1">ConsulTime</h4>
+                                <span class="badge bg-primary-soft text-primary rounded-pill px-3 py-1 fw-bold mb-3" style="font-size: 11px;">Version ${this.version}</span>
+                                
+                                <p class="text-muted small mb-4" style="line-height: 1.6; font-size: 13px;">
+                                    ConsulTime is a premium academic consultation scheduling system designed to bridge students and faculty members. It provides real-time updates, calendar notifications, and live presence verification.
+                                </p>
+                                
+                                <div class="card border-0 bg-light p-3 mb-4 rounded-4 text-start">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted small fw-medium">Developers</span>
+                                        <span class="text-dark small fw-bold">ConsulTime Team</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted small fw-medium">Platform</span>
+                                        <span class="text-dark small fw-bold">${window.Capacitor ? 'Mobile (Android)' : 'Web Portal'}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted small fw-medium">Database Status</span>
+                                        <span class="text-success small fw-bold"><i class="fa-solid fa-circle-check me-1"></i> Connected</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex flex-column gap-2">
+                                    <button onclick="App.checkAppUpdateManual()" class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm" style="font-size: 13px;">
+                                        <i class="fa-solid fa-arrows-rotate me-1"></i> Check for Updates
+                                    </button>
+                                    <button type="button" class="btn btn-light w-100 py-2 rounded-pill border fw-semibold text-muted" data-bs-dismiss="modal" style="font-size: 13px;">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            modalEl = document.getElementById('aboutModal');
+        }
+        
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+    },
+
+    checkAppUpdateManual: async function() {
+        const btn = document.querySelector('#aboutModal .btn-primary');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Checking...';
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch(`https://consultime.me/version.json?t=${Date.now()}`);
+            if (!res.ok) throw new Error("Could not reach update server.");
+            const remote = await res.json();
+            
+            const modalEl = document.getElementById('aboutModal');
+            if (modalEl) {
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+            }
+            
+            if (remote && remote.version && remote.version !== this.version) {
+                this.checkAppUpdate();
+            } else {
+                alert(`You are up to date! ConsulTime is running the latest version (v${this.version}).`);
+            }
+        } catch (e) {
+            alert("Failed to check for updates: " + e.message);
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    },
+
     listenersAttached: false,
     attachEventListeners: function () {
         if (this.listenersAttached) return;
