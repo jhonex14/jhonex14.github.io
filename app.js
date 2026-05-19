@@ -69,6 +69,13 @@ const App = {
                 loginAlert.classList.remove('d-none');
             }
         }
+        if (params.get('kicked') === 'true') {
+            const loginAlert = document.getElementById('loginAlert');
+            if (loginAlert) {
+                loginAlert.innerHTML = `<i class="fa-solid fa-circle-exclamation me-2"></i><strong>Session Terminated:</strong> You have been logged out because this account was signed in on another device or browser.`;
+                loginAlert.classList.remove('d-none');
+            }
+        }
 
         await this.checkAuthStatus();
         
@@ -481,14 +488,58 @@ const App = {
                         checkChannel.unsubscribe();
 
                         if (activeSessions.length > 0) {
-                            // Account is already active elsewhere! Log out the new session
-                            await supabaseClient.auth.signOut();
+                            // Account is already active elsewhere! Restore login button state
                             btn.innerHTML = originalText;
                             btn.disabled = false;
                             
-                            // Display the prompt
-                            alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-2"></i>This account is already logged in on another device or tab.';
+                            // Display the force logout/login confirmation UI
+                            alertBox.innerHTML = `
+                                <div class="p-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-circle-exclamation text-danger fs-5"></i>
+                                        <strong class="text-dark small">Active Session Detected</strong>
+                                    </div>
+                                    <p class="text-muted mb-3" style="font-size: 12px; line-height: 1.4;">
+                                        This account is already logged in on another device or tab. Do you want to sign out the other session and log in here?
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" id="btnForceLogin" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 fw-bold" style="font-size: 11px;">Yes, Sign Out Other Session</button>
+                                        <button type="button" id="btnCancelForce" class="btn btn-light btn-sm rounded-pill px-3 py-1.5 border fw-medium" style="font-size: 11px;">Cancel</button>
+                                    </div>
+                                </div>
+                            `;
                             alertBox.classList.remove('d-none');
+
+                            // Add event listener for Yes, Sign Out Other Session
+                            document.getElementById('btnForceLogin').addEventListener('click', async () => {
+                                const forceBtn = document.getElementById('btnForceLogin');
+                                forceBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i>Signing out other...';
+                                forceBtn.disabled = true;
+
+                                // Send broadcast to kick out other tab
+                                const forceChannel = supabaseClient.channel(`presence_${data.user.id}`);
+                                await forceChannel.subscribe(async (status) => {
+                                    if (status === 'SUBSCRIBED') {
+                                        await forceChannel.send({
+                                            type: 'broadcast',
+                                            event: 'kickout',
+                                            payload: {}
+                                        });
+                                        // Wait 1 second for event propagation, then reload into dashboard
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 1000);
+                                    }
+                                });
+                            });
+
+                            // Add event listener for Cancel
+                            document.getElementById('btnCancelForce').addEventListener('click', async () => {
+                                await supabaseClient.auth.signOut();
+                                alertBox.innerHTML = '';
+                                alertBox.classList.add('d-none');
+                            });
+
                         } else {
                             // Proceed with login reload
                             window.location.reload();
@@ -656,6 +707,11 @@ const App = {
         this.presenceChannel
             .on('presence', { event: 'sync' }, () => {
                 console.log('Presence sync completed.');
+            })
+            .on('broadcast', { event: 'kickout' }, async () => {
+                console.log('Kickout signal received. Logging out...');
+                await supabaseClient.auth.signOut();
+                window.location.replace('login.html?kicked=true');
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
