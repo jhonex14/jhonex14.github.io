@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Domain Guard: Redirect to real site if on wrong domain
+        (function() {
+            const allowedDomains = ['consultime.me', '127.0.0.1', 'localhost'];
+            const currentHost = window.location.hostname;
+            const isAllowed = allowedDomains.some(d => currentHost === d || currentHost.endsWith('.' + d));
+            if (!isAllowed && currentHost !== '') {
+                document.documentElement.innerHTML = '<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;text-align:center;padding:20px"><div style="background:#1e293b;border:2px solid #22c55e;border-radius:16px;padding:40px;max-width:480px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><h1 style="color:#f87171;font-size:24px;margin-bottom:12px">Wrong Website!</h1><p style="color:#94a3b8;margin-bottom:20px">You are on a <strong style="color:#f87171">fake/unauthorized</strong> version of ConsulTime. Your data is NOT safe here.</p><p style="color:#94a3b8;margin-bottom:24px">The real website is:</p><a href="https://consultime.me" style="background:#22c55e;color:#fff;padding:12px 28px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block">Go to consultime.me ✓</a></div></div>';
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Faculty Dashboard - ConsulTime</title>
