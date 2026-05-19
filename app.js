@@ -24,6 +24,7 @@ const App = {
     user: null,
     profile: null,
     charts: {},
+    version: '1.0.6',
 
     get settingsVerified() {
         return sessionStorage.getItem('ct_settings_verified') === 'true';
@@ -87,6 +88,7 @@ const App = {
 
         this.routePage();
         this.startHeaderClock();
+        this.checkAppUpdate();
     },
 
     toggleDarkMode: function() {
@@ -124,6 +126,90 @@ const App = {
 
         updateClock();
         setInterval(updateClock, 1000);
+    },
+
+    checkAppUpdate: async function() {
+        try {
+            const res = await fetch(`https://consultime.me/version.json?t=${Date.now()}`);
+            if (!res.ok) return;
+            const remote = await res.json();
+            
+            if (remote && remote.version && remote.version !== this.version) {
+                const isMobile = window.Capacitor || window.location.href.startsWith('file:') || (window.location.hostname === 'localhost' && !window.location.port); 
+                const bannerId = 'app-update-banner';
+                if (document.getElementById(bannerId)) return;
+                
+                if (!document.getElementById('update-banner-styles')) {
+                    document.head.insertAdjacentHTML('beforeend', `
+                        <style id="update-banner-styles">
+                            .update-banner {
+                                position: fixed;
+                                bottom: 24px;
+                                right: 24px;
+                                z-index: 999999;
+                                background: #1e293b;
+                                color: #fff;
+                                border: 1px solid rgba(255,255,255,0.15);
+                                border-radius: 16px;
+                                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+                                padding: 18px;
+                                max-width: 350px;
+                                font-family: 'Outfit', sans-serif;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 8px;
+                                animation: slideUpUpdate 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                            }
+                            @keyframes slideUpUpdate {
+                                from { opacity: 0; transform: translateY(30px); }
+                                to { opacity: 1; transform: translateY(0); }
+                            }
+                            .update-banner-title {
+                                font-size: 14px;
+                                font-weight: 700;
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                color: #3b82f6;
+                            }
+                            .update-banner-msg {
+                                font-size: 12px;
+                                color: #94a3b8;
+                                line-height: 1.4;
+                                margin: 0;
+                            }
+                            .update-banner-actions {
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                                margin-top: 6px;
+                            }
+                        </style>
+                    `);
+                }
+                
+                const titleText = isMobile ? 'New Mobile Update Available' : 'New Website Update Available';
+                const actionButton = isMobile 
+                    ? `<a href="https://consultime.me" target="_blank" class="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-bold" style="font-size: 11px;">Go to Website</a>`
+                    : `<button onclick="window.location.reload(true)" class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-bold" style="font-size: 11px;"><i class="fa-solid fa-rotate me-1"></i>Reload Page</button>`;
+
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div id="${bannerId}" class="update-banner">
+                        <div class="update-banner-title">
+                            <i class="fa-solid fa-cloud-arrow-down fs-5 text-primary"></i>
+                            <strong>${titleText} (v${remote.version})</strong>
+                        </div>
+                        <p class="update-banner-msg">${remote.message || 'A new update is available with performance fixes and stability enhancements.'}</p>
+                        <div class="update-banner-actions">
+                            ${actionButton}
+                            <button onclick="document.getElementById('${bannerId}').remove()" class="btn btn-light btn-sm rounded-pill px-3 py-1 border fw-semibold" style="font-size: 11px;">Dismiss</button>
+                        </div>
+                    </div>
+                `);
+            }
+        } catch (e) {
+            console.warn('Update check failed:', e);
+        }
     },
 
     listenersAttached: false,
