@@ -1597,7 +1597,7 @@ const App = {
                 }
                 let html = '<li><h6 class="dropdown-header fw-bold">Recent Notifications</h6></li><li><hr class="dropdown-divider"></li>';
                 pendingAppts.slice(0, 5).forEach(a => {
-                    html += `<li><a class="dropdown-item py-2 border-bottom" href="#" onclick="document.getElementById('nav-requests').click()">
+                    html += `<li><a class="dropdown-item py-2 border-bottom" href="#" onclick="document.getElementById('nav-dashboard').click()">
                         <div class="fw-bold small text-dark">${sanitizeHTML(a.profiles.full_name)}</div>
                         <div class="text-muted" style="font-size: 12px;">Requested a consultation</div>
                     </a></li>`;
