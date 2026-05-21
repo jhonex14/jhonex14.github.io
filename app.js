@@ -328,6 +328,9 @@ const App = {
         const availForm = document.getElementById('availabilityForm');
         if (availForm) availForm.addEventListener('submit', (e) => this.handleAddAvailability(e));
 
+        const editAvailForm = document.getElementById('editAvailabilityForm');
+        if (editAvailForm) editAvailForm.addEventListener('submit', (e) => this.handleUpdateAvailability(e));
+
         // Sidebar Navigation
         document.querySelectorAll('.sidebar-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -1546,16 +1549,15 @@ const App = {
         // Fetch faculty's available days
         const { data: availability, error } = await supabaseClient
             .from('faculty_availability')
-            .select('specific_date')
-            .eq('faculty_id', facId)
-            .gte('specific_date', new Date().toISOString().split('T')[0]);
+            .select('day_of_week')
+            .eq('faculty_id', facId);
 
         if (error || !availability || availability.length === 0) {
             dateInput.placeholder = 'No availability set by faculty';
             return;
         }
 
-        const availableDates = [...new Set(availability.map(a => a.specific_date))]; 
+        const availableDays = [...new Set(availability.map(a => a.day_of_week))]; 
 
         dateInput.disabled = false;
         dateInput.placeholder = 'Select a date...';
@@ -1565,10 +1567,14 @@ const App = {
             dateInput._flatpickr.destroy();
         }
 
-        // Initialize Flatpickr
+        // Initialize Flatpickr to enable only the days of the week that the faculty is available
         flatpickr(dateInput, {
             minDate: "today",
-            enable: availableDates,
+            enable: [
+                function(date) {
+                    return availableDays.includes(date.getDay());
+                }
+            ],
             onChange: (selectedDates, dateStr, instance) => {
                 this.checkAvailability();
             }
@@ -1586,12 +1592,17 @@ const App = {
         container.style.display = 'block';
         slotsDiv.innerHTML = '<div class="col-12 text-center text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading availability...</div>';
 
-        // Fetch Faculty Availability for this EXACT date
+        // Parse dateVal string manually to avoid timezone shift
+        const parts = dateVal.split('-');
+        const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+        const dayOfWeekVal = dateObj.getDay();
+
+        // Fetch Faculty Availability for this DAY OF WEEK
         const { data: availability, error } = await supabaseClient
             .from('faculty_availability')
             .select('*')
             .eq('faculty_id', facId)
-            .eq('specific_date', dateVal);
+            .eq('day_of_week', dayOfWeekVal);
 
         // Fetch existing approved/pending appointments for that day
         const { data: existingAppts } = await supabaseClient
@@ -1789,14 +1800,6 @@ const App = {
     loadFacultyDashboard: async function () {
         this.fetchFacultyRequests();
         this.fetchFacultyAvailability();
-        
-        // Init flatpickr for adding availability
-        const availDate = document.getElementById('specificDate');
-        if (availDate) {
-            flatpickr(availDate, {
-                minDate: "today"
-            });
-        }
     },
 
     fetchFacultyRequests: async function () {
@@ -2189,12 +2192,12 @@ const App = {
 
     handleAddAvailability: async function (e) {
         e.preventDefault();
-        const dateVal = document.getElementById('specificDate').value;
+        const dayVal = document.getElementById('dayOfWeek').value;
         const start = document.getElementById('availStartTime').value;
         const end = document.getElementById('availEndTime').value;
 
-        if (!dateVal) {
-            alert("Please select a date.");
+        if (dayVal === "") {
+            alert("Please select a day of the week.");
             return;
         }
 
@@ -2206,9 +2209,10 @@ const App = {
         const { error } = await supabaseClient.from('faculty_availability').insert([
             {
                 faculty_id: this.user.id,
-                specific_date: dateVal,
+                day_of_week: parseInt(dayVal),
                 start_time: start + ':00',
-                end_time: end + ':00'
+                end_time: end + ':00',
+                specific_date: null
             }
         ]);
 
@@ -2224,7 +2228,7 @@ const App = {
             .from('faculty_availability')
             .select('*')
             .eq('faculty_id', this.user.id)
-            .order('specific_date', { ascending: true })
+            .order('day_of_week', { ascending: true })
             .order('start_time', { ascending: true });
 
         if (error) return;
@@ -2232,23 +2236,23 @@ const App = {
         const tbody = document.getElementById('availabilityTableBody');
         tbody.innerHTML = '';
 
-        // Filter out past dates (optional but recommended)
-        const todayStr = new Date().toISOString().split('T')[0];
-        const validData = data.filter(a => a.specific_date >= todayStr);
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-        validData.forEach(avail => {
+        data.forEach(avail => {
             const formatTime = (time) => new Date(`1970-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const dateObj = new Date(avail.specific_date);
-            const exactDateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', weekday: 'long' });
+            const dayName = days[avail.day_of_week] || 'Unknown';
 
             tbody.innerHTML += `
                 <tr>
                     <td>
-                        <div class="fw-medium text-dark">${exactDateStr}</div>
+                        <div class="fw-medium text-dark">${dayName}</div>
                     </td>
                     <td>${formatTime(avail.start_time)} - ${formatTime(avail.end_time)}</td>
                     <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="App.openEditAvailabilityModal('${avail.id}', ${avail.day_of_week}, '${avail.start_time}', '${avail.end_time}')">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                         <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="App.deleteAvailability('${avail.id}')">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -2257,7 +2261,7 @@ const App = {
             `;
         });
 
-        if (validData.length === 0) {
+        if (data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No availability set. Students cannot book appointments.</td></tr>';
         }
     },
@@ -2265,6 +2269,50 @@ const App = {
     deleteAvailability: async function (id) {
         if (confirm("Delete this availability slot?")) {
             await supabaseClient.from('faculty_availability').delete().eq('id', id);
+            this.fetchFacultyAvailability();
+        }
+    },
+
+    openEditAvailabilityModal: function (id, dayOfWeek, startTime, endTime) {
+        document.getElementById('editAvailId').value = id;
+        document.getElementById('editDayOfWeek').value = dayOfWeek;
+        document.getElementById('editAvailStartTime').value = startTime.substring(0, 5);
+        document.getElementById('editAvailEndTime').value = endTime.substring(0, 5);
+
+        const modal = new bootstrap.Modal(document.getElementById('editAvailabilityModal'));
+        modal.show();
+    },
+
+    handleUpdateAvailability: async function (e) {
+        e.preventDefault();
+        const id = document.getElementById('editAvailId').value;
+        const dayOfWeekVal = document.getElementById('editDayOfWeek').value;
+        const start = document.getElementById('editAvailStartTime').value;
+        const end = document.getElementById('editAvailEndTime').value;
+
+        if (dayOfWeekVal === "") {
+            alert("Please select a day of the week.");
+            return;
+        }
+
+        if (start >= end) {
+            alert("Start time must be before end time.");
+            return;
+        }
+
+        const { error } = await supabaseClient.from('faculty_availability').update({
+            day_of_week: parseInt(dayOfWeekVal),
+            start_time: start + (start.length === 5 ? ':00' : ''),
+            end_time: end + (end.length === 5 ? ':00' : ''),
+            specific_date: null
+        }).eq('id', id);
+
+        if (error) {
+            alert(error.message);
+        } else {
+            const modalEl = document.getElementById('editAvailabilityModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
             this.fetchFacultyAvailability();
         }
     },
