@@ -1680,6 +1680,30 @@ const App = {
         btn.innerHTML = 'Booking...';
         btn.disabled = true;
 
+        // Check if the slot is already taken right before booking to prevent double bookings
+        const { data: duplicateCheck, error: checkError } = await supabaseClient
+            .from('appointments')
+            .select('id')
+            .eq('faculty_id', facId)
+            .eq('appointment_date', apptDate)
+            .eq('start_time', startTime + ':00')
+            .in('status', ['pending', 'approved']);
+
+        if (checkError) {
+            alert("Error checking availability: " + checkError.message);
+            btn.innerHTML = 'Submit Request';
+            btn.disabled = false;
+            return;
+        }
+
+        if (duplicateCheck && duplicateCheck.length > 0) {
+            alert("This time slot has already been requested or approved by another student. Please select another slot.");
+            btn.innerHTML = 'Submit Request';
+            btn.disabled = false;
+            this.checkAvailability();
+            return;
+        }
+
         const { error } = await supabaseClient.from('appointments').insert([
             {
                 student_id: this.user.id,
