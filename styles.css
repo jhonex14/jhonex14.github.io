@@ -489,3 +489,58 @@ body.dark-mode #chatbotOptionsContainer {
     background-color: #1e293b !important;
     border-color: #334155 !important;
 }
+
+/* Flatpickr Dark Mode Styles */
+body.dark-mode .flatpickr-calendar {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+}
+body.dark-mode .flatpickr-months,
+body.dark-mode .flatpickr-month {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-prev-month,
+body.dark-mode .flatpickr-next-month {
+    color: #f8fafc !important;
+    fill: #f8fafc !important;
+}
+body.dark-mode .flatpickr-prev-month:hover,
+body.dark-mode .flatpickr-next-month:hover {
+    color: var(--primary-light) !important;
+}
+body.dark-mode .flatpickr-current-month,
+body.dark-mode .flatpickr-current-month span,
+body.dark-mode .flatpickr-current-month input {
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-weekday {
+    color: #cbd5e1 !important;
+    background-color: #1e293b !important;
+}
+body.dark-mode .flatpickr-day {
+    color: #cbd5e1 !important;
+}
+body.dark-mode .flatpickr-day:hover,
+body.dark-mode .flatpickr-day:focus {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .flatpickr-day.selected {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+body.dark-mode .flatpickr-day.flatpickr-disabled,
+body.dark-mode .flatpickr-day.flatpickr-disabled:hover {
+    color: #475569 !important;
+    background-color: transparent !important;
+}
+body.dark-mode .flatpickr-day.prevMonthDay,
+body.dark-mode .flatpickr-day.nextMonthDay {
+    color: #475569 !important;
+}
+body.dark-mode .flatpickr-prev-month svg,
+body.dark-mode .flatpickr-next-month svg {
+    fill: #f8fafc !important;
+}
