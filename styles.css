@@ -405,19 +405,19 @@ body.dark-mode input[readonly] {
     color: #f8fafc !important;
 }
 body.dark-mode .time-slot {
-    background-color: #1e293b !important;
-    color: #cbd5e1 !important;
-    border-color: #334155 !important;
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
 }
 body.dark-mode .time-slot:hover {
-    background-color: #334155 !important;
-    color: #ffffff !important;
+    background-color: #1e293b !important;
+    color: var(--primary-light) !important;
     border-color: var(--primary-light) !important;
 }
 body.dark-mode .time-slot.selected {
-    background-color: var(--primary-color) !important;
+    background-color: var(--primary-light) !important;
     color: #ffffff !important;
-    border-color: var(--primary-color) !important;
+    border-color: var(--primary-light) !important;
 }
 
 /* Dropdown Menu */

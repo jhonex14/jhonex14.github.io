@@ -1,4 +1,4 @@
-const CACHE_NAME = 'consultime-v7';
+const CACHE_NAME = 'consultime-v8';
 const ASSETS = [
   './',
   './login.html',
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (e) => {
   
   e.respondWith(
     fetch(e.request).catch(() => {
-      return caches.match(e.request);
+      return caches.match(e.request, { ignoreSearch: true });
     })
   );
 });
