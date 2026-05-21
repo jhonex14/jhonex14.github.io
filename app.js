@@ -1769,7 +1769,10 @@ const App = {
                 let isTaken = false;
                 if (existingAppts) {
                     isTaken = existingAppts.some(appt => {
-                        return appt.start_time.substring(0, 5) === slotStart;
+                        if (!appt.start_time) return false;
+                        const [apptH, apptM] = appt.start_time.split(':').map(Number);
+                        const [slotH, slotM] = slotStart.split(':').map(Number);
+                        return apptH === slotH && apptM === slotM;
                     });
                 }
 
@@ -1956,8 +1959,12 @@ const App = {
 
     cancelAppointment: async function (id) {
         if (confirm("Cancel this appointment request?")) {
-            await supabaseClient.from('appointments').update({ status: 'cancelled' }).eq('id', id);
-            this.fetchStudentAppointments();
+            const { error } = await supabaseClient.from('appointments').update({ status: 'cancelled' }).eq('id', id);
+            if (error) {
+                alert("Failed to cancel appointment: " + error.message);
+            } else {
+                this.fetchStudentAppointments();
+            }
         }
     },
 
@@ -2354,35 +2361,63 @@ const App = {
                     .eq('id', id)
                     .single();
 
-                if (currentAppt && !fetchError) {
-                    // Update the selected appointment to approved
-                    await supabaseClient.from('appointments').update({
-                        status: 'approved',
-                        faculty_notes: notes
-                    }).eq('id', id);
+                if (fetchError || !currentAppt) {
+                    alert("Error retrieving appointment details: " + (fetchError ? fetchError.message : "Not found"));
+                    return;
+                }
 
-                    // Auto-reject any other pending appointments for the same date and time slot
-                    await supabaseClient.from('appointments').update({
-                        status: 'rejected',
-                        faculty_notes: 'This slot has been booked by another student (First-Come, First-Served).'
-                    })
+                // Check if another appointment is already approved for the exact same date and time slot
+                const { data: alreadyApproved, error: checkApprovedError } = await supabaseClient
+                    .from('appointments')
+                    .select('id')
                     .eq('faculty_id', currentAppt.faculty_id)
                     .eq('appointment_date', currentAppt.appointment_date)
                     .eq('start_time', currentAppt.start_time)
-                    .eq('status', 'pending')
+                    .eq('status', 'approved')
                     .neq('id', id);
-                } else {
-                    // Fallback to simple update if we couldn't fetch details
-                    await supabaseClient.from('appointments').update({
-                        status: type,
-                        faculty_notes: notes
-                    }).eq('id', id);
+
+                if (checkApprovedError) {
+                    alert("Error verifying slot availability: " + checkApprovedError.message);
+                    return;
                 }
-            } else {
+
+                if (alreadyApproved && alreadyApproved.length > 0) {
+                    alert("Cannot approve: This time slot has already been approved for another student.");
+                    return;
+                }
+
+                // Update the selected appointment to approved
+                const { error: approveError } = await supabaseClient.from('appointments').update({
+                    status: 'approved',
+                    faculty_notes: notes
+                }).eq('id', id);
+
+                if (approveError) {
+                    alert("Failed to approve appointment: " + approveError.message);
+                    return;
+                }
+
+                // Auto-reject any other pending appointments for the same date and time slot
                 await supabaseClient.from('appointments').update({
+                    status: 'rejected',
+                    faculty_notes: 'This slot has been booked by another student (First-Come, First-Served).'
+                })
+                .eq('faculty_id', currentAppt.faculty_id)
+                .eq('appointment_date', currentAppt.appointment_date)
+                .eq('start_time', currentAppt.start_time)
+                .eq('status', 'pending')
+                .neq('id', id);
+
+            } else {
+                const { error: updateError } = await supabaseClient.from('appointments').update({
                     status: type,
                     faculty_notes: notes
                 }).eq('id', id);
+
+                if (updateError) {
+                    alert("Failed to update appointment: " + updateError.message);
+                    return;
+                }
             }
 
             modal.hide();

@@ -71,13 +71,7 @@ CREATE TABLE public.appointments (
 
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users or Admin can view appointments" ON public.appointments FOR SELECT USING (
-    auth.uid() = student_id 
-    OR 
-    auth.uid() = faculty_id 
-    OR 
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Anyone can view appointments" ON public.appointments FOR SELECT USING (true);
 CREATE POLICY "Students or Admin can create appointments" ON public.appointments FOR INSERT WITH CHECK (
     auth.uid() = student_id 
     OR 
