@@ -1546,10 +1546,10 @@ const App = {
         document.getElementById('selectedStartTime').value = '';
         document.getElementById('selectedEndTime').value = '';
 
-        // Fetch faculty's available days
+        // Fetch faculty's available days (both day of week and specific dates)
         const { data: availability, error } = await supabaseClient
             .from('faculty_availability')
-            .select('day_of_week')
+            .select('day_of_week, specific_date')
             .eq('faculty_id', facId);
 
         if (error || !availability || availability.length === 0) {
@@ -1557,7 +1557,13 @@ const App = {
             return;
         }
 
-        const availableDays = [...new Set(availability.map(a => a.day_of_week))]; 
+        const availableDays = [...new Set(availability.filter(a => a.day_of_week !== null).map(a => a.day_of_week))];
+        const availableDates = [...new Set(availability.filter(a => a.specific_date !== null).map(a => a.specific_date))];
+
+        if (availableDays.length === 0 && availableDates.length === 0) {
+            dateInput.placeholder = 'No availability set by faculty';
+            return;
+        }
 
         dateInput.disabled = false;
         dateInput.placeholder = 'Select a date...';
@@ -1567,12 +1573,22 @@ const App = {
             dateInput._flatpickr.destroy();
         }
 
-        // Initialize Flatpickr to enable only the days of the week that the faculty is available
+        // Initialize Flatpickr to enable days matching day of week OR specific dates
         flatpickr(dateInput, {
             minDate: "today",
             enable: [
                 function(date) {
-                    return availableDays.includes(date.getDay());
+                    // Check if day of week matches
+                    const dayMatch = availableDays.includes(date.getDay());
+                    
+                    // Check if specific date matches (formatted as YYYY-MM-DD in local time)
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    const dateStr = `${y}-${m}-${d}`;
+                    const dateMatch = availableDates.includes(dateStr);
+                    
+                    return dayMatch || dateMatch;
                 }
             ],
             onChange: (selectedDates, dateStr, instance) => {
@@ -1597,12 +1613,12 @@ const App = {
         const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
         const dayOfWeekVal = dateObj.getDay();
 
-        // Fetch Faculty Availability for this DAY OF WEEK
+        // Fetch Faculty Availability for this DAY OF WEEK or SPECIFIC DATE
         const { data: availability, error } = await supabaseClient
             .from('faculty_availability')
             .select('*')
             .eq('faculty_id', facId)
-            .eq('day_of_week', dayOfWeekVal);
+            .or(`day_of_week.eq.${dayOfWeekVal},specific_date.eq.${dateVal}`);
 
         // Fetch existing approved/pending appointments for that day
         const { data: existingAppts } = await supabaseClient
