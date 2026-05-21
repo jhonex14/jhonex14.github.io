@@ -1534,6 +1534,12 @@ const App = {
         const dateInput = document.getElementById('appointmentDate');
         const container = document.getElementById('availabilityContainer');
         const slotsDiv = document.getElementById('timeSlotsContainer');
+        const summaryDiv = document.getElementById('facultyAvailabilitySummary');
+
+        if (summaryDiv) {
+            summaryDiv.style.display = 'none';
+            summaryDiv.innerHTML = '';
+        }
 
         if (!facId) return;
 
@@ -1549,7 +1555,7 @@ const App = {
         // Fetch faculty's available days (both day of week and specific dates)
         const { data: availability, error } = await supabaseClient
             .from('faculty_availability')
-            .select('day_of_week, specific_date')
+            .select('day_of_week, specific_date, start_time, end_time')
             .eq('faculty_id', facId);
 
         if (error || !availability || availability.length === 0) {
@@ -1557,12 +1563,126 @@ const App = {
             return;
         }
 
-        const availableDays = [...new Set(availability.filter(a => a.day_of_week !== null).map(a => a.day_of_week))];
+        const availableDays = [...new Set(availability.filter(a => a.day_of_week !== null && a.day_of_week !== undefined).map(a => a.day_of_week))];
         const availableDates = [...new Set(availability.filter(a => a.specific_date !== null).map(a => a.specific_date))];
 
         if (availableDays.length === 0 && availableDates.length === 0) {
             dateInput.placeholder = 'No availability set by faculty';
             return;
+        }
+
+        // Helper to format time to 12h AM/PM
+        function formatTime12h(timeStr) {
+            if (!timeStr) return '';
+            const parts = timeStr.split(':');
+            let hours = parseInt(parts[0], 10);
+            const minutes = parts[1] || '00';
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+        }
+
+        const daysOfWeekNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        // Group weekly days and specific dates
+        const weeklyGroups = {};
+        const dateGroups = {};
+
+        availability.forEach(item => {
+            const timeRange = `${formatTime12h(item.start_time)} - ${formatTime12h(item.end_time)}`;
+            if (item.day_of_week !== null && item.day_of_week !== undefined) {
+                const dayName = daysOfWeekNames[item.day_of_week];
+                if (!weeklyGroups[dayName]) weeklyGroups[dayName] = [];
+                weeklyGroups[dayName].push(timeRange);
+            } else if (item.specific_date) {
+                let formattedDate = item.specific_date;
+                try {
+                    const dateParts = item.specific_date.split('-');
+                    const dObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                    formattedDate = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                } catch (e) {
+                    console.error(e);
+                }
+                if (!dateGroups[formattedDate]) dateGroups[formattedDate] = [];
+                dateGroups[formattedDate].push(timeRange);
+            }
+        });
+
+        // Sort time ranges inside groups for cleaner display
+        const sortTimes = (a, b) => {
+            const getVal = (str) => {
+                const time = str.split(' - ')[0];
+                const parts = time.split(' ');
+                let [h, m] = parts[0].split(':').map(Number);
+                if (parts[1] === 'PM' && h !== 12) h += 12;
+                if (parts[1] === 'AM' && h === 12) h = 0;
+                return h * 60 + m;
+            };
+            return getVal(a) - getVal(b);
+        };
+
+        Object.keys(weeklyGroups).forEach(k => weeklyGroups[k].sort(sortTimes));
+        Object.keys(dateGroups).forEach(k => dateGroups[k].sort(sortTimes));
+
+        // Build HTML for summary
+        if (summaryDiv) {
+            let summaryHTML = `
+                <div class="mt-3 p-3 rounded-3 shadow-sm border-start border-4 border-primary bg-primary-soft">
+                    <div class="fw-bold mb-2 text-primary" style="font-size: 0.9rem;">
+                        <i class="fa-regular fa-clock me-1"></i> Faculty Availability Schedule:
+                    </div>
+            `;
+
+            let hasWeekly = false;
+            let weeklyHTML = '<ul class="list-unstyled mb-0 ps-0" style="font-size: 0.85rem;">';
+            const sortedDays = Object.keys(weeklyGroups).sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+            
+            sortedDays.forEach(day => {
+                hasWeekly = true;
+                weeklyHTML += `
+                    <li class="d-flex align-items-center mb-1">
+                        <span class="badge bg-primary text-white me-2 px-2 py-1" style="min-width: 90px; text-align: center; font-size: 0.75rem;">${day}</span>
+                        <span class="text-dark">${weeklyGroups[day].join(', ')}</span>
+                    </li>
+                `;
+            });
+            weeklyHTML += '</ul>';
+
+            let hasSpecific = false;
+            let specificHTML = '<ul class="list-unstyled mb-0 ps-0" style="font-size: 0.85rem;">';
+            const sortedDates = Object.keys(dateGroups).sort((a, b) => new Date(a) - new Date(b));
+
+            sortedDates.forEach(date => {
+                hasSpecific = true;
+                specificHTML += `
+                    <li class="d-flex align-items-center mb-1">
+                        <span class="badge bg-success text-white me-2 px-2 py-1" style="min-width: 90px; text-align: center; font-size: 0.75rem;">${date}</span>
+                        <span class="text-dark">${dateGroups[date].join(', ')}</span>
+                    </li>
+                `;
+            });
+            specificHTML += '</ul>';
+
+            if (hasWeekly) {
+                summaryHTML += weeklyHTML;
+            }
+            if (hasSpecific) {
+                if (hasWeekly) {
+                    summaryHTML += `<div class="border-top my-2 pt-2 fw-bold text-primary" style="font-size: 0.85rem;"><i class="fa-regular fa-calendar-check me-1"></i> Specific Available Dates:</div>`;
+                } else {
+                    summaryHTML += `<div class="fw-bold mb-2 text-primary" style="font-size: 0.85rem;"><i class="fa-regular fa-calendar-check me-1"></i> Specific Available Dates:</div>`;
+                }
+                summaryHTML += specificHTML;
+            }
+
+            summaryHTML += `
+                </div>
+            `;
+
+            summaryDiv.innerHTML = summaryHTML;
+            summaryDiv.style.display = 'block';
         }
 
         dateInput.disabled = false;
@@ -1740,6 +1860,11 @@ const App = {
         } else {
             alert("Appointment request submitted successfully!");
             document.getElementById('bookForm').reset();
+            const summaryDiv = document.getElementById('facultyAvailabilitySummary');
+            if (summaryDiv) {
+                summaryDiv.style.display = 'none';
+                summaryDiv.innerHTML = '';
+            }
             document.getElementById('availabilityContainer').style.display = 'none';
             this.switchView('dashboard');
             this.fetchStudentAppointments();
