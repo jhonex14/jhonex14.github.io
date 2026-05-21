@@ -214,21 +214,24 @@ body {
 
 /* Calendar/Slot Picker */
 .time-slot {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     padding: 0.5rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
+    background-color: #ffffff;
+    color: #1f2937 !important;
 }
 .time-slot:hover {
     border-color: var(--primary-light);
     background: #eff6ff;
+    color: var(--primary-color) !important;
 }
 .time-slot.selected {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
 }
 
 /* Loader */
@@ -377,13 +380,44 @@ body.dark-mode .table-hover tbody tr:hover > * {
 }
 
 /* Form Controls & Modal */
-body.dark-mode .form-control, body.dark-mode .form-select, body.dark-mode .modal-content {
-    background-color: #0f172a !important;
+body.dark-mode .form-control, 
+body.dark-mode .form-select, 
+body.dark-mode select, 
+body.dark-mode input, 
+body.dark-mode textarea, 
+body.dark-mode .modal-content {
+    background-color: #1e293b !important;
     color: #f8fafc !important;
     border-color: #334155 !important;
 }
+body.dark-mode select option,
+body.dark-mode .form-select option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
 body.dark-mode .bg-light {
     background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-input,
+body.dark-mode input[readonly] {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .time-slot {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .time-slot:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+    border-color: var(--primary-light) !important;
+}
+body.dark-mode .time-slot.selected {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    border-color: var(--primary-color) !important;
 }
 
 /* Dropdown Menu */
