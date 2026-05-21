@@ -94,6 +94,9 @@ CREATE POLICY "Admin can delete appointments" ON public.appointments FOR DELETE 
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
+-- 4. Unique index to prevent double bookings (First-Come, First-Served)
+CREATE UNIQUE INDEX IF NOT EXISTS unique_approved_appointment ON public.appointments (faculty_id, appointment_date, start_time) WHERE (status = 'approved');
+
 -- Create views or functions if necessary
 -- Function to handle new user registration triggers
 CREATE OR REPLACE FUNCTION public.handle_new_user() 

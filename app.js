@@ -2345,10 +2345,45 @@ const App = {
 
         document.getElementById('confirmActionBtn').onclick = async () => {
             const notes = document.getElementById('actionNotes').value;
-            await supabaseClient.from('appointments').update({
-                status: type,
-                faculty_notes: notes
-            }).eq('id', id);
+
+            if (type === 'approved') {
+                // Get details of the current appointment to identify competing/conflicting ones
+                const { data: currentAppt, error: fetchError } = await supabaseClient
+                    .from('appointments')
+                    .select('faculty_id, appointment_date, start_time')
+                    .eq('id', id)
+                    .single();
+
+                if (currentAppt && !fetchError) {
+                    // Update the selected appointment to approved
+                    await supabaseClient.from('appointments').update({
+                        status: 'approved',
+                        faculty_notes: notes
+                    }).eq('id', id);
+
+                    // Auto-reject any other pending appointments for the same date and time slot
+                    await supabaseClient.from('appointments').update({
+                        status: 'rejected',
+                        faculty_notes: 'This slot has been booked by another student (First-Come, First-Served).'
+                    })
+                    .eq('faculty_id', currentAppt.faculty_id)
+                    .eq('appointment_date', currentAppt.appointment_date)
+                    .eq('start_time', currentAppt.start_time)
+                    .eq('status', 'pending')
+                    .neq('id', id);
+                } else {
+                    // Fallback to simple update if we couldn't fetch details
+                    await supabaseClient.from('appointments').update({
+                        status: type,
+                        faculty_notes: notes
+                    }).eq('id', id);
+                }
+            } else {
+                await supabaseClient.from('appointments').update({
+                    status: type,
+                    faculty_notes: notes
+                }).eq('id', id);
+            }
 
             modal.hide();
             this.fetchFacultyRequests();
