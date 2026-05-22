@@ -119,7 +119,7 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="idNumber" class="form-label fw-medium text-dark">ID Number</label>
+                                <label for="idNumber" id="idNumberLabel" class="form-label fw-medium text-dark">ID Number</label>
                                 <input type="text" class="form-control bg-light" id="idNumber" required placeholder="e.g. 2026-0001">
                             </div>
                             <div class="col-md-6 mb-3">
@@ -370,6 +370,23 @@
             const container = document.getElementById('studentFieldsContainer');
             const schoolYearInput = document.getElementById('schoolYear');
             const sectionInput = document.getElementById('section');
+            
+            // Toggle ID label & placeholder based on role
+            const idLabel = document.getElementById('idNumberLabel');
+            const idInput = document.getElementById('idNumber');
+            if (idLabel && idInput) {
+                if (roleVal === 'student') {
+                    idLabel.textContent = 'LRN Number';
+                    idInput.placeholder = 'e.g. 101234567890';
+                } else if (roleVal === 'faculty') {
+                    idLabel.textContent = 'Employee ID Number';
+                    idInput.placeholder = 'e.g. 2026-0001';
+                } else {
+                    idLabel.textContent = 'ID Number';
+                    idInput.placeholder = 'e.g. 2026-0001';
+                }
+            }
+
             if (!container || !schoolYearInput || !sectionInput) return;
             
             if (roleVal === 'student') {
