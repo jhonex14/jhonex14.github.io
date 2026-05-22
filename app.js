@@ -1092,7 +1092,17 @@ const App = {
         if (!document.getElementById('profileName')) return;
         
         document.getElementById('profileName').value = this.profile.full_name;
-        document.getElementById('profileDept').value = this.profile.department || '';
+        const profileDeptEl = document.getElementById('profileDept');
+        if (profileDeptEl) {
+            const deptVal = this.profile.department || '';
+            if (deptVal && !Array.from(profileDeptEl.options).some(o => o.value === deptVal)) {
+                const opt = document.createElement('option');
+                opt.value = deptVal;
+                opt.textContent = deptVal;
+                profileDeptEl.appendChild(opt);
+            }
+            profileDeptEl.value = deptVal;
+        }
         if (document.getElementById('profileIdNumber')) {
             document.getElementById('profileIdNumber').value = this.profile.id_number || '';
         }
@@ -1191,7 +1201,17 @@ const App = {
             profileNameInput.value = p.full_name;
             if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = p.email;
             if (document.getElementById('profileIdNumber')) document.getElementById('profileIdNumber').value = p.id_number || '';
-            if (document.getElementById('profileDept')) document.getElementById('profileDept').value = p.department || '';
+            const profileDeptSelect = document.getElementById('profileDept');
+            if (profileDeptSelect) {
+                const currentVal = p.department || '';
+                if (currentVal && !Array.from(profileDeptSelect.options).some(opt => opt.value === currentVal)) {
+                    const opt = document.createElement('option');
+                    opt.value = currentVal;
+                    opt.textContent = currentVal;
+                    profileDeptSelect.appendChild(opt);
+                }
+                profileDeptSelect.value = currentVal;
+            }
             if (document.getElementById('profileAddress')) document.getElementById('profileAddress').value = p.address || '';
             if (document.getElementById('profileAge')) document.getElementById('profileAge').value = p.age || '';
         }
@@ -3084,10 +3104,10 @@ const App = {
         document.getElementById('editUserId').value = user.id;
         document.getElementById('editUserFullName').value = user.full_name;
         document.getElementById('editUserIdNumber').value = user.id_number || '';
-        document.getElementById('editUserDepartment').value = user.department || '';
         document.getElementById('editUserRole').value = user.role;
         document.getElementById('editUserIsApproved').checked = user.is_approved !== false;
 
+        this.updateEditUserDepartmentDropdown(user.role, user.department || '');
         this.toggleModalApprovalSwitch();
 
         const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
@@ -3101,6 +3121,77 @@ const App = {
             container.classList.remove('d-none');
         } else {
             container.classList.add('d-none');
+        }
+        this.updateEditUserDepartmentDropdown(role, document.getElementById('editUserDepartment').value);
+    },
+
+    updateEditUserDepartmentDropdown: function(role, currentDept) {
+        const deptSelect = document.getElementById('editUserDepartment');
+        if (!deptSelect) return;
+        
+        deptSelect.innerHTML = '';
+        
+        const studentOptions = [
+            { value: "STEM", text: "Senior High: STEM (Science, Technology, Engineering, & Mathematics)" },
+            { value: "ABM", text: "Senior High: ABM (Accountancy, Business, & Management)" },
+            { value: "HUMSS", text: "Senior High: HUMSS (Humanities & Social Sciences)" },
+            { value: "GAS", text: "Senior High: GAS (General Academic Strand)" },
+            { value: "TVL - ICT", text: "Senior High: TVL - ICT (Info. & Comm. Technology)" },
+            { value: "TVL - HE", text: "Senior High: TVL - HE (Home Economics)" },
+            { value: "TVL - IA", text: "Senior High: TVL - IA (Industrial Arts)" },
+            { value: "Grade 7", text: "Junior High: Grade 7" },
+            { value: "Grade 8", text: "Junior High: Grade 8" },
+            { value: "Grade 9", text: "Junior High: Grade 9" },
+            { value: "Grade 10", text: "Junior High: Grade 10" },
+            { value: "Others", text: "Others" }
+        ];
+
+        const facultyOptions = [
+            { value: "English Department", text: "English Department" },
+            { value: "Mathematics Department", text: "Mathematics Department" },
+            { value: "Science Department", text: "Science Department" },
+            { value: "Filipino Department", text: "Filipino Department" },
+            { value: "Social Studies Department", text: "Social Studies Department" },
+            { value: "MAPEH Department", text: "MAPEH Department" },
+            { value: "TLE / TVL Department", text: "TLE / TVL Department" },
+            { value: "Values Education Department", text: "Values Education Department" },
+            { value: "SHS Department", text: "Senior High School (SHS) Department" },
+            { value: "JHS Department", text: "Junior High School (JHS) Department" },
+            { value: "Guidance & Counseling Department", text: "Guidance & Counseling Department" },
+            { value: "Administrative / Support Staff", text: "Administrative / Support Staff" },
+            { value: "Others", text: "Others" }
+        ];
+
+        let options = [];
+        if (role === 'student') {
+            options = studentOptions;
+        } else {
+            options = facultyOptions;
+        }
+
+        const placeholderOpt = document.createElement('option');
+        placeholderOpt.value = "";
+        placeholderOpt.disabled = true;
+        placeholderOpt.selected = !currentDept;
+        placeholderOpt.textContent = "Select Course / Department";
+        deptSelect.appendChild(placeholderOpt);
+
+        options.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.value;
+            el.textContent = opt.text;
+            if (currentDept === opt.value) {
+                el.selected = true;
+            }
+            deptSelect.appendChild(el);
+        });
+        
+        if (currentDept && !options.some(opt => opt.value === currentDept)) {
+            const el = document.createElement('option');
+            el.value = currentDept;
+            el.textContent = currentDept;
+            el.selected = true;
+            deptSelect.appendChild(el);
         }
     },
 

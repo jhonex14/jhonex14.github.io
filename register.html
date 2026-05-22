@@ -100,7 +100,9 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="department" class="form-label fw-medium text-dark">Course / Department</label>
-                                <input type="text" class="form-control bg-light" id="department" required placeholder="e.g. BSCS or ICT Dept">
+                                <select class="form-select bg-light" id="department" required disabled>
+                                    <option value="" disabled selected>Please select Account Type first</option>
+                                </select>
                             </div>
                         </div>
 
@@ -199,6 +201,66 @@
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
+        });
+
+        // Dynamic department selection based on role/account type
+        document.getElementById('role').addEventListener('change', function() {
+            const role = this.value;
+            const deptSelect = document.getElementById('department');
+            deptSelect.innerHTML = '';
+            deptSelect.disabled = false;
+
+            const studentOptions = [
+                { value: "STEM", text: "Senior High: STEM (Science, Technology, Engineering, & Mathematics)" },
+                { value: "ABM", text: "Senior High: ABM (Accountancy, Business, & Management)" },
+                { value: "HUMSS", text: "Senior High: HUMSS (Humanities & Social Sciences)" },
+                { value: "GAS", text: "Senior High: GAS (General Academic Strand)" },
+                { value: "TVL - ICT", text: "Senior High: TVL - ICT (Info. & Comm. Technology)" },
+                { value: "TVL - HE", text: "Senior High: TVL - HE (Home Economics)" },
+                { value: "TVL - IA", text: "Senior High: TVL - IA (Industrial Arts)" },
+                { value: "Grade 7", text: "Junior High: Grade 7" },
+                { value: "Grade 8", text: "Junior High: Grade 8" },
+                { value: "Grade 9", text: "Junior High: Grade 9" },
+                { value: "Grade 10", text: "Junior High: Grade 10" },
+                { value: "Others", text: "Others" }
+            ];
+
+            const facultyOptions = [
+                { value: "English Department", text: "English Department" },
+                { value: "Mathematics Department", text: "Mathematics Department" },
+                { value: "Science Department", text: "Science Department" },
+                { value: "Filipino Department", text: "Filipino Department" },
+                { value: "Social Studies Department", text: "Social Studies Department" },
+                { value: "MAPEH Department", text: "MAPEH Department" },
+                { value: "TLE / TVL Department", text: "TLE / TVL Department" },
+                { value: "Values Education Department", text: "Values Education Department" },
+                { value: "SHS Department", text: "Senior High School (SHS) Department" },
+                { value: "JHS Department", text: "Junior High School (JHS) Department" },
+                { value: "Guidance & Counseling Department", text: "Guidance & Counseling Department" },
+                { value: "Administrative / Support Staff", text: "Administrative / Support Staff" },
+                { value: "Others", text: "Others" }
+            ];
+
+            let options = [];
+            if (role === 'student') {
+                options = studentOptions;
+            } else if (role === 'faculty') {
+                options = facultyOptions;
+            }
+
+            const placeholderOpt = document.createElement('option');
+            placeholderOpt.value = "";
+            placeholderOpt.disabled = true;
+            placeholderOpt.selected = true;
+            placeholderOpt.textContent = "Select Course / Department";
+            deptSelect.appendChild(placeholderOpt);
+
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.value;
+                el.textContent = opt.text;
+                deptSelect.appendChild(el);
+            });
         });
     </script>
 </body>

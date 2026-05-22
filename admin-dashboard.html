@@ -307,7 +307,22 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-medium">Course / Department</label>
-                                    <input type="text" class="form-control bg-light" id="profileDept">
+                                    <select class="form-select bg-light" id="profileDept" required>
+                                        <option value="" disabled selected>Select Department</option>
+                                        <option value="English Department">English Department</option>
+                                        <option value="Mathematics Department">Mathematics Department</option>
+                                        <option value="Science Department">Science Department</option>
+                                        <option value="Filipino Department">Filipino Department</option>
+                                        <option value="Social Studies Department">Social Studies Department</option>
+                                        <option value="MAPEH Department">MAPEH Department</option>
+                                        <option value="TLE / TVL Department">TLE / TVL Department</option>
+                                        <option value="Values Education Department">Values Education Department</option>
+                                        <option value="SHS Department">Senior High School (SHS) Department</option>
+                                        <option value="JHS Department">Junior High School (JHS) Department</option>
+                                        <option value="Guidance & Counseling Department">Guidance & Counseling Department</option>
+                                        <option value="Administrative / Support Staff">Administrative / Support Staff</option>
+                                        <option value="Others">Others</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row">
@@ -401,7 +416,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Course / Department</label>
-                            <input type="text" class="form-control bg-light border-0" id="editUserDepartment">
+                            <select class="form-select bg-light border-0" id="editUserDepartment" required></select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Access Role</label>
