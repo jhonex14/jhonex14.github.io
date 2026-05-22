@@ -1124,6 +1124,82 @@ const App = {
     profileAddressInitDone: false,
     addressAddressInitDone: false,
 
+    updateAddressVisibility: function(prefix) {
+        const isProfile = (prefix === 'profile');
+        const regionEl = document.getElementById(isProfile ? 'profileRegion' : 'addressRegion');
+        const provinceEl = document.getElementById(isProfile ? 'profileProvince' : 'addressProvince');
+        const provinceWrapper = document.getElementById(isProfile ? 'profileProvinceWrapper' : 'addressProvinceWrapper');
+        const cityEl = document.getElementById(isProfile ? 'profileCity' : 'addressCity');
+        const barangayEl = document.getElementById(isProfile ? 'profileBarangay' : 'addressBarangay');
+        const streetEl = document.getElementById(isProfile ? 'profileStreet' : 'addressStreet');
+        
+        const manualContainer = document.getElementById(isProfile ? 'profileAddressManualContainer' : 'addressManualContainer');
+        const isManualActive = manualContainer && !manualContainer.classList.contains('d-none');
+
+        if (!regionEl) return;
+
+        const toggleField = (el, show, required = false) => {
+            if (!el) return;
+            const col = el.closest('.col-md-6, .col-md-12, .mb-3');
+            if (col) {
+                if (show) {
+                    col.classList.remove('d-none');
+                } else {
+                    col.classList.add('d-none');
+                }
+            }
+            if (show && required) {
+                el.setAttribute('required', 'required');
+            } else {
+                el.removeAttribute('required');
+            }
+        };
+
+        if (isManualActive) {
+            if (provinceWrapper) provinceWrapper.classList.add('d-none');
+            if (provinceEl) provinceEl.removeAttribute('required');
+            toggleField(cityEl, false);
+            toggleField(barangayEl, false);
+            toggleField(streetEl, false);
+            return;
+        }
+
+        const regionVal = regionEl.value;
+        const hasRegion = !!regionVal;
+
+        const regionHasProvinces = provinceWrapper ? !provinceWrapper.classList.contains('d-none') : true;
+
+        const provinceVal = provinceEl ? provinceEl.value : '';
+        const cityVal = cityEl ? cityEl.value : '';
+        const barangayVal = barangayEl ? barangayEl.value : '';
+
+        // 1. Region is always shown.
+
+        // 2. Province is shown if a region is selected AND that region has provinces.
+        const showProvince = hasRegion && regionHasProvinces;
+        if (provinceWrapper) {
+            if (showProvince) {
+                provinceWrapper.classList.remove('d-none');
+                if (provinceEl) provinceEl.setAttribute('required', 'required');
+            } else {
+                provinceWrapper.classList.add('d-none');
+                if (provinceEl) provinceEl.removeAttribute('required');
+            }
+        }
+
+        // 3. City is shown if a region is selected AND (either region has no provinces OR a province is selected)
+        const showCity = hasRegion && (!regionHasProvinces || !!provinceVal);
+        toggleField(cityEl, showCity, true);
+
+        // 4. Barangay is shown if City is shown AND selected
+        const showBarangay = showCity && !!cityVal;
+        toggleField(barangayEl, showBarangay, true);
+
+        // 5. Street is shown if Barangay is shown AND selected
+        const showStreet = showBarangay && !!barangayVal;
+        toggleField(streetEl, showStreet, false);
+    },
+
     initAddressSelectors: async function(prefix) {
         const isProfile = (prefix === 'profile');
         if (isProfile && this.profileAddressInitDone) return;
@@ -1151,22 +1227,14 @@ const App = {
                 if (selectContainer) selectContainer.classList.add('d-none');
                 if (manualContainer) manualContainer.classList.remove('d-none');
                 regionEl.removeAttribute('required');
-                if (provinceEl) provinceEl.removeAttribute('required');
-                if (cityEl) cityEl.removeAttribute('required');
-                if (barangayEl) barangayEl.removeAttribute('required');
                 if (manualEl) manualEl.setAttribute('required', 'required');
+                this.updateAddressVisibility(prefix);
             } else {
                 if (manualContainer) manualContainer.classList.add('d-none');
                 if (selectContainer) selectContainer.classList.remove('d-none');
                 regionEl.setAttribute('required', 'required');
-                if (provinceWrapper && !provinceWrapper.classList.contains('d-none') && provinceEl) {
-                    provinceEl.setAttribute('required', 'required');
-                } else if (provinceEl) {
-                    provinceEl.removeAttribute('required');
-                }
-                if (cityEl) cityEl.setAttribute('required', 'required');
-                if (barangayEl) barangayEl.setAttribute('required', 'required');
                 if (manualEl) manualEl.removeAttribute('required');
+                this.updateAddressVisibility(prefix);
             }
         };
 
@@ -1198,6 +1266,15 @@ const App = {
                 barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
                 barangayEl.disabled = true;
             }
+            if (streetEl) {
+                streetEl.value = '';
+            }
+
+            if (provinceWrapper) {
+                provinceWrapper.classList.add('d-none');
+            }
+
+            this.updateAddressVisibility(prefix);
 
             if (!regionCode) return;
 
@@ -1208,12 +1285,6 @@ const App = {
                 if (provinces && provinces.length > 0 && provinceEl) {
                     if (provinceWrapper) provinceWrapper.classList.remove('d-none');
                     provinceEl.disabled = false;
-                    const isManualActive = manualContainer && !manualContainer.classList.contains('d-none');
-                    if (!isManualActive) {
-                        provinceEl.setAttribute('required', 'required');
-                    } else {
-                        provinceEl.removeAttribute('required');
-                    }
 
                     provinces.sort((a, b) => a.name.localeCompare(b.name));
                     provinceEl.innerHTML = '<option value="" disabled selected>Select Province</option>';
@@ -1227,7 +1298,6 @@ const App = {
                     if (provinceWrapper) provinceWrapper.classList.add('d-none');
                     if (provinceEl) {
                         provinceEl.innerHTML = '';
-                        provinceEl.removeAttribute('required');
                         provinceEl.disabled = true;
                     }
 
@@ -1248,6 +1318,7 @@ const App = {
                         });
                     }
                 }
+                this.updateAddressVisibility(prefix);
             } catch (err) {
                 showManualMode(true);
             }
@@ -1265,6 +1336,11 @@ const App = {
                     barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
                     barangayEl.disabled = true;
                 }
+                if (streetEl) {
+                    streetEl.value = '';
+                }
+
+                this.updateAddressVisibility(prefix);
 
                 if (!provinceCode) return;
 
@@ -1284,6 +1360,7 @@ const App = {
                             cityEl.appendChild(opt);
                         });
                     }
+                    this.updateAddressVisibility(prefix);
                 } catch (err) {
                     showManualMode(true);
                 }
@@ -1298,6 +1375,11 @@ const App = {
                     barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
                     barangayEl.disabled = true;
                 }
+                if (streetEl) {
+                    streetEl.value = '';
+                }
+
+                this.updateAddressVisibility(prefix);
 
                 if (!cityCode) return;
 
@@ -1317,9 +1399,17 @@ const App = {
                             barangayEl.appendChild(opt);
                         });
                     }
+                    this.updateAddressVisibility(prefix);
                 } catch (err) {
                     showManualMode(true);
                 }
+            };
+        }
+
+        // Handle Barangay Change
+        if (barangayEl) {
+            barangayEl.onchange = () => {
+                this.updateAddressVisibility(prefix);
             };
         }
 
@@ -1334,6 +1424,7 @@ const App = {
                 opt.textContent = r.name;
                 regionEl.appendChild(opt);
             });
+            this.updateAddressVisibility(prefix);
         } catch (err) {
             showManualMode(true);
             if (manualEl) {
@@ -1361,22 +1452,14 @@ const App = {
                 if (selectContainer) selectContainer.classList.add('d-none');
                 if (manualContainer) manualContainer.classList.remove('d-none');
                 regionEl.removeAttribute('required');
-                if (provinceEl) provinceEl.removeAttribute('required');
-                if (cityEl) cityEl.removeAttribute('required');
-                if (barangayEl) barangayEl.removeAttribute('required');
                 if (manualEl) manualEl.setAttribute('required', 'required');
+                this.updateAddressVisibility(prefix);
             } else {
                 if (manualContainer) manualContainer.classList.add('d-none');
                 if (selectContainer) selectContainer.classList.remove('d-none');
                 regionEl.setAttribute('required', 'required');
-                if (provinceWrapper && !provinceWrapper.classList.contains('d-none') && provinceEl) {
-                    provinceEl.setAttribute('required', 'required');
-                } else if (provinceEl) {
-                    provinceEl.removeAttribute('required');
-                }
-                if (cityEl) cityEl.setAttribute('required', 'required');
-                if (barangayEl) barangayEl.setAttribute('required', 'required');
                 if (manualEl) manualEl.removeAttribute('required');
+                this.updateAddressVisibility(prefix);
             }
         };
 
