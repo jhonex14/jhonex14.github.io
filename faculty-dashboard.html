@@ -85,6 +85,7 @@
                 <a class="sidebar-link active" href="#" id="nav-dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
                 <a class="sidebar-link" href="#" id="nav-requests"><i class="fa-solid fa-clipboard-list"></i> Appointment Requests</a>
                 <a class="sidebar-link" href="#" id="nav-availability"><i class="fa-solid fa-calendar-week"></i> Manage Availability</a>
+                <a class="sidebar-link" href="#" id="nav-weekly-reports"><i class="fa-solid fa-file-lines"></i> Weekly Reports</a>
                 <a class="sidebar-link" href="#" id="nav-profile"><i class="fa-solid fa-gear"></i> Settings</a>
                 <a class="sidebar-link" href="#" id="nav-about" onclick="App.showAboutModal()"><i class="fa-solid fa-circle-info"></i> About</a>
             </nav>
@@ -206,6 +207,159 @@
                 </div>
             </div>
             </div>
+        <!-- Weekly Reports View -->
+        <div id="view-weekly-reports" class="d-none">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-4 flex-column flex-md-row">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">Weekly Reports</h5>
+                    <p class="text-muted mb-0">Review this week’s consultations, save a report to Supabase, and see stored report history.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary rounded-pill" onclick="App.loadFacultyWeeklyReport()"><i class="fa-solid fa-arrows-rotate me-1"></i> Refresh</button>
+                    <button class="btn btn-primary rounded-pill" onclick="App.saveFacultyWeeklyReport()"><i class="fa-solid fa-floppy-disk me-1"></i> Save Weekly Report</button>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Week Range</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportPeriod">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-warning">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Total Consultations</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportTotal">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-warning">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Pending</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportPending">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-success">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Approved</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportApproved">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Completed</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportCompleted">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-info">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Busiest Day</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportBusiestDay">—</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-secondary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Avg. Consultation</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportAverageDuration">0 min</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Top Department</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportTopDept">—</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Weekly Appointment Details</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Student</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="weeklyReportTableBody">
+                                    <tr><td colspan="4" class="text-center py-4 text-muted">Loading weekly appointments...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Weekly Insights</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <div class="card bg-light p-3 rounded-4 h-100">
+                                    <h6 class="fw-semibold text-dark mb-2">Status Distribution</h6>
+                                    <canvas id="weeklyStatusChart" style="max-height: 220px;"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="card bg-light p-3 rounded-4 h-100">
+                                    <h6 class="fw-semibold text-dark mb-2">Daily Appointment Volume</h6>
+                                    <canvas id="weeklyDailyChart" style="max-height: 220px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Departmental Peer Benchmarks -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4 h-100 border-start border-4 border-info shadow-sm rounded-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-family: 'Outfit', sans-serif;">
+                                <i class="fa-solid fa-ranking-star text-info"></i> Departmental Peer Benchmarks (This Week)
+                            </h6>
+                            <span class="badge bg-info-subtle text-info rounded-pill fw-bold px-3 py-1.5" id="peerReportDeptName">Loading Department...</span>
+                        </div>
+                        <div class="row g-4" id="peerBenchmarksContainer">
+                            <!-- Peer analytics cards populated dynamically by JS -->
+                            <div class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading departmental benchmark comparison...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Saved Report History</h6>
+                        <div id="savedWeeklyReportsList" class="small text-muted" style="min-height: 220px;">
+                            Loading stored reports...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="weeklyReportStatus" class="alert alert-info d-none" role="status"></div>
+        </div>
         <!-- Appointment Requests View -->
         <div id="view-requests" class="d-none">
             <div class="d-flex justify-content-between align-items-center mb-4">

@@ -1178,7 +1178,7 @@ const App = {
         const activeLink = document.getElementById(`nav-${viewId}`);
         if (activeLink) activeLink.classList.add('active', 'text-primary', 'bg-light', 'border-primary');
 
-        const views = ['view-dashboard', 'view-book', 'view-history', 'view-requests', 'view-availability', 'view-profile'];
+        const views = ['view-dashboard', 'view-book', 'view-history', 'view-requests', 'view-availability', 'view-weekly-reports', 'view-profile'];
         views.forEach(v => {
             const el = document.getElementById(v);
             if (el) el.classList.add('d-none');
@@ -1186,6 +1186,10 @@ const App = {
 
         const targetView = document.getElementById(`view-${viewId}`);
         if (targetView) targetView.classList.remove('d-none');
+
+        if (viewId === 'weekly-reports') {
+            this.loadFacultyWeeklyReport();
+        }
     },
 
     // --- PROFILE LOGIC ---
@@ -2874,6 +2878,489 @@ const App = {
                 notifList.innerHTML = '<li><h6 class="dropdown-header fw-bold">Notifications</h6></li><li><hr class="dropdown-divider"></li><li><span class="dropdown-item text-center text-muted small">No new notifications</span></li>';
             }
         }
+    },
+
+    getCurrentWeekRange: function() {
+        const today = new Date();
+        const mondayOffset = (today.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - mondayOffset);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        return { weekStart, weekEnd };
+    },
+
+    formatDateString: function(date) {
+        return date.toISOString().split('T')[0];
+    },
+
+    loadFacultyWeeklyReport: async function() {
+        if (!this.user || !this.profile || this.profile.role !== 'faculty') return;
+
+        const { weekStart, weekEnd } = this.getCurrentWeekRange();
+        const weekStartStr = this.formatDateString(weekStart);
+        const weekEndStr = this.formatDateString(weekEnd);
+
+        const weekReportStatus = document.getElementById('weeklyReportStatus');
+        if (weekReportStatus) {
+            weekReportStatus.classList.add('d-none');
+            weekReportStatus.textContent = '';
+        }
+
+        document.getElementById('weekReportPeriod').textContent = `${weekStartStr} — ${weekEndStr}`;
+
+        const { data, error } = await supabaseClient
+            .from('appointments')
+            .select('*, profiles!appointments_student_id_fkey(full_name, department)')
+            .eq('faculty_id', this.user.id)
+            .gte('appointment_date', weekStartStr)
+            .lte('appointment_date', weekEndStr)
+            .order('appointment_date', { ascending: true })
+            .order('start_time', { ascending: true });
+
+        if (error) {
+            console.error('Error loading weekly appointments:', error);
+            const tbody = document.getElementById('weeklyReportTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Unable to load weekly appointments.</td></tr>';
+            return;
+        }
+
+        const pending = data.filter(a => a.status === 'pending').length;
+        const approved = data.filter(a => a.status === 'approved').length;
+        const completed = data.filter(a => a.status === 'completed').length;
+        const total = data.length;
+
+        const departmentCounts = {};
+        const dayCounts = { Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0 };
+        let totalMinutes = 0;
+
+        data.forEach(appt => {
+            const dept = appt.profiles?.department || 'Unknown';
+            departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
+
+            const dayName = new Date(appt.appointment_date).toLocaleDateString('en-US', { weekday: 'long' });
+            if (dayCounts[dayName] !== undefined) dayCounts[dayName] += 1;
+
+            const start = new Date(`1970-01-01T${appt.start_time}`);
+            const end = new Date(`1970-01-01T${appt.end_time}`);
+            const duration = (end - start) / 60000;
+            if (duration > 0) totalMinutes += duration;
+        });
+
+        const busiestDay = Object.keys(dayCounts).reduce((best, day) => dayCounts[day] > (dayCounts[best] || 0) ? day : best, 'Sunday');
+        const avgDuration = total > 0 ? Math.round(totalMinutes / total) : 0;
+        const topDept = Object.entries(departmentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'None';
+
+        document.getElementById('weekReportTotal').textContent = total;
+        document.getElementById('weekReportPending').textContent = pending;
+        document.getElementById('weekReportApproved').textContent = approved;
+        document.getElementById('weekReportCompleted').textContent = completed;
+        document.getElementById('weekReportBusiestDay').textContent = total > 0 ? busiestDay : 'No bookings';
+        document.getElementById('weekReportAverageDuration').textContent = `${avgDuration} min`;
+        document.getElementById('weekReportTopDept').textContent = topDept;
+
+        const tbody = document.getElementById('weeklyReportTableBody');
+        if (tbody) {
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No consultations scheduled this week.</td></tr>';
+            } else {
+                tbody.innerHTML = '';
+                data.forEach(appt => {
+                    const dateObj = new Date(appt.appointment_date);
+                    const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+                    const formatTime = time => new Date(`1970-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const statusLabel = appt.status === 'no_show' ? 'NO SHOW' : appt.status.toUpperCase();
+                    const statusClass = appt.status === 'approved' ? 'badge bg-success' : appt.status === 'completed' ? 'badge bg-primary' : appt.status === 'pending' ? 'badge bg-warning text-dark' : 'badge bg-secondary';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${dateStr}</td>
+                            <td>${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</td>
+                            <td>${sanitizeHTML(appt.profiles.full_name)}<br><small class="text-muted">${sanitizeHTML(appt.profiles.department || 'Student')}</small></td>
+                            <td><span class="${statusClass}">${statusLabel}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+            this.renderWeeklyReportCharts(data);
+        }
+
+        await this.loadSavedWeeklyReports();
+        await this.loadFacultyPeerBenchmarks(weekStartStr, weekEndStr);
+    },
+
+    loadSavedWeeklyReports: async function() {
+        const reportsBlock = document.getElementById('savedWeeklyReportsList');
+        if (!reportsBlock) return;
+
+        const { data, error } = await supabaseClient
+            .from('faculty_reports')
+            .select('*')
+            .eq('faculty_id', this.user.id)
+            .order('generated_at', { ascending: false })
+            .limit(10);
+
+        if (error) {
+            reportsBlock.innerHTML = '<div class="text-muted small">No saved weekly report history found. If this is a new setup, create the <code>faculty_reports</code> table in Supabase.</div>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            reportsBlock.innerHTML = '<div class="text-muted small">No saved weekly reports yet. Click Save Weekly Report to store the current week.</div>';
+            return;
+        }
+
+        reportsBlock.innerHTML = data.map(report => {
+            const generatedAt = new Date(report.generated_at).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="fw-semibold text-dark">${sanitizeHTML(report.week_start)} — ${sanitizeHTML(report.week_end)}</div>
+                            <div class="small text-muted">Saved on ${generatedAt}</div>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">${sanitizeHTML(report.total_requests || 0)} items</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Pending: ${sanitizeHTML(report.pending_requests || 0)} · Approved: ${sanitizeHTML(report.approved_requests || 0)} · Completed: ${sanitizeHTML(report.completed_requests || 0)}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    loadFacultyPeerBenchmarks: async function(weekStartStr, weekEndStr) {
+        const peerContainer = document.getElementById('peerBenchmarksContainer');
+        const deptBadge = document.getElementById('peerReportDeptName');
+        if (!peerContainer) return;
+
+        const dept = this.profile?.department || '';
+        if (deptBadge) {
+            deptBadge.textContent = dept || 'General / No Department';
+        }
+
+        // 1. Fetch all faculty members in the same department
+        let query = supabaseClient
+            .from('profiles')
+            .select('id, full_name, department, avatar')
+            .eq('role', 'faculty');
+        
+        if (dept) {
+            query = query.eq('department', dept);
+        }
+
+        const { data: peers, error: peersError } = await query;
+
+        if (peersError) {
+            console.error('Error loading peer benchmarks profiles:', peersError);
+            peerContainer.innerHTML = `<div class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Unable to load departmental benchmarks profiles.</div>`;
+            return;
+        }
+
+        if (!peers || peers.length === 0) {
+            peerContainer.innerHTML = `<div class="text-center py-4 text-muted">No departmental peer data available.</div>`;
+            return;
+        }
+
+        // 2. Fetch all appointments this week for all department peers
+        const peerIds = peers.map(p => p.id);
+        const { data: appts, error: apptsError } = await supabaseClient
+            .from('appointments')
+            .select('id, faculty_id, status')
+            .in('faculty_id', peerIds)
+            .gte('appointment_date', weekStartStr)
+            .lte('appointment_date', weekEndStr);
+
+        if (apptsError) {
+            console.error('Error loading peer benchmarks appointments:', apptsError);
+            peerContainer.innerHTML = `<div class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Unable to load departmental benchmarks appointments.</div>`;
+            return;
+        }
+
+        // 3. Aggregate consultations per peer
+        const peerStats = {};
+        peers.forEach(p => {
+            peerStats[p.id] = {
+                id: p.id,
+                full_name: p.full_name,
+                avatar: p.avatar,
+                total: 0,
+                pending: 0,
+                approved: 0,
+                completed: 0
+            };
+        });
+
+        if (appts && appts.length > 0) {
+            appts.forEach(appt => {
+                if (peerStats[appt.faculty_id]) {
+                    peerStats[appt.faculty_id].total++;
+                    if (appt.status === 'pending') {
+                        peerStats[appt.faculty_id].pending++;
+                    } else if (appt.status === 'approved') {
+                        peerStats[appt.faculty_id].approved++;
+                    } else if (appt.status === 'completed') {
+                        peerStats[appt.faculty_id].completed++;
+                    }
+                }
+            });
+        }
+
+        const sortedPeers = Object.values(peerStats).sort((a, b) => b.total - a.total);
+        const currentUserId = this.user.id;
+        const rankIndex = sortedPeers.findIndex(p => p.id === currentUserId);
+        const rank = rankIndex !== -1 ? rankIndex + 1 : sortedPeers.length;
+        const totalPeers = sortedPeers.length;
+
+        let percentileText = '';
+        if (totalPeers <= 1) {
+            percentileText = 'Sole faculty in this department';
+        } else {
+            const percentile = Math.round(((totalPeers - rank) / (totalPeers - 1)) * 100);
+            percentileText = `Rank #${rank} of ${totalPeers} in department (${percentile}% percentile)`;
+        }
+
+        const totalDeptConsultations = sortedPeers.reduce((sum, p) => sum + p.total, 0);
+        const peerAverage = totalPeers > 0 ? (totalDeptConsultations / totalPeers) : 0;
+        const currentUserTotal = peerStats[currentUserId] ? peerStats[currentUserId].total : 0;
+
+        let comparisonText = '';
+        const diff = currentUserTotal - peerAverage;
+        if (diff > 0) {
+            comparisonText = `<span class="text-success fw-bold"><i class="fa-solid fa-arrow-trend-up"></i> +${diff.toFixed(1)} above average</span>`;
+        } else if (diff < 0) {
+            comparisonText = `<span class="text-warning fw-bold"><i class="fa-solid fa-arrow-trend-down"></i> ${Math.abs(diff).toFixed(1)} below average</span>`;
+        } else {
+            comparisonText = `<span class="text-muted fw-bold"><i class="fa-solid fa-check"></i> Equal to average</span>`;
+        }
+
+        const maxConsultations = Math.max(...sortedPeers.map(p => p.total), 1);
+
+        peerContainer.innerHTML = `
+            <!-- KPI Summary Cards -->
+            <div class="col-md-4">
+                <div class="card border-0 bg-light p-3 rounded-4 h-100 shadow-none hover-lift">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary-soft text-primary rounded-circle p-3 d-flex align-items-center justify-content-center animate-float" style="width: 50px; height: 50px; background-color: rgba(30, 58, 138, 0.1);">
+                            <i class="fa-solid fa-trophy fa-lg" style="color: var(--primary-color);"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-medium">Your Ranking</span>
+                            <h4 class="fw-bold text-dark mb-0">Rank #${rank} <span class="fs-6 fw-normal text-muted">of ${totalPeers}</span></h4>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted small" style="font-size: 0.8rem;">${percentileText}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-light p-3 rounded-4 h-100 shadow-none hover-lift">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-accent-soft text-accent rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: rgba(16, 185, 129, 0.1);">
+                            <i class="fa-solid fa-chart-line fa-lg" style="color: var(--accent-color);"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-medium">Department Avg</span>
+                            <h4 class="fw-bold text-dark mb-0">${peerAverage.toFixed(1)} <span class="fs-6 fw-normal text-muted">consults</span></h4>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted small" style="font-size: 0.8rem;">${comparisonText}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-light p-3 rounded-4 h-100 shadow-none hover-lift">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-info-soft text-info rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: rgba(13, 202, 240, 0.1);">
+                            <i class="fa-solid fa-users fa-lg" style="color: #0dcaf0;"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-medium">Department Total</span>
+                            <h4 class="fw-bold text-dark mb-0">${totalDeptConsultations} <span class="fs-6 fw-normal text-muted">consults</span></h4>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted small" style="font-size: 0.8rem;">Total activity across all faculty</div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Table/List -->
+            <div class="col-12 mt-3">
+                <div class="card border-0 p-3 bg-light rounded-4 shadow-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-ol text-primary me-2"></i>Department Weekly Leaderboard</h6>
+                        <span class="text-muted small">${weekStartStr} to ${weekEndStr}</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        ${sortedPeers.map((peer, idx) => {
+                            const percent = Math.round((peer.total / maxConsultations) * 100);
+                            const isSelf = peer.id === currentUserId;
+                            const placeBadge = idx === 0 ? '🏆 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `#${idx + 1}`;
+                            const placeColor = idx === 0 ? 'bg-warning text-dark' : idx === 1 ? 'bg-secondary text-white' : idx === 2 ? 'bg-danger text-white' : 'bg-light text-muted border';
+                            
+                            const initials = peer.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            const avatarHtml = peer.avatar 
+                                ? `<img src="${peer.avatar}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Avatar">`
+                                : `<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 0.9rem;">${initials}</div>`;
+                            
+                            return `
+                                <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-white border ${isSelf ? 'border-primary border-2 shadow-sm' : 'border-light'}" style="${isSelf ? 'background-color: rgba(30, 58, 138, 0.03) !important;' : ''}">
+                                    <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-center rounded-pill px-3 py-1 fw-bold text-nowrap ${placeColor}" style="min-width: 65px; font-size: 0.8rem;">
+                                            ${placeBadge}
+                                        </div>
+                                        ${avatarHtml}
+                                        <div class="flex-grow-1" style="max-width: 60%;">
+                                            <div class="fw-semibold text-dark d-flex align-items-center gap-2">
+                                                ${sanitizeHTML(peer.full_name)}
+                                                ${isSelf ? '<span class="badge bg-primary text-white rounded-pill text-xs">You</span>' : ''}
+                                            </div>
+                                            <div class="progress mt-2" style="height: 6px; border-radius: 3px;">
+                                                <div class="progress-bar ${isSelf ? 'bg-primary' : 'bg-info'}" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end ms-3">
+                                        <span class="fw-bold text-dark fs-5">${peer.total}</span> <span class="text-muted small">consults</span>
+                                        <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                            ${peer.completed} completed · ${peer.approved} approved · ${peer.pending} pending
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderWeeklyReportCharts: function(data) {
+        if (!window.Chart) return;
+
+        const statusData = [
+            data.filter(a => a.status === 'pending').length,
+            data.filter(a => a.status === 'approved').length,
+            data.filter(a => a.status === 'completed').length
+        ];
+
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const dayCounts = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+        data.forEach(appt => {
+            const day = new Date(appt.appointment_date).toLocaleDateString('en-US', { weekday: 'short' });
+            if (dayCounts[day] !== undefined) dayCounts[day] += 1;
+        });
+
+        const dailyData = days.map(d => dayCounts[d]);
+
+        const isEmpty = data.length === 0;
+        let statusLabels = ['Pending', 'Approved', 'Completed'];
+        let statusDatasetData = statusData;
+        let statusColors = ['#f59e0b', '#10b981', '#3b82f6'];
+        if (isEmpty) {
+            statusLabels = ['No Data'];
+            statusDatasetData = [1];
+            statusColors = ['#cbd5e1']; // slate grey for empty state
+        }
+
+        const ctxStatus = document.getElementById('weeklyStatusChart');
+        if (ctxStatus) {
+            if (this.charts.weeklyStatus) this.charts.weeklyStatus.destroy();
+            this.charts.weeklyStatus = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusDatasetData,
+                        backgroundColor: statusColors,
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: document.body.classList.contains('dark-mode') ? '#f8fafc' : '#1f2937' } } }, cutout: '70%' }
+            });
+        }
+
+        const ctxDaily = document.getElementById('weeklyDailyChart');
+        if (ctxDaily) {
+            if (this.charts.weeklyDaily) this.charts.weeklyDaily.destroy();
+            this.charts.weeklyDaily = new Chart(ctxDaily, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Appointments',
+                        data: dailyData,
+                        backgroundColor: isEmpty ? '#cbd5e1' : '#2563eb',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: document.body.classList.contains('dark-mode') ? '#94a3b8' : '#6b7280' }, grid: { color: document.body.classList.contains('dark-mode') ? '#334155' : '#e5e7eb' } },
+                        x: { ticks: { color: document.body.classList.contains('dark-mode') ? '#94a3b8' : '#6b7280' }, grid: { color: 'transparent' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    },
+
+    saveFacultyWeeklyReport: async function() {
+        if (!this.user || !this.profile || this.profile.role !== 'faculty') return;
+
+        const { weekStart, weekEnd } = this.getCurrentWeekRange();
+        const weekStartStr = this.formatDateString(weekStart);
+        const weekEndStr = this.formatDateString(weekEnd);
+
+        const { data, error } = await supabaseClient
+            .from('appointments')
+            .select('*, profiles!appointments_student_id_fkey(full_name, department)')
+            .eq('faculty_id', this.user.id)
+            .gte('appointment_date', weekStartStr)
+            .lte('appointment_date', weekEndStr)
+            .order('appointment_date', { ascending: true });
+
+        if (error) {
+            alert('Unable to gather appointment details: ' + error.message);
+            return;
+        }
+
+        const pending = data.filter(a => a.status === 'pending').length;
+        const approved = data.filter(a => a.status === 'approved').length;
+        const completed = data.filter(a => a.status === 'completed').length;
+        const total = data.length;
+
+        const snapshot = data.map(appt => ({
+            date: appt.appointment_date,
+            start_time: appt.start_time,
+            end_time: appt.end_time,
+            status: appt.status,
+            student_name: appt.profiles?.full_name || null,
+            department: appt.profiles?.department || null,
+            purpose: appt.purpose
+        }));
+
+        const { error: saveError } = await supabaseClient.from('faculty_reports').insert([{
+            faculty_id: this.user.id,
+            week_start: weekStartStr,
+            week_end: weekEndStr,
+            total_requests: total,
+            pending_requests: pending,
+            approved_requests: approved,
+            completed_requests: completed,
+            report_notes: null,
+            raw_snapshot: JSON.stringify(snapshot)
+        }]);
+
+        if (saveError) {
+            alert('Unable to save weekly report. Please verify the faculty_reports table exists in Supabase and your permissions.\n' + saveError.message);
+            return;
+        }
+
+        this.showToast('Weekly Report Saved', 'The current weekly report was stored in Supabase.', 'success');
+        await this.loadSavedWeeklyReports();
     },
 
     exportFacultyReport: function() {

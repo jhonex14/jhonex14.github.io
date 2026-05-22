@@ -92,7 +92,40 @@ CREATE POLICY "Admin can delete appointments" ON public.appointments FOR DELETE 
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
--- 4. Unique index to prevent double bookings (First-Come, First-Served)
+-- 4. Create Faculty Weekly Reports Table
+CREATE TABLE public.faculty_reports (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    faculty_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    week_start DATE NOT NULL,
+    week_end DATE NOT NULL,
+    generated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    total_requests INTEGER NOT NULL DEFAULT 0,
+    pending_requests INTEGER NOT NULL DEFAULT 0,
+    approved_requests INTEGER NOT NULL DEFAULT 0,
+    completed_requests INTEGER NOT NULL DEFAULT 0,
+    report_notes TEXT,
+    raw_snapshot JSONB
+);
+
+ALTER TABLE public.faculty_reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Faculty or Admin can view weekly reports" ON public.faculty_reports FOR SELECT USING (
+    auth.uid() = faculty_id
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Faculty or Admin can insert weekly reports" ON public.faculty_reports FOR INSERT WITH CHECK (
+    auth.uid() = faculty_id
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Faculty or Admin can update weekly reports" ON public.faculty_reports FOR UPDATE USING (
+    auth.uid() = faculty_id
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Admin can delete weekly reports" ON public.faculty_reports FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- 5. Unique index to prevent double bookings (First-Come, First-Served)
 CREATE UNIQUE INDEX IF NOT EXISTS unique_approved_appointment ON public.appointments (faculty_id, appointment_date, start_time) WHERE (status = 'approved');
 
 -- Create views or functions if necessary
