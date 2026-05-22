@@ -965,6 +965,30 @@ const App = {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
             btn.disabled = true;
 
+            // Check if email already exists in profiles table
+            const { data: emailExists, error: emailError } = await supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .single();
+
+            if (emailExists) {
+                throw new Error('Email address is already registered. Please use a different email or sign in.');
+            }
+
+            // Check if ID number already exists
+            if (idNumber) {
+                const { data: idExists, error: idError } = await supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('id_number', idNumber)
+                    .single();
+
+                if (idExists) {
+                    throw new Error('ID Number is already registered. Please use a different ID or sign in.');
+                }
+            }
+
             const { data, error } = await supabaseClient.auth.signUp({
                 email,
                 password,
@@ -1271,11 +1295,6 @@ const App = {
 
     initAddressSelectors: async function(prefix) {
         const isProfile = (prefix === 'profile');
-        if (isProfile && this.profileAddressInitDone) return;
-        if (!isProfile && this.addressAddressInitDone) return;
-        
-        if (isProfile) this.profileAddressInitDone = true;
-        else this.addressAddressInitDone = true;
 
         const regionEl = document.getElementById(isProfile ? 'profileRegion' : 'addressRegion');
         const provinceEl = document.getElementById(isProfile ? 'profileProvince' : 'addressProvince');
@@ -1308,16 +1327,22 @@ const App = {
         };
 
         if (toggleManualBtn) {
-            toggleManualBtn.onclick = (e) => {
+            toggleManualBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 showManualMode(true);
-            };
+                return false;
+            });
         }
         if (toggleSelectBtn) {
-            toggleSelectBtn.onclick = (e) => {
+            toggleSelectBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 showManualMode(false);
-            };
+                return false;
+            });
         }
 
         // Handle Region Change
@@ -1715,8 +1740,7 @@ const App = {
     populateProfileView: function() {
         if (!document.getElementById('profileName')) return;
         
-        if (document.getElementById('profileRegion') && !this.profileAddressInitDone) {
-            this.profileAddressInitDone = true;
+        if (document.getElementById('profileRegion')) {
             this.initAddressSelectors('profile');
         }
         
@@ -1831,8 +1855,7 @@ const App = {
         // Edit form
         const profileNameInput = document.getElementById('profileName');
         if (profileNameInput) {
-            if (document.getElementById('profileRegion') && !this.profileAddressInitDone) {
-                this.profileAddressInitDone = true;
+            if (document.getElementById('profileRegion')) {
                 this.initAddressSelectors('profile');
             }
             profileNameInput.value = p.full_name;
@@ -2157,8 +2180,67 @@ const App = {
 
     // --- STUDENT DASHBOARD LOGIC ---
     loadStudentDashboard: async function () {
+        await this.autoExpireAppointments();
         this.fetchFacultyList();
         this.fetchStudentAppointments();
+    },
+
+    // Auto-cancel expired pending requests and mark no-shows for approved appointments
+    autoExpireAppointments: async function () {
+        try {
+            // Use Philippines time (UTC+8)
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+            const todayStr = now.toISOString().split('T')[0];
+            const currentTime = now.toTimeString().substring(0, 8); // "HH:MM:SS"
+
+            // 1. Auto-cancel: pending appointments whose date has already passed entirely
+            const { error: cancelErr } = await supabaseClient
+                .from('appointments')
+                .update({ status: 'cancelled', faculty_notes: 'Auto-cancelled: appointment date passed without a faculty response.' })
+                .eq('status', 'pending')
+                .lt('appointment_date', todayStr);
+
+            if (cancelErr) console.warn('Auto-cancel pending error:', cancelErr.message);
+
+            // 2. Auto-cancel: pending appointments on today whose time window has already closed
+            const { error: cancelTodayErr } = await supabaseClient
+                .from('appointments')
+                .update({ status: 'cancelled', faculty_notes: 'Auto-cancelled: appointment time passed without a faculty response.' })
+                .eq('status', 'pending')
+                .eq('appointment_date', todayStr)
+                .lt('end_time', currentTime);
+
+            if (cancelTodayErr) console.warn('Auto-cancel today pending error:', cancelTodayErr.message);
+
+            // 3. Auto no-show: approved appointments whose end_time + 15min grace period has passed
+            // Calculate time minus 15 minutes (grace period)
+            const graceDate = new Date(now.getTime() - 15 * 60 * 1000);
+            const graceDateStr = graceDate.toISOString().split('T')[0];
+            const graceTimeStr = graceDate.toTimeString().substring(0, 8);
+
+            // Past days: any approved appointment from a previous date → no_show
+            const { error: noShowPastErr } = await supabaseClient
+                .from('appointments')
+                .update({ status: 'no_show', faculty_notes: 'Marked as no-show: student did not attend the scheduled consultation.' })
+                .eq('status', 'approved')
+                .lt('appointment_date', graceDateStr);
+
+            if (noShowPastErr) console.warn('Auto no-show past error:', noShowPastErr.message);
+
+            // Today: approved appointments on today where end_time + 15min grace has passed
+            const { error: noShowTodayErr } = await supabaseClient
+                .from('appointments')
+                .update({ status: 'no_show', faculty_notes: 'Marked as no-show: student did not attend the scheduled consultation.' })
+                .eq('status', 'approved')
+                .eq('appointment_date', graceDateStr)
+                .lt('end_time', graceTimeStr);
+
+            if (noShowTodayErr) console.warn('Auto no-show today error:', noShowTodayErr.message);
+
+            console.log('Auto-expire check completed.');
+        } catch (e) {
+            console.warn('autoExpireAppointments error:', e);
+        }
     },
 
     fetchFacultyList: async function () {
@@ -2546,7 +2628,8 @@ const App = {
             .from('appointments')
             .select('*, profiles!appointments_faculty_id_fkey(full_name)')
             .eq('student_id', this.user.id)
-            .order('appointment_date', { ascending: false });
+            .order('appointment_date', { ascending: false })
+            .order('start_time', { ascending: false });
 
         if (error) return;
 
@@ -2568,6 +2651,29 @@ const App = {
 
             const formatTime = (time) => new Date(`1970-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Label for no_show
+            const statusLabel = appt.status === 'no_show' ? 'NO SHOW' : appt.status.toUpperCase();
+
+            // Sanction warning row (only shown if faculty wrote a sanction note)
+            const sanctionRow = (appt.status === 'no_show' && appt.sanction_note)
+                ? `<tr><td colspan="5" class="px-4 pb-2 pt-0">
+                    <div class="d-flex align-items-start gap-2 p-2 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa;">
+                        <i class="fa-solid fa-triangle-exclamation text-warning mt-1" style="font-size:13px;"></i>
+                        <div>
+                            <span class="fw-bold" style="font-size:12px;color:#c2410c;">Sanction from Faculty:</span>
+                            <span class="text-dark" style="font-size:12px;"> ${sanitizeHTML(appt.sanction_note)}</span>
+                        </div>
+                    </div>
+                  </td></tr>`
+                : (appt.status === 'no_show'
+                    ? `<tr><td colspan="5" class="px-4 pb-2 pt-0">
+                        <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa;">
+                            <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size:13px;"></i>
+                            <span style="font-size:12px;color:#c2410c;">You did not attend this consultation. Please contact your faculty for further instructions.</span>
+                        </div>
+                      </td></tr>`
+                    : '');
+
             tbody.innerHTML += `
                 <tr>
                     <td class="px-4">
@@ -2583,12 +2689,13 @@ const App = {
                         <small class="text-muted">${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</small>
                     </td>
                     <td class="text-wrap" style="max-width: 200px;">${sanitizeHTML(appt.purpose)}</td>
-                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${sanitizeHTML(appt.status)}</span></td>
+                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${statusLabel}</span></td>
                     <td class="text-end px-4">
                         ${appt.status === 'pending' ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="App.cancelAppointment('${appt.id}')">Cancel</button>` : ''}
                         ${appt.status === 'approved' ? `<a href="https://meet.jit.si/ConsulTime_${appt.id}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"><i class="fa-solid fa-video me-1"></i> Join Call</a>` : ''}
                     </td>
                 </tr>
+                ${sanctionRow}
             `;
         });
 
@@ -2637,6 +2744,7 @@ const App = {
 
     // --- FACULTY DASHBOARD LOGIC ---
     loadFacultyDashboard: async function () {
+        await this.autoExpireAppointments();
         this.fetchFacultyRequests();
         this.fetchFacultyAvailability();
     },
@@ -2681,7 +2789,29 @@ const App = {
                     <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="App.openActionModal('${appt.id}', 'completed')">Mark Done</button>
                     <a href="https://meet.jit.si/ConsulTime_${appt.id}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm ms-1"><i class="fa-solid fa-video"></i></a>
                 `;
+            } else if (appt.status === 'no_show') {
+                actions = `
+                    <button class="btn btn-sm btn-warning rounded-pill px-3 shadow-sm" style="font-size:12px;" onclick="App.openActionModal('${appt.id}', 'no_show_sanction')">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Add Sanction
+                    </button>
+                `;
             }
+
+            // Show existing sanction note if present
+            const sanctionRow = appt.sanction_note
+                ? `<tr><td colspan="5" class="px-4 pb-2 pt-0">
+                    <div class="d-flex align-items-start gap-2 p-2 rounded-3" style="background:#fff7ed;border:1px solid #fed7aa;">
+                        <i class="fa-solid fa-triangle-exclamation text-warning mt-1" style="font-size:13px;"></i>
+                        <div>
+                            <span class="fw-bold text-warning-emphasis" style="font-size:12px;">Sanction Note:</span>
+                            <span class="text-dark" style="font-size:12px;"> ${sanitizeHTML(appt.sanction_note)}</span>
+                        </div>
+                    </div>
+                  </td></tr>`
+                : '';
+
+            // Display label for no_show
+            const statusLabel = appt.status === 'no_show' ? 'NO SHOW' : appt.status.toUpperCase();
 
             tbody.innerHTML += `
                 <tr>
@@ -2701,11 +2831,12 @@ const App = {
                         <small class="text-muted">${formatTime(appt.start_time)} - ${formatTime(appt.end_time)}</small>
                     </td>
                     <td class="text-wrap text-muted small" style="max-width: 200px;">${sanitizeHTML(appt.purpose)}</td>
-                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${sanitizeHTML(appt.status)}</span></td>
+                    <td><span class="badge status-badge ${badgeClass} text-uppercase">${statusLabel}</span></td>
                     <td class="text-end px-4">
                         ${actions}
                     </td>
                 </tr>
+                ${sanctionRow}
             `;
         });
 
@@ -3009,6 +3140,7 @@ const App = {
         if (type === 'approved') { title = 'Approve Request'; desc = 'This will notify the student that the consultation is confirmed.'; }
         if (type === 'rejected') { title = 'Reject Request'; desc = 'Please provide a reason in the notes if possible.'; }
         if (type === 'completed') { title = 'Complete Consultation'; desc = 'Mark this consultation as successfully completed.'; }
+        if (type === 'no_show_sanction') { title = '⚠️ Add Sanction Note'; desc = 'The student did not attend this consultation. Write a sanction note (e.g., reschedule penalty, warning, etc.). This will be visible to the student.'; }
 
         document.getElementById('actionModalTitle').textContent = title;
         document.getElementById('actionModalDesc').textContent = desc;
@@ -3075,6 +3207,20 @@ const App = {
                 .eq('status', 'pending')
                 .neq('id', id);
 
+            } else if (type === 'no_show_sanction') {
+                // Save sanction note without changing the status (stays no_show)
+                if (!notes.trim()) {
+                    alert('Please enter a sanction note before saving.');
+                    return;
+                }
+                const { error: sanctionErr } = await supabaseClient.from('appointments').update({
+                    sanction_note: notes.trim()
+                }).eq('id', id);
+
+                if (sanctionErr) {
+                    alert('Failed to save sanction note: ' + sanctionErr.message);
+                    return;
+                }
             } else {
                 const { error: updateError } = await supabaseClient.from('appointments').update({
                     status: type,
