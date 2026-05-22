@@ -1,4 +1,4 @@
 {
-  "version": "1.0.8",
-  "message": "Protocol and domain origin normalization for multi-tab session stability."
+  "version": "1.0.9",
+  "message": "Dynamic navbar session synchronization across multiple tabs."
 }

@@ -24,7 +24,7 @@ const App = {
     user: null,
     profile: null,
     charts: {},
-    version: '1.0.8',
+    version: '1.0.9',
 
     get settingsVerified() {
         return sessionStorage.getItem('ct_settings_verified') === 'true';
