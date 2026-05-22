@@ -158,17 +158,16 @@
                             </div>
                         </div>
 
-                        <!-- Age Input -->
+                        <!-- Age & University Email Inputs -->
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="age" class="form-label fw-medium text-dark">Age</label>
                                 <input type="number" class="form-control bg-light" id="age" required min="15" placeholder="18">
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="regEmail" class="form-label fw-medium text-dark">University Email Address</label>
-                            <input type="email" class="form-control bg-light" id="regEmail" required placeholder="juan@university.edu">
+                            <div class="col-md-6 mb-3">
+                                <label for="regEmail" class="form-label fw-medium text-dark">University Email Address</label>
+                                <input type="email" class="form-control bg-light" id="regEmail" required placeholder="juan@university.edu">
+                            </div>
                         </div>
 
                         <div class="row">
@@ -253,9 +252,17 @@
         });
 
         // Dynamic department selection based on role/account type
-        document.getElementById('role').addEventListener('change', function() {
-            const role = this.value;
+        function updateDepartments() {
+            const roleSelect = document.getElementById('role');
+            const role = roleSelect.value;
             const deptSelect = document.getElementById('department');
+            
+            if (!role) {
+                deptSelect.innerHTML = '<option value="" disabled selected>Please select Account Type first</option>';
+                deptSelect.disabled = true;
+                return;
+            }
+
             deptSelect.innerHTML = '';
             deptSelect.disabled = false;
 
@@ -310,7 +317,12 @@
                 el.textContent = opt.text;
                 deptSelect.appendChild(el);
             });
-        });
+        }
+
+        document.getElementById('role').addEventListener('change', updateDepartments);
+        
+        // Run immediately in case the browser restored/pre-selected a role on load
+        updateDepartments();
     </script>
 </body>
 </html>
