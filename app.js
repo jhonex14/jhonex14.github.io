@@ -2782,12 +2782,14 @@ const App = {
             dateInput._flatpickr.destroy();
         }
 
-        // Compute maxDate: 7 calendar days from today (Manila time)
+        // Compute maxDate: 5 calendar days from today (Manila time)
+        // This prevents students from booking on next week's recurring days
+        // (e.g., today is Friday May 22, so max = May 27 — next Friday May 29 is excluded)
         const manilaToday = this.getManilaTime();
         const maxDateObj = new Date();
-        maxDateObj.setDate(maxDateObj.getDate() + 7);
+        maxDateObj.setDate(maxDateObj.getDate() + 5);
 
-        // Initialize Flatpickr to enable days matching day of week OR specific dates, max 7 days ahead
+        // Initialize Flatpickr to enable days matching day of week OR specific dates, max 5 days ahead
         flatpickr(dateInput, {
             minDate: "today",
             maxDate: maxDateObj,
