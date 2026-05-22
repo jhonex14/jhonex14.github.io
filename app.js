@@ -2845,6 +2845,16 @@ const App = {
         slotsDiv.innerHTML = '';
 
         // Generate 30-min slots based on availability
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+        const nowY = now.getFullYear();
+        const nowM = String(now.getMonth() + 1).padStart(2, '0');
+        const nowD = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${nowY}-${nowM}-${nowD}`;
+
+        const isToday = (dateVal === todayStr);
+        const currentH = now.getHours();
+        const currentM = now.getMinutes();
+
         availability.forEach(avail => {
             let start = new Date(`1970-01-01T${avail.start_time}`);
             const end = new Date(`1970-01-01T${avail.end_time}`);
@@ -2853,6 +2863,14 @@ const App = {
                 let slotStart = start.toTimeString().substring(0, 5);
                 start.setMinutes(start.getMinutes() + 30);
                 let slotEnd = start.toTimeString().substring(0, 5);
+
+                // Filter out past slots when booking for today
+                if (isToday) {
+                    const [slotH, slotM] = slotStart.split(':').map(Number);
+                    if (slotH < currentH || (slotH === currentH && slotM <= currentM)) {
+                        continue;
+                    }
+                }
 
                 // Check if slot is taken
                 let isTaken = false;
@@ -2880,7 +2898,11 @@ const App = {
         });
 
         if (slotsDiv.innerHTML === '') {
-            slotsDiv.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0">All slots are booked for this day.</div></div>';
+            if (isToday) {
+                slotsDiv.innerHTML = '<div class="col-12"><div class="alert alert-warning mb-0"><i class="fa-solid fa-circle-exclamation me-2"></i>No more available consultation hours left for today. Please select another date from the calendar.</div></div>';
+            } else {
+                slotsDiv.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0">All slots are booked or unavailable for this day.</div></div>';
+            }
         }
     },
 
