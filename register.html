@@ -134,11 +134,11 @@
                         <div id="studentFieldsContainer" class="d-none">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="schoolYear" class="form-label fw-medium text-dark">School Year</label>
+                                    <label for="schoolYear" class="form-label fw-medium text-dark">School Year <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control bg-light" id="schoolYear" placeholder="e.g. 2025-2026">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="section" class="form-label fw-medium text-dark">Section</label>
+                                    <label for="section" class="form-label fw-medium text-dark">Section <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control bg-light" id="section" placeholder="e.g. Grade 11 - STEM A">
                                 </div>
                             </div>
@@ -392,10 +392,26 @@
             if (roleVal === 'student') {
                 container.classList.remove('d-none');
                 schoolYearInput.setAttribute('required', 'required');
+                schoolYearInput.setAttribute('readonly', 'readonly');
+                
+                // Calculate and pre-fill upcoming school year
+                const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+                const month = now.getMonth() + 1; // 1-indexed
+                const date = now.getDate();
+                const currentYear = now.getFullYear();
+                let expectedSY = '';
+                if (month > 4 || (month === 4 && date >= 15)) {
+                    expectedSY = `${currentYear}-${currentYear + 1}`;
+                } else {
+                    expectedSY = `${currentYear - 1}-${currentYear}`;
+                }
+                schoolYearInput.value = expectedSY;
+                
                 sectionInput.setAttribute('required', 'required');
             } else {
                 container.classList.add('d-none');
                 schoolYearInput.removeAttribute('required');
+                schoolYearInput.removeAttribute('readonly');
                 sectionInput.removeAttribute('required');
                 schoolYearInput.value = '';
                 sectionInput.value = '';

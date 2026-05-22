@@ -639,7 +639,7 @@ const App = {
     }
 },
 
-    routePage: function () {
+    routePage: async function () {
         const path = window.location.pathname;
         const isAuthPage = path.includes('login.html') || path.includes('register.html');
         const isDashboard = path.includes('dashboard.html');
@@ -649,6 +649,13 @@ const App = {
             // Safe role detection fallback
             const userRole = (this.profile && this.profile.role) || (this.user.user_metadata && this.user.user_metadata.role) || 'student';
             const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+
+            if (userRole === 'student') {
+                const hasValidSchoolYear = await this.checkSchoolYearExpiration();
+                if (!hasValidSchoolYear) {
+                    return; // Block access to dashboard/profile load
+                }
+            }
 
             // Detect browser back/forward button clicks
             const navEntries = window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation');
@@ -1810,11 +1817,16 @@ const App = {
             document.getElementById('profileAge').value = this.profile.age || '';
         }
         if (this.profile.role === 'student') {
-            if (document.getElementById('profileSchoolYear')) {
-                document.getElementById('profileSchoolYear').value = this.profile.school_year || '';
+            const syEl = document.getElementById('profileSchoolYear');
+            const secEl = document.getElementById('profileSection');
+            if (syEl) {
+                syEl.value = this.profile.school_year || this.getExpectedSchoolYear();
+                syEl.setAttribute('readonly', 'readonly');
+                syEl.setAttribute('required', 'required');
             }
-            if (document.getElementById('profileSection')) {
-                document.getElementById('profileSection').value = this.profile.section || '';
+            if (secEl) {
+                secEl.value = this.profile.section || '';
+                secEl.setAttribute('required', 'required');
             }
         }
         document.getElementById('profileEmail').value = this.profile.email;
@@ -1980,8 +1992,16 @@ const App = {
                     age: parseInt(document.getElementById('profileAge').value) || null
                 };
                 if (this.profile.role === 'student') {
-                    updates.school_year = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : null;
-                    updates.section = document.getElementById('profileSection') ? document.getElementById('profileSection').value : null;
+                    const syVal = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : '';
+                    const secVal = document.getElementById('profileSection') ? document.getElementById('profileSection').value.trim() : '';
+                    if (!secVal) {
+                        this.showProfileToast('Class section is required for student profiles.', 'danger');
+                        btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Save Changes';
+                        btn.disabled = false;
+                        return;
+                    }
+                    updates.school_year = syVal;
+                    updates.section = secVal;
                 }
                 if (this.tempAvatar) updates.avatar = this.tempAvatar;
 
@@ -2080,8 +2100,16 @@ const App = {
         if (address) updates.address = address;
         if (age) updates.age = parseInt(age);
         if (this.profile.role === 'student') {
-            updates.school_year = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : null;
-            updates.section = document.getElementById('profileSection') ? document.getElementById('profileSection').value : null;
+            const syVal = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : '';
+            const secVal = document.getElementById('profileSection') ? document.getElementById('profileSection').value.trim() : '';
+            if (!secVal) {
+                this.showToast('Validation Error', 'Class section is required for student profiles.', 'danger');
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save Changes';
+                btn.disabled = false;
+                return;
+            }
+            updates.school_year = syVal;
+            updates.section = secVal;
         }
 
         if (this.tempAvatar) {
@@ -2256,8 +2284,202 @@ const App = {
         }
     },
 
+    getExpectedSchoolYear: function () {
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+        const month = now.getMonth() + 1; // 1-indexed (1 to 12)
+        const date = now.getDate();
+        const currentYear = now.getFullYear();
+
+        if (month > 4 || (month === 4 && date >= 15)) {
+            return `${currentYear}-${currentYear + 1}`;
+        } else {
+            return `${currentYear - 1}-${currentYear}`;
+        }
+    },
+
+    checkSchoolYearExpiration: async function () {
+        if (!this.profile || this.profile.role !== 'student') return true;
+
+        const expectedSchoolYear = this.getExpectedSchoolYear();
+        
+        // Check if the student's registered school_year does not match the upcoming school year
+        if (this.profile.school_year !== expectedSchoolYear) {
+            console.log(`School Year Expiration: Student registered in '${this.profile.school_year || 'None'}', expected '${expectedSchoolYear}'. Deactivating section and prompting update.`);
+            
+            // Set the section and school_year to empty in the database to officially deactivate/expire the active section
+            try {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update({ section: '', school_year: '' })
+                    .eq('id', this.user.id);
+                    
+                if (error) {
+                    console.error('Failed to deactivate old section in database:', error.message);
+                } else {
+                    this.profile.section = '';
+                    this.profile.school_year = '';
+                }
+            } catch (e) {
+                console.warn('Database error during section deactivation:', e);
+            }
+
+            // Show the non-dismissible school year update modal
+            this.showSchoolYearUpdateModal(expectedSchoolYear);
+            return false;
+        }
+        return true;
+    },
+
+    showSchoolYearUpdateModal: function (expectedSchoolYear) {
+        // Remove any existing instance of the modal
+        const existingModal = document.getElementById('schoolYearUpdateModal');
+        if (existingModal) existingModal.remove();
+
+        const modalHTML = `
+            <div class="modal fade" id="schoolYearUpdateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="schoolYearUpdateModalLabel" aria-hidden="true" style="font-family: 'Outfit', sans-serif;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow-lg border-0" style="border-radius: 24px; overflow: hidden; background: #ffffff;">
+                        <div class="modal-header border-0 bg-primary-custom text-white py-4 px-4 position-relative">
+                            <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                                <i class="fa-solid fa-clock" style="font-size: 6rem; transform: translate(30px, -20px); color: #ffffff;"></i>
+                            </div>
+                            <div class="z-index-1">
+                                <h4 class="modal-title fw-bold" id="schoolYearUpdateModalLabel">
+                                    <i class="fa-solid fa-calendar-check text-accent me-2"></i>School Year Update Required
+                                </h4>
+                                <p class="text-white-75 mb-0 small">Enrollment Transition & Account Update</p>
+                            </div>
+                        </div>
+                        <div class="modal-body p-4 text-start">
+                            <div class="alert alert-warning border-0 rounded-4 px-3 py-3 mb-4 d-flex align-items-start gap-2" style="background: rgba(245, 158, 11, 0.1); color: #b45309;">
+                                <i class="fa-solid fa-triangle-exclamation mt-1 fs-5"></i>
+                                <div>
+                                    <strong style="font-size: 13px;">Section Deactivated:</strong>
+                                    <p class="mb-0 small mt-1" style="line-height: 1.4; color: #78350f;">
+                                        Every school year, students are required to update their registered School Year and Section to continue using ConsulTime. Your active section has been expired for the new school year.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <form id="schoolYearUpdateForm">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-dark small" style="letter-spacing: 0.03em;">UPCOMING SCHOOL YEAR</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted border-0 rounded-start-3"><i class="fa-solid fa-calendar-days"></i></span>
+                                        <input type="text" class="form-control bg-light border-0 rounded-end-3 fw-bold text-dark px-3 py-2.5" id="updateSchoolYearInput" value="${expectedSchoolYear}" readonly style="font-size: 14px;">
+                                    </div>
+                                    <div class="form-text text-muted mt-1" style="font-size: 11px;">Automatically calculated upcoming school year.</div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="updateSectionInput" class="form-label fw-bold text-dark small" style="letter-spacing: 0.03em;">NEW CLASS SECTION <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted border-0 rounded-start-3"><i class="fa-solid fa-users"></i></span>
+                                        <input type="text" class="form-control bg-light border-0 rounded-end-3 px-3 py-2.5" id="updateSectionInput" required placeholder="e.g. Grade 11 - STEM A" style="font-size: 14px;">
+                                    </div>
+                                    <div class="form-text text-muted mt-1" style="font-size: 11px;">Enter your new grade level and section.</div>
+                                </div>
+                                
+                                <div id="updateModalAlert" class="alert alert-danger d-none rounded-3 py-2 px-3 small mb-3"></div>
+
+                                <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" id="submitSchoolYearUpdate" style="font-size: 14px; transition: all 0.2s ease;">
+                                    <i class="fa-solid fa-user-check"></i> Register for School Year
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const modalEl = document.getElementById('schoolYearUpdateModal');
+        const bsModal = new bootstrap.Modal(modalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        bsModal.show();
+
+        const form = document.getElementById('schoolYearUpdateForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitSchoolYearUpdate');
+            const alertEl = document.getElementById('updateModalAlert');
+            const sectionVal = document.getElementById('updateSectionInput').value.trim();
+            
+            if (!sectionVal) {
+                alertEl.textContent = "Please enter your class section.";
+                alertEl.classList.remove('d-none');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving details...`;
+            alertEl.classList.add('d-none');
+
+            try {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update({
+                        school_year: expectedSchoolYear,
+                        section: sectionVal
+                    })
+                    .eq('id', this.user.id);
+
+                if (error) throw error;
+
+                // Update local profile state
+                this.profile.school_year = expectedSchoolYear;
+                this.profile.section = sectionVal;
+
+                // Sync sidebar profile and profile views
+                if (typeof this.populateProfileView === 'function') {
+                    this.populateProfileView();
+                }
+                const profileSchoolYear = document.getElementById('profileSchoolYear');
+                const profileSection = document.getElementById('profileSection');
+                if (profileSchoolYear) profileSchoolYear.value = expectedSchoolYear;
+                if (profileSection) profileSection.value = sectionVal;
+
+                bsModal.hide();
+                modalEl.remove();
+
+                // Show dynamic success toast/notification
+                const notifyEl = document.createElement("div");
+                notifyEl.style.position = "fixed";
+                notifyEl.style.bottom = "24px";
+                notifyEl.style.right = "24px";
+                notifyEl.style.background = "#22c55e";
+                notifyEl.style.color = "#ffffff";
+                notifyEl.style.padding = "16px 24px";
+                notifyEl.style.borderRadius = "12px";
+                notifyEl.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+                notifyEl.style.zIndex = "999999";
+                notifyEl.innerHTML = `<i class="fa-solid fa-circle-check me-2"></i>Account successfully updated to School Year ${expectedSchoolYear}!`;
+                document.body.appendChild(notifyEl);
+                
+                setTimeout(() => {
+                    notifyEl.remove();
+                    window.location.reload();
+                }, 2000);
+
+            } catch (error) {
+                console.error("Error updating school year:", error);
+                alertEl.textContent = "Failed to update profile: " + (error.message || error);
+                alertEl.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-user-check"></i> Register for School Year`;
+            }
+        });
+    },
+
     // --- STUDENT DASHBOARD LOGIC ---
     loadStudentDashboard: async function () {
+        const hasValidSchoolYear = await this.checkSchoolYearExpiration();
+        if (!hasValidSchoolYear) return;
+
         await this.autoExpireAppointments();
         this.fetchFacultyList();
         this.fetchStudentAppointments();
