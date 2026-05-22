@@ -2782,9 +2782,15 @@ const App = {
             dateInput._flatpickr.destroy();
         }
 
-        // Initialize Flatpickr to enable days matching day of week OR specific dates
+        // Compute maxDate: 7 calendar days from today (Manila time)
+        const manilaToday = this.getManilaTime();
+        const maxDateObj = new Date();
+        maxDateObj.setDate(maxDateObj.getDate() + 7);
+
+        // Initialize Flatpickr to enable days matching day of week OR specific dates, max 7 days ahead
         flatpickr(dateInput, {
             minDate: "today",
+            maxDate: maxDateObj,
             enable: [
                 function(date) {
                     // Check if day of week matches
@@ -2861,10 +2867,15 @@ const App = {
                 start.setMinutes(start.getMinutes() + 30);
                 let slotEnd = start.toTimeString().substring(0, 5);
 
-                // Filter out past slots when booking for today
+                // Filter out past time slots when booking for today.
+                // A slot is hidden if its END time is already in the past
+                // (i.e. slotH:slotM30 <= currentH:currentM in 24h format).
                 if (isToday) {
                     const [slotH, slotM] = slotStart.split(':').map(Number);
-                    if (slotH < currentH || (slotH === currentH && slotM <= currentM)) {
+                    const slotEndH = Math.floor((slotH * 60 + slotM + 30) / 60);
+                    const slotEndM = (slotH * 60 + slotM + 30) % 60;
+                    // Hide slot if its end time is at or before current time
+                    if (slotEndH < currentH || (slotEndH === currentH && slotEndM <= currentM)) {
                         continue;
                     }
                 }
