@@ -1,4 +1,4 @@
 {
-  "version": "1.0.6",
-  "message": "Important bug fixes for faculty approvals and login loader screen."
+  "version": "1.0.7",
+  "message": "Update schema fields storage and apply address fix."
 }

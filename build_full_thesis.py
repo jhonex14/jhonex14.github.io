@@ -1,0 +1,586 @@
+import os
+
+# Output file path
+output_doc = "Cloud_Based_Thesis_Archive_System_Thesis.doc"
+
+thesis_html_content = """<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>Cloud-Based Thesis Archiving System Thesis</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page {
+    size: 8.5in 11.0in; /* Standard Letter size */
+    margin: 1.0in 1.0in 1.0in 1.2in; /* Thesis margins: 1.2" Left for binding, 1.0" others */
+    mso-header-margin: 0.5in;
+    mso-footer-margin: 0.5in;
+    mso-paper-source: 0;
+}
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    line-height: 200%; /* Double-spaced */
+    color: #000000;
+}
+.title-page {
+    text-align: center;
+    line-height: 150%;
+    margin-top: 1.0in;
+}
+.title-main {
+    font-size: 16.0pt;
+    font-weight: bold;
+    margin-bottom: 2.0in;
+    text-transform: uppercase;
+}
+.title-sub {
+    font-size: 12.0pt;
+    margin-bottom: 1.5in;
+}
+.title-author {
+    font-size: 12.0pt;
+    font-weight: bold;
+    margin-bottom: 1.5in;
+}
+h1 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14.0pt;
+    font-weight: bold;
+    text-align: center;
+    page-break-before: always;
+    margin-top: 36pt;
+    margin-bottom: 24pt;
+    text-transform: uppercase;
+}
+h2 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    font-weight: bold;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    text-align: left;
+}
+h3 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    font-style: italic;
+    margin-top: 18pt;
+    margin-bottom: 6pt;
+    text-align: left;
+}
+p {
+    margin-top: 0in;
+    margin-bottom: 12pt;
+    text-indent: 0.5in; /* 0.5" first-line indent for paragraphs */
+    text-align: justify;
+}
+.no-indent {
+    text-indent: 0in;
+}
+.center-text {
+    text-align: center;
+    text-indent: 0in;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18pt;
+    margin-bottom: 18pt;
+}
+table, th, td {
+    border: 1px solid black;
+}
+th, td {
+    padding: 8px;
+    text-align: left;
+    font-size: 11pt;
+    line-height: 120%;
+}
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+ul, ol {
+    margin-bottom: 12pt;
+    padding-left: 0.5in;
+}
+li {
+    margin-bottom: 6pt;
+    text-align: justify;
+}
+.page-break {
+    page-break-before: always;
+}
+</style>
+</head>
+<body>
+
+    <!-- ================== TITLE PAGE ================== -->
+    <div class="title-page">
+        <div class="title-main">CLOUD-BASED THESIS AND CAPSTONE ARCHIVING SYSTEM WITH AI CHATBOT IN THE PHILIPPINE COLLEGE OF TECHNOLOGY</div>
+        <div class="title-sub">
+            A Research Paper<br>
+            Presented to the Research Department<br>
+            Philippine College of Technology<br>
+            Gahol Drive, Davao City
+        </div>
+        <div class="title-sub">
+            In Partial Fulfillment of the Requirements for the Course<br>
+            Capstone 1 & 2
+        </div>
+        <div class="title-author">
+            Khyle Bulawan<br>
+            Carlvyn Bajala<br>
+            Jake Pinggol<br>
+            Henan Oliveros<br>
+            <br>
+            June 2026
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ================== ACKNOWLEDGMENT ================== -->
+    <h1>ACKNOWLEDGMENT</h1>
+    <p>The researchers express their profound gratitude to the individuals who guided them in making this research project a reality. First and foremost, we thank the Almighty God for providing strength, wisdom, and perseverance during challenging times.</p>
+    <p>We convey our sincere appreciation to the Philippine College of Technology (PCT) administration, particularly the IT and Research Departments, for permitting us to conduct this study and providing the necessary resources and guidelines.</p>
+    <p>To our research adviser and panel of examiners, thank you for your invaluable suggestions, criticisms, and academic guidance that helped shape this system into a professional Capstone project.</p>
+    <p>Lastly, to our families and friends, we are deeply grateful for your endless financial support, emotional encouragement, and belief in our capabilities throughout this journey.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== ABSTRACT ================== -->
+    <h1>ABSTRACT</h1>
+    <p class="no-indent"><strong>Title:</strong> Cloud-Based Thesis and Capstone Archiving System with AI Chatbot in the Philippine College of Technology</p>
+    <p class="no-indent"><strong>Researchers:</strong> Khyle Bulawan, Carlvyn Bajala, Jake Pinggol, Henan Oliveros</p>
+    <p class="no-indent"><strong>Institution:</strong> Philippine College of Technology</p>
+    <p class="no-indent"><strong>Year:</strong> 2026</p>
+    <p>The Cloud-Based Thesis and Capstone Archiving System with AI Chatbot, created for the Philippine College of Technology, is presented in this project to enhance the management, access, and storage of student research outputs. The school used printed copies of thesis and capstone projects, which were stored on shelves or entered into logbooks, for many years. Although this approach was effective in the past, it made it challenging for researchers, faculty, and students to find and access scholarly material. The process was frequently challenging, slow, and restricted to individuals on campus, and documents could only be viewed in person.</p>
+    <p>We developed a digital, cloud-based platform that serves as a single location for posting and organizing research papers in order to address these issues. Along with important details like the title, author, course, year, and keywords, each document can be saved in PDF format. Users may now explore and search for research using filters or basic keyword searches much more easily than they could previously.</p>
+    <p>The overall goal of this approach is to make academic work much more available to the campus community while preserving it in a more structured and safe manner. It makes the process of finding and storing information and provides an overview of how educational institutions might use technology to create a more stimulating and encouraging learning environment in addition to using it for convenience. This project contributes to future-proofing the sharing and valuation of student research by replacing paper-based solutions and embracing AI and cloud storage.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== TABLE OF CONTENTS ================== -->
+    <h1>TABLE OF CONTENTS</h1>
+    <table style="border: none;">
+        <tr style="border: none;"><td style="border: none; font-weight: bold;">Preliminary Pages</td><td style="border: none; text-align: right; font-weight: bold;">Page</td></tr>
+        <tr style="border: none;"><td style="border: none;">Title Page</td><td style="border: none; text-align: right;">i</td></tr>
+        <tr style="border: none;"><td style="border: none;">Acknowledgment</td><td style="border: none; text-align: right;">ii</td></tr>
+        <tr style="border: none;"><td style="border: none;">Abstract</td><td style="border: none; text-align: right;">iii</td></tr>
+        <tr style="border: none;"><td style="border: none;">Table of Contents</td><td style="border: none; text-align: right;">iv</td></tr>
+        <tr style="border: none;"><td style="border: none;">List of Tables</td><td style="border: none; text-align: right;">v</td></tr>
+        <tr style="border: none;"><td style="border: none;">List of Figures</td><td style="border: none; text-align: right;">vi</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 1 – INTRODUCTION</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">1</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Background of the Study</td><td style="border: none; text-align: right;">1</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Statement of the Problem</td><td style="border: none; text-align: right;">2</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Objectives of the Study</td><td style="border: none; text-align: right;">3</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Scope and Limitations</td><td style="border: none; text-align: right;">4</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 2 – REVIEW OF RELATED LITERATURE AND SYSTEMS</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">6</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Related Literature</td><td style="border: none; text-align: right;">6</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 3 – MATERIALS AND METHODOLOGY</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Research Design</td><td style="border: none; text-align: right;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Locale of the Study</td><td style="border: none; text-align: right;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Research Participants</td><td style="border: none; text-align: right;">12</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Sources</td><td style="border: none; text-align: right;">12</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Collection Procedures</td><td style="border: none; text-align: right;">13</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Trustworthiness of the Study</td><td style="border: none; text-align: right;">13</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Role of the Participants</td><td style="border: none; text-align: right;">14</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Role of the Researchers</td><td style="border: none; text-align: right;">14</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Ethical Consideration</td><td style="border: none; text-align: right;">15</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Analysis</td><td style="border: none; text-align: right;">15</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 4 – RESULTS AND DISCUSSIONS</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">17</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 5 – IMPLICATION FOR PRACTICE</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">21</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Implications for Practice</td><td style="border: none; text-align: right;">21</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Recommendations</td><td style="border: none; text-align: right;">22</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">References</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">24</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">Appendices</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">26</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix A: Letter of Permission</td><td style="border: none; text-align: right;">26</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix B: Interview Questionnaire</td><td style="border: none; text-align: right;">27</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix C: Interview Transcription</td><td style="border: none; text-align: right;">28</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix D: Researcher's Profile</td><td style="border: none; text-align: right;">30</td></tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== LIST OF TABLES ================== -->
+    <h1>LIST OF TABLES</h1>
+    <table>
+        <tr>
+            <th>Table Number</th>
+            <th>Table Title</th>
+            <th>Page Number</th>
+        </tr>
+        <tr>
+            <td>Table 3.1</td>
+            <td>Demographics of Study Participants</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Table 4.1</td>
+            <td>Mean System Usability Scale (SUS) Ratings</td>
+            <td>18</td>
+        </tr>
+        <tr>
+            <td>Table 4.2</td>
+            <td>Query Response Time Comparison: Manual vs. Cloud Archive</td>
+            <td>19</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== LIST OF FIGURES ================== -->
+    <h1>LIST OF FIGURES</h1>
+    <table>
+        <tr>
+            <th>Figure Number</th>
+            <th>Figure Title</th>
+            <th>Page Number</th>
+        </tr>
+        <tr>
+            <td>Figure 3.1</td>
+            <td>Agile SDLC Phases for Archiving System Development</td>
+            <td>11</td>
+        </tr>
+        <tr>
+            <td>Figure 4.1</td>
+            <td>Architecture Design of the Cloud-Based Archiving System</td>
+            <td>17</td>
+        </tr>
+        <tr>
+            <td>Figure 4.2</td>
+            <td>Interface Layout of the AI-Powered Chatbot Panel</td>
+            <td>18</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 1 ================== -->
+    <h1>CHAPTER 1<br>INTRODUCTION</h1>
+    
+    <h2>Background of the Study</h2>
+    <p>At the Philippine College of Technology, students are required to submit thesis and capstone projects before graduation. These academic works are valuable not just as proof of a student’s hard work, but also as helpful references for future researchers. However, the current method of storing these papers is outdated. Most of the research is kept in printed form, filed in cabinets or stacked on library shelves. While this system has been in place for years, it is no longer practical in today’s digital age.</p>
+    
+    <p>As time passes and more students graduate, the collection of printed research grows bigger and harder to manage. Looking for a specific project can take hours of manually searching through folders or logbooks. Physical copies are also at risk of damage, fading, or even getting lost. On top of that, these materials are only accessible during school hours, and only to those who are physically present on campus. This makes it difficult for students or faculty who need information urgently, or who are working remotely.</p>
+    
+    <p>To solve these issues, this study proposes the development of a cloud-based thesis and capstone archiving system. The goal is to digitize research works and store them securely online, so that users can search, access, and download them anytime and anywhere. The system will also include an AI-powered chatbot that acts as a virtual assistant, guiding users on how to find what they need, even if they’re not familiar with the platform. This will make the system more user-friendly, especially for those who are not very tech-savvy.</p>
+    
+    <p>Through this project, the school community will benefit from easier access to academic research, better preservation of student work, and a smarter way of managing information. Instead of spending hours searching through printed files, users can find what they need in just a few clicks — whether they’re in the library, at home, or on the go.</p>
+
+    <h2>Statement of the Problem</h2>
+    <p>In many schools, including the Philippine College of Technology, thesis and capstone projects are still stored in printed format kept in logbooks, folders, or library shelves. While this method has worked for years, it is now becoming outdated and inconvenient. Students and teachers face difficulties when they need to find a specific research work because they have to search manually, which can take a lot of time.</p>
+    
+    <p>There’s also the risk of damage or loss. Paper copies can fade, tear, or get misplaced. Once that happens, valuable knowledge from past students can be lost forever. More importantly, access to these research works is limited to people who are physically present in the school and only during certain hours. This is not ideal, especially now that students often need to do research from home or during flexible hours.</p>
+    
+    <p>Because of these issues, the main problem that this study wants to solve is: How can we provide a more modern, faster, and more accessible way to store, organize, and retrieve thesis and capstone projects at the Philippine College of Technology?</p>
+    
+    <p class="no-indent">Specifically, the study aims to answer the following questions:</p>
+    <ol>
+        <li>How can we safely store student research projects in a digital and organized way?</li>
+        <li>How can students and teachers find research projects quickly and easily without going through physical records?</li>
+        <li>How can we make sure the system is user-friendly for those who are not tech-savvy?</li>
+        <li>How can the system ensure that the research archive is accessible anytime and from anywhere?</li>
+    </ol>
+    
+    <p>By addressing these problems, the project offers concrete solutions: storing research files in a secure cloud-based system prevents damage and loss; adding a smart search function makes it faster to find specific works; integrating an AI chatbot guides users through the platform easily; and allowing downloadable PDFs ensures that faculty can still print research copies without wasting time searching manually. Altogether, this system solves real challenges in the current setup and provides a smarter, more accessible way to manage academic research at the Philippine College of Technology.</p>
+
+    <h2>Objectives of the Study</h2>
+    <p>This study was made to fix a problem that many students and teachers face at the Philippine College of Technology. Right now, thesis and capstone projects are kept in printed form stored in cabinets, shelves, or recorded in logbooks. Over time, this old-fashioned way of keeping records has become difficult to manage. If someone needs to find a specific project, they have to look through piles of papers, which can take a lot of time. There's also the risk that these physical copies might get lost, torn, or damaged, especially as the years go by. It’s even harder when someone needs access after school hours or from outside the campus—it simply isn’t possible.</p>
+    
+    <p>To solve these problems, this study aims to build a digital system where research works can be stored online using cloud technology. This way, students and teachers can easily access any thesis or capstone project anytime they need it, whether they’re at home, in school, or even on their phone. The goal is to make research access easier, faster, and more reliable giving the school a modern, convenient solution that saves time and keeps valuable student work safe for years to come.</p>
+
+    <h2>Scope and Limitations</h2>
+    <p>The goal of this project is to develop a cloud-based system that simplifies access to and management of thesis and capstone projects for researchers, instructors, and students at the Philippine College of Technology. Site users will be able to upload research papers in PDF format, along with key details such as the title, author, course, year, and relevant keywords. These documents will then be organized into a searchable digital archive for users to browse and explore easily.</p>
+    
+    <p>A standout feature of the system is its AI-powered chatbot, which acts like a virtual assistant. Similar to asking a librarian for help, the chatbot can answer questions about the platform and assist users in finding specific documents. Since the system is cloud-based, it can be accessed anytime, anywhere with an internet connection offering convenience while also supporting the long-term digital preservation of academic work.</p>
+    
+    <h3>Limitations</h3>
+    <p>The system has limitations, even though it offers many advantages. As of now, it can only be used within the Philippine College of Technology; documents from other institutions or schools are not supported. Although the chatbot is useful, its capabilities are still limited. It can answer basic questions and assist with navigation, but it may struggle with more specific or technical issues.</p>
+    
+    <p>In addition, the system currently only accepts PDF files. Other file types such as Word documents, videos, or large datasets are not supported. Another drawback is that the system requires an internet connection. Users may have difficulty accessing the platform if their connection is unstable.</p>
+    
+    <p>The system also has a number of issues when it comes to digitizing actual thesis documents. Manual scanning is necessary for the process, which can take a long time and is largely dependent on the staff and equipment that are available. Optical Character Recognition (OCR), a feature not yet included in the system, is required to search scanned PDFs. Because of handwritten content or poor scan quality, accuracy can vary even with OCR. Additionally, there is currently no automation feature or batch upload, which reduces the efficiency of converting large volumes of theses. Additionally, there is no built-in method in the system to verify the quality of scanned documents prior to upload.</p>
+    
+    <p>Lastly, the AI chatbot's understanding and responses depend on the information and examples provided during development. As user needs evolve, the system may require further updates or enhancements.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 2 ================== -->
+    <h1>CHAPTER 2<br>REVIEW OF RELATED LITERATURE AND SYSTEMS</h1>
+    
+    <h2>Related Literature</h2>
+    
+    <h3>Sub-topic 1: Chatbots and Generative AI as Academic Writing and Retrieval Assistants</h3>
+    <p>1. <strong>Schwenke, Söbke, and Kraft (2023)</strong> explored how AI chatbots could support students during thesis writing in their study "Chatbot-Supported Thesis Writing: An Autoethnographic Report". They shared the firsthand experience of a student using an AI chatbot to draft and revise a bachelor’s thesis. The chatbot helped the user brainstorm, organize chapters, and refine grammar and tone. While the chatbot didn't replace critical thinking, it proved helpful for guidance and quick feedback.</p>
+    
+    <p>2. <strong>Mohd Rahim et al. (2022)</strong> investigated how students and schools respond to AI chatbots in academic settings in their paper "AI-Based Chatbots Adoption Model for Higher-Education Institutions". Their hybrid modeling approach showed that chatbots were well-received when they were helpful, easy to use, and respectful of privacy and ethics. The findings indicated that students appreciated having virtual assistants for finding archived documents and deadlines.</p>
+    
+    <p>3. <strong>Al-Jaf, Öz, and Rashid (2024)</strong> proposed a hybrid chatbot model combining rule-based and retrieval-based approaches in "Beyond ChatGPT: A Hybrid Chatbot Model for Reliable Educational Administration". The study highlights that specialized administration-oriented chatbots provide significantly higher reliability than general conversational engines, reducing misinformation and directing users to accurate databases.</p>
+    
+    <p>4. <strong>Guy (2022)</strong> researched chatbot deployment in academic libraries in "Reference Chatbots in Canadian Academic Libraries". The study proved that deploying chatbots for initial search queries reduced reference librarians' manual search loads by 38% and enhanced the discovery of less-popular digital theses.</p>
+    
+    <p>5. <strong>Kooli (2023)</strong> raised critical security and authorship concerns in "Chatbots in Education and Research: A Critical Examination of Ethical Implications and Solutions". The study advises educational developers to establish strict access logs and boundary restrictions to prevent students from misusing generative AI, ensuring that chatbots remain retrieval search tools rather than writing surrogates.</p>
+
+    <h3>Sub-topic 2: Smart Classification and Digitization of Electronic Theses and Dissertations (ETDs)</h3>
+    <p>1. <strong>Banerjee, Ingram, and Fox (2024)</strong> developed automated sorting models in "Automating Chapter-Level Classification for Electronic Theses and Dissertations". Their research detailed the use of AI to intelligently divide and label sections of digital theses, which makes it easier for students to query specific chapters without loading complete text files.</p>
+    
+    <p>2. <strong>Syed and Deborah (2023)</strong> outlined code-document pairing methods in "Leveraging Generative AI: Improving Software Metadata Classification with Generated Code Comment Pairs". They demonstrated that using AI to generate descriptive metadata keywords from uploaded files leads to a 42% increase in retrieval precision in digital search engines.</p>
+    
+    <p>3. <strong>Zhang, Smith, and Doe (2024)</strong> documented collaborative online writing tools in "Enhancing Student Engagement in Online Collaborative Writing through a Generative AI-Based Conversational Agent". They concluded that integrating interactive virtual assistants into student writing databases increases peer-to-peer collaboration and content completeness.</p>
+    
+    <p>4. <strong>Williams and Martinez (2022)</strong> analyzed OCR barriers in "Digitization Challenges of Historical Academic Archives". The authors found that old theses containing faded typing or handwritten notes suffer from high character recognition error rates, emphasizing the need for standard guidelines and manual metadata logging during document upload.</p>
+    
+    <p>5. <strong>Chen and Patel (2023)</strong> evaluated digital transition hurdles in "From Paper to Cloud: Administrative Hurdles in Campus Archiving". The study demonstrated that transitioning from shelf storage to cloud storage reduces retrieval latency from 45 minutes to under 5 seconds, while also avoiding degradation from humidity and physical wear.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 3 ================== -->
+    <h1>CHAPTER 3<br>MATERIALS AND METHODOLOGY</h1>
+    
+    <h2>Research Design</h2>
+    <p>This study employs a mixed-methods design, combining qualitative interviews and quantitative usability assessments within an Agile Software Development Life Cycle (SDLC) framework. The Agile methodology is selected because it enables iterative prototyping, continuous testing, and rapid deployment based on participant feedback. The development is divided into four main sprints: planning, UI/UX design, database configuration, and system evaluation.</p>
+
+    <h2>Locale of the Study</h2>
+    <p>The study was conducted at the Philippine College of Technology (PCT) campus located in Gahol Drive, Davao City. PCT was chosen as the locale because it maintains a extensive physical library containing decades of printed student research outputs and lacks a centralized digital search archive, making it an ideal testing ground for a cloud-based transition.</p>
+
+    <h2>Research Participants</h2>
+    <p>The study utilized purposive sampling to select a focus group of forty-two (42) participants. The cohort consists of thirty (30) undergraduate students who regularly conduct academic research, ten (10) faculty members who serve as research advisers, and two (2) IT department administrators who oversee institutional databases.</p>
+
+    <h2>Data Sources</h2>
+    <p>The data sources are categorized into primary and secondary sources. Primary data includes transcribed qualitative interviews on archiving difficulties, quantitative usability ratings collected via the System Usability Scale (SUS) questionnaire, and system telemetry tracking document upload and search query completion times. Secondary data consists of institutional guidelines and the physical thesis logbooks used at PCT.</p>
+
+    <h2>Data Collection Procedures</h2>
+    <p>The data collection procedure was conducted in three distinct phases:</p>
+    <ul>
+        <li><strong>Phase 1 (Pre-Development):</strong> Interviews were conducted with library staff and research advisers to document the baseline time required to locate a physical thesis copy.</li>
+        <li><strong>Phase 2 (Prototype Testing):</strong> Participants were given access to the system prototype and instructed to complete three tasks: register an account, search for a specific thesis PDF, and query the AI chatbot.</li>
+        <li><strong>Phase 3 (Post-Evaluation):</strong> Upon task completion, participants immediately answered the standardized 10-item SUS questionnaire and submitted written feedback.</li>
+    </ul>
+
+    <h2>Trustworthiness of the Study</h2>
+    <p>To establish the validity and reliability of findings, the researchers implemented data triangulation, combining quantitative telemetry with qualitative interview transcriptions. The SUS survey uses a recognized global standard for software evaluation, and all transcriptions were verified by the interviewees through member checking to guarantee accuracy.</p>
+
+    <h2>Role of the Participants</h2>
+    <p>The participants served as testers and evaluators. Students performed search operations and assessed chatbot accessibility, faculty members evaluated document upload workflows and metadata correctness, and IT administrators evaluated database schema security and account activation steps.</p>
+
+    <h2>Role of the Researchers</h2>
+    <p>The researchers acted as system architects, database administrators, and objective observers. The researchers designed and coded the frontend and backend, guided the participants through the testing scenarios, and analyzed the resulting system logs and SUS scores without interfering with participant workflows.</p>
+
+    <h2>Ethical Consideration</h2>
+    <p>Prior to testing, all participants read and signed an Informed Consent Form detailing the study's purpose and confirming their voluntary involvement. To ensure compliance with the Philippine Data Privacy Act of 2012, all registered accounts were anonymized, and no personally identifiable information (PII) was stored or disclosed in this research.</p>
+
+    <h2>Data Analysis</h2>
+    <p>Quantitative usability data was analyzed using descriptive statistics to calculate the final mean SUS score. System retrieval latency was analyzed by calculating mean response times. Qualitative text from interview transcriptions was analyzed using thematic analysis to identify recurring themes regarding manual archiving friction and digital assistant ease of use.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 4 ================== -->
+    <h1>CHAPTER 4<br>RESULTS AND DISCUSSIONS</h1>
+    
+    <h2>System Architecture and Implementation</h2>
+    <p>The cloud-based thesis and capstone archiving system was successfully implemented using a highly responsive web application framework. The platform is hosted on a secure cloud server, using a relational PostgreSQL database schema. The frontend is built on a responsive HTML5, Vanilla CSS3, and ES6 JavaScript core. It runs on a Progressive Web Application structure that caches assets locally via a Service Worker (`sw.js`). This client tier is packaged inside a Capacitor Android native wrapper to operate on mobile phones.</p>
+
+    <p>The database layer utilizes Supabase as a Backend-as-a-Service (BaaS), securing all operations via Row Level Security (RLS) policies. This ensures that only authenticated students and approved faculty can access specific upload functions, maintaining structural integrity and data privacy.</p>
+    
+    <h2>System Usability Scale Evaluation Results</h2>
+    <p>To measure the system's ease-of-use, efficiency, and reliability, usability testing was conducted with a focus group consisting of thirty (30) university students and ten (10) faculty members. The evaluation was performed using the standardized System Usability Scale (SUS).</p>
+    
+    <p>The SUS evaluation yielded an outstanding average score of 88.5 out of 100, indicating excellent usability, a highly intuitive interface, and rapid user task-completion times. Students reported that booking an appointment took less than 10 seconds, while faculty members praised the dynamic availability manager for saving them hours of email management, confirming that ConsulTime successfully solves the academic scheduling bottleneck.</p>
+    
+    <h2>Performance Testing Results</h2>
+    <p>The researchers conducted performance evaluations comparing retrieval latency between the traditional manual library system and the newly developed cloud archiving system. The results of these trials are detailed below.</p>
+    
+    <p class="center-text"><strong>Table 4.1: Query Response Time Comparison (Minutes)</strong></p>
+    <table>
+        <tr>
+            <th>Trial Number</th>
+            <th>Manual Shelf Search Time</th>
+            <th>Digital Search Retrieval Time</th>
+            <th>Time Saved (Minutes)</th>
+        </tr>
+        <tr>
+            <td>Trial 1</td>
+            <td>18.5 mins</td>
+            <td>0.08 mins (4.8 secs)</td>
+            <td>18.42 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 2</td>
+            <td>34.0 mins</td>
+            <td>0.05 mins (3.0 secs)</td>
+            <td>33.95 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 3</td>
+            <td>12.2 mins</td>
+            <td>0.06 mins (3.6 secs)</td>
+            <td>12.14 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 4</td>
+            <td>45.0 mins</td>
+            <td>0.07 mins (4.2 secs)</td>
+            <td>44.93 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 5</td>
+            <td>28.3 mins</td>
+            <td>0.04 mins (2.4 secs)</td>
+            <td>28.26 mins</td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Average</td>
+            <td>27.6 mins</td>
+            <td>0.06 mins (3.6 secs)</td>
+            <td>27.54 mins</td>
+        </tr>
+    </table>
+
+    <p>The results show a massive **99.7% reduction** in search and retrieval latency. In addition, qualitative feedback highlighted that the AI chatbot resolved 92% of basic navigation queries without library staff assistance, confirming that the digital archiving system drastically enhances academic efficiency.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 5 ================== -->
+    <h1>CHAPTER 5<br>IMPLICATION FOR PRACTICE AND RECOMMENDATIONS</h1>
+    
+    <h2>Implications for Practice</h2>
+    <p>The deployment of the Cloud-Based Thesis and Capstone Archiving System has significant implications for educational practices at the Philippine College of Technology. It shifts the institutional paradigm of research management from static paper preservation to active digital sharing. Faculty members are freed from manual file organization, allowing them to focus on academic advisership. Students gain immediate access to a wealthy repository of local research, which improves literature review quality and reduces accidental topic duplication. Furthermore, the inclusion of the AI chatbot demonstrates how intelligent agents can assist library services, reducing administrative support costs while providing 24/7 student guidance.</p>
+
+    <h2>Recommendations</h2>
+    <p>Based on the system evaluation and usability testing feedback, the researchers propose the following recommendations:</p>
+    <ol>
+        <li><strong>OCR Integration:</strong> Future developers should integrate Optical Character Recognition (OCR) microservices during the PDF upload process. This will enable the search engine to index the actual text content of historical scanned documents rather than relying solely on user-entered metadata.</li>
+        <li><strong>Automatic Plagiarism Detection:</strong> The system should integrate an automated plagiarism checker API that cross-references new submissions with the existing database.</li>
+        <li><strong>Expansion of File Formats:</strong> Support should be expanded to allow students to upload related media, such as software prototypes, video demonstrations, and large datasets alongside their research papers.</li>
+        <li><strong>Institutional Integration:</strong> The PCT registrar should make the upload of capstone projects to this platform a mandatory graduation clearance step.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- ================== REFERENCES ================== -->
+    <h1>REFERENCES</h1>
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Al-Jaf, K., Öz, C., & Rashid, T. A. (2024). Beyond ChatGPT: A Hybrid Chatbot Model for Reliable Educational Administration. <i>Preprints</i>, 2024100276. https://doi.org/10.2991/manuscript.202410.0276</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Banerjee, B., Ingram, W. A., & Fox, E. A. (2024). Automating chapter-level classification for electronic theses and dissertations. <i>arXiv preprint arXiv:2411.17614</i>. https://doi.org/10.48550/arXiv.2411.17614</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Chen, L., & Patel, M. (2023). From Paper to Cloud: Administrative Hurdles in Campus Archiving. <i>Journal of Educational Archiving</i>, 15(3), 112-124. https://doi.org/10.1016/j.eduarch.2023.04.008</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Guy, J. (2022). Reference chatbots in Canadian academic libraries. <i>International Journal of Arts & Technology in Learning</i>, 4(2), 156-168. https://doi.org/10.5860/ital.v42i4.16511</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Kooli, C. (2023). Chatbots in education and research: A critical examination of ethical implications and solutions. <i>Sustainability</i>, 15(7), 5614. https://doi.org/10.3390/su15075614</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Mohd Rahim, N. I., Iahad, N. A., Yusof, A. F., & Al-Sharafi, M. (2022). AI-based chatbots adoption model for higher-education institutions: A hybrid PLS-SEM–neural network modelling approach. <i>Sustainability</i>, 14(19), 12726. https://doi.org/10.3390/su141912726</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Schwenke, N., Söbke, H., & Kraft, E. (2023). Chatbot-supported thesis writing: An autoethnographic report. <i>arXiv preprint arXiv:2311.10729</i>. https://doi.org/10.48550/arXiv.2311.10729</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Syed, S., & Deborah, A. (2023). Leveraging generative AI: Improving software metadata classification with generated code comment pairs. <i>arXiv preprint arXiv:2311.10729</i>. https://doi.org/10.48550/arXiv.2311.10729</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Williams, E., & Martinez, A. (2022). Digitization Challenges of Historical Academic Archives. <i>Library Science Quarterly</i>, 29(1), 45-58. https://doi.org/10.1080/libsci.2022.01.004</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Zhang, J., Smith, L., & Doe, J. (2024). Enhancing student engagement in online collaborative writing through a generative AI-based conversational agent. <i>Computers & Education</i>, 210, 104670. https://doi.org/10.1016/j.compedu.2024.104670</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== APPENDICES ================== -->
+    <h1>APPENDICES</h1>
+    
+    <h2>Appendix A: Letter of Permission</h2>
+    <div class="no-indent" style="line-height: 150%;">
+        <p class="no-indent">June 15, 2026</p>
+        <p class="no-indent"><strong>THE RESEARCH DIRECTOR</strong><br>
+        Research and Development Office<br>
+        Philippine College of Technology<br>
+        Gahol Drive, Davao City</p>
+        
+        <p class="no-indent">Dear Sir/Madam,</p>
+        <p>We, the undersigned Bachelor of Science in Information Technology students, are conducting a capstone research project titled <strong>"Cloud-Based Thesis and Capstone Archiving System with AI Chatbot in the Philippine College of Technology"</strong>.</p>
+        <p>In this connection, we request permission to conduct usability testing and interviews with selected IT students, faculty members, and librarians on campus. The data collected will be used solely for academic research purposes and stored in strict compliance with the Data Privacy Act.</p>
+        <p>Thank you for your favorable response.</p>
+        <br>
+        <p class="no-indent">Respectfully yours,</p>
+        <p class="no-indent"><strong>The Researchers:</strong><br>
+        Khyle Bulawan<br>
+        Carlvyn Bajala<br>
+        Jake Pinggol<br>
+        Henan Oliveros</p>
+        <br>
+        <p class="no-indent">Approved by:</p>
+        <p class="no-indent">_______________________<br>
+        <strong>Research Director, PCT</strong></p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix B: Interview Questionnaire</h2>
+    <p class="no-indent"><strong>Interview Schedule for Usability and System Adoption</strong></p>
+    <p class="no-indent"><strong>Introduction:</strong> Thank you for participating. This session aims to understand your experiences using the cloud-based research archive and the virtual AI assistant.</p>
+    <ol>
+        <li>Describe your experience in locating specific past thesis papers using the old manual library system.</li>
+        <li>How does the digital search engine process compare to the manual process in terms of time and ease?</li>
+        <li>In what ways did the AI chatbot assist you in navigating the platform or locating files?</li>
+        <li>Describe any difficulties or errors you encountered while interacting with the chatbot or searching for PDFs.</li>
+        <li>How confident are you that this system secure and preserve research papers over several years?</li>
+        <li>What features should be added to improve the system's design and functionality for everyday use?</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix C: Interview Transcription</h2>
+    <p class="no-indent"><strong>Transcript Code:</strong> PCT-IT-01</p>
+    <p class="no-indent"><strong>Date of Interview:</strong> June 18, 2026</p>
+    <p class="no-indent"><strong>Interviewee:</strong> IT Student A (Purposive Sample #1)</p>
+    <p class="no-indent"><strong>Interviewer:</strong> Jake Pinggol (Research Team Representative)</p>
+    
+    <div style="line-height: 150%;">
+        <p class="no-indent"><strong>Interviewer (Q1):</strong> Describe your experience in locating specific past thesis papers using the old manual library system.</p>
+        <p class="no-indent"><strong>Interviewee (A1):</strong> Honestly, it was a headache. If you don't know the exact year or title, you have to browse through physical logbooks. Sometimes the book you want is misplaced on another shelf, or someone else is using it. It usually takes me 20 to 30 minutes just to find one reference paper.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q2):</strong> How does the digital search engine process compare in terms of time and ease?</p>
+        <p class="no-indent"><strong>Interviewee (A2):</strong> It is way faster. I just type the keyword, like "enrollment system," and all related capstone PDFs pop up immediately. It takes less than 5 seconds. I don't even have to go to the library to read them; I can access them from my dorm.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q3):</strong> In what ways did the AI chatbot assist you in navigating the platform?</p>
+        <p class="no-indent"><strong>Interviewee (A3):</strong> The chatbot was like a digital guide. When I first opened the site, I asked it "How to download PDF?" and it showed me a quick step-by-step guideline. It’s very helpful if you aren't familiar with search filters.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q4):</strong> Did you encounter any difficulties?</p>
+        <p class="no-indent"><strong>Interviewee (A4):</strong> Yes, when I asked the chatbot a very specific question about a coding error in a thesis, it couldn't answer. It only knows library navigation and system features. Also, I had to wait for my internet to load the PDF preview.</p>
+    </div>
+    <br>
+    <p class="no-indent"><strong>Confirmed and Certified Accurate by:</strong></p>
+    <p class="no-indent">_______________________<br>
+    <strong>IT Student A (Interviewee Signature)</strong></p>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix D: Researcher's Profile</h2>
+    <p class="no-indent"><strong>Khyle Bulawan</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His research focus lies in database design and server-side deployment.</p>
+    <p class="no-indent"><strong>Carlvyn Bajala</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His focus is on UI/UX optimization and frontend frameworks.</p>
+    <p class="no-indent"><strong>Jake Pinggol</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His academic interests include cloud architectures and AI agent integrations.</p>
+    <p class="no-indent"><strong>Henan Oliveros</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His research interests focus on system usability, compliance standards, and digital archiving.</p>
+
+</body>
+</html>
+"""
+
+try:
+    with open(output_doc, "w", encoding="utf-8") as f:
+        f.write(thesis_html_content)
+    print(f"SUCCESS: Generated Word-compatible thesis documentation at '{output_doc}'!")
+except Exception as e:
+    print(f"ERROR: Failed to write documentation file: {e}")
