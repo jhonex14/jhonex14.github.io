@@ -870,7 +870,18 @@ const App = {
         const role = document.getElementById('role').value;
         const idNumber = document.getElementById('idNumber').value;
         const department = document.getElementById('department').value;
-        const address = document.getElementById('address') ? document.getElementById('address').value : '';
+        
+        let address = '';
+        const addressBarangayEl = document.getElementById('addressBarangay');
+        const addressStreetEl = document.getElementById('addressStreet');
+        if (addressBarangayEl && addressStreetEl) {
+            const barangayVal = addressBarangayEl.value;
+            const streetVal = addressStreetEl.value.trim();
+            address = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
+        } else {
+            address = document.getElementById('address') ? document.getElementById('address').value : '';
+        }
+        
         const age = document.getElementById('age') ? document.getElementById('age').value : '';
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
@@ -1088,6 +1099,33 @@ const App = {
     },
 
     // --- PROFILE LOGIC ---
+    parseAddress: function (fullAddress) {
+        if (!fullAddress) return { barangay: '', street: '' };
+        
+        const barangays = [
+            "Tibungco, Davao City", "Panacan, Davao City", "Bunawan, Davao City",
+            "Ilang, Davao City", "Lasang, Davao City", "Mudiang, Davao City",
+            "Sasa, Davao City", "Cabantian, Davao City", "Buhangin, Davao City",
+            "Indangan, Davao City", "Licanan, Davao City", "Mahayag, Davao City",
+            "Catitipan, Davao City", "Communal, Davao City", "Pampanga, Davao City",
+            "Lanang, Davao City", "Agdao, Davao City", "Toril, Davao City",
+            "Calinan, Davao City", "Mintal, Davao City", "Matina, Davao City",
+            "Talomo, Davao City", "Bajada, Davao City"
+        ];
+        
+        for (const barangay of barangays) {
+            if (fullAddress.endsWith(barangay)) {
+                let street = fullAddress.substring(0, fullAddress.length - barangay.length).trim();
+                if (street.endsWith(',')) {
+                    street = street.substring(0, street.length - 1).trim();
+                }
+                return { barangay: barangay, street: street };
+            }
+        }
+        
+        return { barangay: 'Others', street: fullAddress };
+    },
+
     populateProfileView: function() {
         if (!document.getElementById('profileName')) return;
         
@@ -1106,7 +1144,13 @@ const App = {
         if (document.getElementById('profileIdNumber')) {
             document.getElementById('profileIdNumber').value = this.profile.id_number || '';
         }
-        if (document.getElementById('profileAddress')) {
+        const profileBarangayEl = document.getElementById('profileBarangay');
+        const profileStreetEl = document.getElementById('profileStreet');
+        if (profileBarangayEl && profileStreetEl) {
+            const parsed = this.parseAddress(this.profile.address || '');
+            profileBarangayEl.value = parsed.barangay || '';
+            profileStreetEl.value = parsed.street || '';
+        } else if (document.getElementById('profileAddress')) {
             document.getElementById('profileAddress').value = this.profile.address || '';
         }
         if (document.getElementById('profileAge')) {
@@ -1212,7 +1256,15 @@ const App = {
                 }
                 profileDeptSelect.value = currentVal;
             }
-            if (document.getElementById('profileAddress')) document.getElementById('profileAddress').value = p.address || '';
+            const profileBarangayEl = document.getElementById('profileBarangay');
+            const profileStreetEl = document.getElementById('profileStreet');
+            if (profileBarangayEl && profileStreetEl) {
+                const parsed = this.parseAddress(p.address || '');
+                profileBarangayEl.value = parsed.barangay || '';
+                profileStreetEl.value = parsed.street || '';
+            } else if (document.getElementById('profileAddress')) {
+                document.getElementById('profileAddress').value = p.address || '';
+            }
             if (document.getElementById('profileAge')) document.getElementById('profileAge').value = p.age || '';
         }
 
@@ -1242,11 +1294,22 @@ const App = {
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i>Saving...';
                 btn.disabled = true;
 
+                let addressVal = '';
+                const profileBarangayEl = document.getElementById('profileBarangay');
+                const profileStreetEl = document.getElementById('profileStreet');
+                if (profileBarangayEl && profileStreetEl) {
+                    const barangayVal = profileBarangayEl.value;
+                    const streetVal = profileStreetEl.value.trim();
+                    addressVal = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
+                } else if (document.getElementById('profileAddress')) {
+                    addressVal = document.getElementById('profileAddress').value;
+                }
+
                 const updates = {
                     full_name: document.getElementById('profileName').value,
                     department: document.getElementById('profileDept').value,
                     id_number: document.getElementById('profileIdNumber').value,
-                    address: document.getElementById('profileAddress').value,
+                    address: addressVal,
                     age: parseInt(document.getElementById('profileAge').value) || null
                 };
                 if (this.tempAvatar) updates.avatar = this.tempAvatar;
@@ -1329,7 +1392,18 @@ const App = {
         const name = document.getElementById('profileName').value;
         const dept = document.getElementById('profileDept').value;
         const idNumber = document.getElementById('profileIdNumber') ? document.getElementById('profileIdNumber').value : '';
-        const address = document.getElementById('profileAddress') ? document.getElementById('profileAddress').value : '';
+        
+        let address = '';
+        const profileBarangayEl = document.getElementById('profileBarangay');
+        const profileStreetEl = document.getElementById('profileStreet');
+        if (profileBarangayEl && profileStreetEl) {
+            const barangayVal = profileBarangayEl.value;
+            const streetVal = profileStreetEl.value.trim();
+            address = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
+        } else {
+            address = document.getElementById('profileAddress') ? document.getElementById('profileAddress').value : '';
+        }
+        
         const age = document.getElementById('profileAge') ? document.getElementById('profileAge').value : '';
         
         const updates = {

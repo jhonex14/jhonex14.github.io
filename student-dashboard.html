@@ -282,36 +282,41 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-9 mb-3">
-                                    <label class="form-label fw-medium">Full Address</label>
-                                    <input type="text" class="form-control bg-light" id="profileAddress" list="davaoBarangays">
-                                    <datalist id="davaoBarangays">
-                                        <option value="Tibungco, Davao City">
-                                        <option value="Panacan, Davao City">
-                                        <option value="Bunawan, Davao City">
-                                        <option value="Ilang, Davao City">
-                                        <option value="Lasang, Davao City">
-                                        <option value="Mudiang, Davao City">
-                                        <option value="Sasa, Davao City">
-                                        <option value="Cabantian, Davao City">
-                                        <option value="Buhangin, Davao City">
-                                        <option value="Indangan, Davao City">
-                                        <option value="Licanan, Davao City">
-                                        <option value="Mahayag, Davao City">
-                                        <option value="Catitipan, Davao City">
-                                        <option value="Communal, Davao City">
-                                        <option value="Pampanga, Davao City">
-                                        <option value="Lanang, Davao City">
-                                        <option value="Agdao, Davao City">
-                                        <option value="Toril, Davao City">
-                                        <option value="Calinan, Davao City">
-                                        <option value="Mintal, Davao City">
-                                        <option value="Matina, Davao City">
-                                        <option value="Talomo, Davao City">
-                                        <option value="Bajada, Davao City">
-                                    </datalist>
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label fw-medium">Barangay / Area</label>
+                                    <select class="form-select bg-light" id="profileBarangay" required>
+                                        <option value="" disabled selected>Select Barangay</option>
+                                        <option value="Tibungco, Davao City">Tibungco, Davao City</option>
+                                        <option value="Panacan, Davao City">Panacan, Davao City</option>
+                                        <option value="Bunawan, Davao City">Bunawan, Davao City</option>
+                                        <option value="Ilang, Davao City">Ilang, Davao City</option>
+                                        <option value="Lasang, Davao City">Lasang, Davao City</option>
+                                        <option value="Mudiang, Davao City">Mudiang, Davao City</option>
+                                        <option value="Sasa, Davao City">Sasa, Davao City</option>
+                                        <option value="Cabantian, Davao City">Cabantian, Davao City</option>
+                                        <option value="Buhangin, Davao City">Buhangin, Davao City</option>
+                                        <option value="Indangan, Davao City">Indangan, Davao City</option>
+                                        <option value="Licanan, Davao City">Licanan, Davao City</option>
+                                        <option value="Mahayag, Davao City">Mahayag, Davao City</option>
+                                        <option value="Catitipan, Davao City">Catitipan, Davao City</option>
+                                        <option value="Communal, Davao City">Communal, Davao City</option>
+                                        <option value="Pampanga, Davao City">Pampanga, Davao City</option>
+                                        <option value="Lanang, Davao City">Lanang, Davao City</option>
+                                        <option value="Agdao, Davao City">Agdao, Davao City</option>
+                                        <option value="Toril, Davao City">Toril, Davao City</option>
+                                        <option value="Calinan, Davao City">Calinan, Davao City</option>
+                                        <option value="Mintal, Davao City">Mintal, Davao City</option>
+                                        <option value="Matina, Davao City">Matina, Davao City</option>
+                                        <option value="Talomo, Davao City">Talomo, Davao City</option>
+                                        <option value="Bajada, Davao City">Bajada, Davao City</option>
+                                        <option value="Others">Others</option>
+                                    </select>
                                 </div>
-                                <div class="col-md-3 mb-3">
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label fw-medium">Street / Purok / Subdivision</label>
+                                    <input type="text" class="form-control bg-light" id="profileStreet" placeholder="e.g. Purok 9, Luardo Compound">
+                                </div>
+                                <div class="col-md-2 mb-3">
                                     <label class="form-label fw-medium">Age</label>
                                     <input type="number" class="form-control bg-light" id="profileAge" min="15">
                                 </div>
