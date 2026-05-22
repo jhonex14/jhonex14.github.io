@@ -1,4 +1,4 @@
 {
-  "version": "1.0.9",
-  "message": "Dynamic navbar session synchronization across multiple tabs."
+  "version": "1.0.10",
+  "message": "Auto-cancel expired appointments and no-show sanction notes for faculty."
 }
