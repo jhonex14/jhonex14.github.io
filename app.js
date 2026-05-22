@@ -1928,7 +1928,17 @@ const App = {
         // Hero section
         document.getElementById('heroName').textContent = p.full_name;
         document.getElementById('heroEmail').textContent = p.email;
-        document.getElementById('heroBadge').textContent = p.role.toUpperCase();
+        const heroBadge = document.getElementById('heroBadge');
+        if (heroBadge) {
+            heroBadge.textContent = p.role.toUpperCase();
+            if (p.role === 'student') {
+                heroBadge.style.backgroundColor = '#3b82f6';
+            } else if (p.role === 'faculty') {
+                heroBadge.style.backgroundColor = '#10b981';
+            } else {
+                heroBadge.style.backgroundColor = '#ef4444';
+            }
+        }
         
         const textSpan = document.getElementById('profileInitialsText');
         if (textSpan) textSpan.textContent = initials;
