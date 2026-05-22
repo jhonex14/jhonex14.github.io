@@ -491,6 +491,19 @@
                             <label class="form-label fw-semibold">Course / Department</label>
                             <select class="form-select bg-light border-0" id="editUserDepartment" required></select>
                         </div>
+                        <!-- Student School Year & Section -->
+                        <div id="editUserStudentFields" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">School Year</label>
+                                    <input type="text" class="form-control bg-light border-0" id="editUserSchoolYear" placeholder="e.g. 2025-2026">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Section</label>
+                                    <input type="text" class="form-control bg-light border-0" id="editUserSection" placeholder="e.g. Grade 11 - STEM A">
+                                </div>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Access Role</label>
                             <select class="form-select bg-light border-0" id="editUserRole" required onchange="App.toggleModalApprovalSwitch()">

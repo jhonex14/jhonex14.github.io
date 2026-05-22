@@ -156,6 +156,19 @@ const App = {
         this.routePage();
         this.startHeaderClock();
         this.checkAppUpdate();
+
+        // Start consultation alarm poller loop
+        this.checkConsultationAlarms();
+        setInterval(() => this.checkConsultationAlarms(), 30000);
+
+        // Resume AudioContext on user interaction to bypass autoplay restrictions
+        const resumeAudio = () => {
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
+        };
+        document.addEventListener('click', resumeAudio, { passive: true });
+        document.addEventListener('touchstart', resumeAudio, { passive: true });
     },
 
     toggleDarkMode: function() {
@@ -949,6 +962,8 @@ const App = {
         const address = this.getAddressFromUI('address');
         
         const age = document.getElementById('age') ? document.getElementById('age').value : '';
+        const schoolYear = document.getElementById('schoolYear') ? document.getElementById('schoolYear').value : '';
+        const section = document.getElementById('section') ? document.getElementById('section').value : '';
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
         const confirm = document.getElementById('confirmPassword').value;
@@ -999,7 +1014,9 @@ const App = {
                         id_number: idNumber,
                         department: department,
                         address: address,
-                        age: age
+                        age: age,
+                        school_year: role === 'student' ? schoolYear : null,
+                        section: role === 'student' ? section : null
                     }
                 }
             });
@@ -1014,7 +1031,26 @@ const App = {
                 window.location.replace('login.html');
             }
         } catch (error) {
-            alertBox.textContent = error.message;
+            let msg = error.message || '';
+            if (msg.includes('rate limit') || msg.includes('Failed to send confirmation email') || msg.includes('magiclink')) {
+                alertBox.innerHTML = `
+                    <div class="text-start p-1">
+                        <h6 class="fw-bold text-danger mb-1">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>Email Verification Rate Limit Exceeded
+                        </h6>
+                        <p class="small mb-2 text-white-50">Supabase restricts free projects to sending only 3 verification emails per hour.</p>
+                        <span class="small fw-bold d-block mb-1 text-white">How to fix this immediately:</span>
+                        <ol class="small ps-3 mb-0 text-white-50">
+                            <li>Open your <strong>Supabase Dashboard</strong>.</li>
+                            <li>Go to <strong>Authentication</strong> &gt; <strong>Providers</strong> &gt; <strong>Email</strong>.</li>
+                            <li>Toggle <strong>"Confirm email"</strong> to <strong>OFF</strong>.</li>
+                            <li>Click <strong>Save</strong> at the bottom.</li>
+                        </ol>
+                    </div>
+                `;
+            } else {
+                alertBox.textContent = msg;
+            }
             alertBox.classList.remove('d-none');
             btn.innerHTML = 'Register Account <i class="fa-solid fa-user-plus"></i>';
             btn.disabled = false;
@@ -1773,6 +1809,14 @@ const App = {
         if (document.getElementById('profileAge')) {
             document.getElementById('profileAge').value = this.profile.age || '';
         }
+        if (this.profile.role === 'student') {
+            if (document.getElementById('profileSchoolYear')) {
+                document.getElementById('profileSchoolYear').value = this.profile.school_year || '';
+            }
+            if (document.getElementById('profileSection')) {
+                document.getElementById('profileSection').value = this.profile.section || '';
+            }
+        }
         document.getElementById('profileEmail').value = this.profile.email;
         
         document.getElementById('profileNameDisplay').textContent = this.profile.full_name;
@@ -1855,6 +1899,16 @@ const App = {
         document.getElementById('infoEmail').textContent = p.email;
         document.getElementById('infoAge').textContent = p.age || '—';
         document.getElementById('infoAddress').textContent = p.address || '—';
+        
+        if (p.role === 'student') {
+            if (document.getElementById('rowSchoolYear')) document.getElementById('rowSchoolYear').classList.remove('d-none');
+            if (document.getElementById('rowSection')) document.getElementById('rowSection').classList.remove('d-none');
+            if (document.getElementById('infoSchoolYear')) document.getElementById('infoSchoolYear').textContent = p.school_year || '—';
+            if (document.getElementById('infoSection')) document.getElementById('infoSection').textContent = p.section || '—';
+        } else {
+            if (document.getElementById('rowSchoolYear')) document.getElementById('rowSchoolYear').classList.add('d-none');
+            if (document.getElementById('rowSection')) document.getElementById('rowSection').classList.add('d-none');
+        }
 
         // Edit form
         const profileNameInput = document.getElementById('profileName');
@@ -1884,6 +1938,10 @@ const App = {
                 document.getElementById('profileAddress').value = p.address || '';
             }
             if (document.getElementById('profileAge')) document.getElementById('profileAge').value = p.age || '';
+            if (p.role === 'student') {
+                if (document.getElementById('profileSchoolYear')) document.getElementById('profileSchoolYear').value = p.school_year || '';
+                if (document.getElementById('profileSection')) document.getElementById('profileSection').value = p.section || '';
+            }
         }
 
         // Avatar upload handler
@@ -1921,6 +1979,10 @@ const App = {
                     address: addressVal,
                     age: parseInt(document.getElementById('profileAge').value) || null
                 };
+                if (this.profile.role === 'student') {
+                    updates.school_year = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : null;
+                    updates.section = document.getElementById('profileSection') ? document.getElementById('profileSection').value : null;
+                }
                 if (this.tempAvatar) updates.avatar = this.tempAvatar;
 
                 const { error } = await supabaseClient.from('profiles').update(updates).eq('id', this.user.id);
@@ -1938,6 +2000,10 @@ const App = {
                     document.getElementById('infoDept').textContent = updates.department || '—';
                     document.getElementById('infoAge').textContent = updates.age || '—';
                     document.getElementById('infoAddress').textContent = updates.address || '—';
+                    if (this.profile.role === 'student') {
+                        if (document.getElementById('infoSchoolYear')) document.getElementById('infoSchoolYear').textContent = updates.school_year || '—';
+                        if (document.getElementById('infoSection')) document.getElementById('infoSection').textContent = updates.section || '—';
+                    }
                     this.showProfileToast('Profile updated successfully!', 'success');
                 }
             });
@@ -2013,6 +2079,10 @@ const App = {
         if (idNumber) updates.id_number = idNumber;
         if (address) updates.address = address;
         if (age) updates.age = parseInt(age);
+        if (this.profile.role === 'student') {
+            updates.school_year = document.getElementById('profileSchoolYear') ? document.getElementById('profileSchoolYear').value : null;
+            updates.section = document.getElementById('profileSection') ? document.getElementById('profileSection').value : null;
+        }
 
         if (this.tempAvatar) {
             updates.avatar = this.tempAvatar;
@@ -2033,6 +2103,10 @@ const App = {
             if (idNumber) this.profile.id_number = idNumber;
             if (address) this.profile.address = address;
             if (age) this.profile.age = parseInt(age);
+            if (this.profile.role === 'student') {
+                this.profile.school_year = updates.school_year;
+                this.profile.section = updates.section;
+            }
             if (this.tempAvatar) this.profile.avatar = this.tempAvatar;
             this.checkAuthStatus(); // Refresh UI headers
         }
@@ -2756,7 +2830,7 @@ const App = {
     fetchFacultyRequests: async function () {
         const { data, error } = await supabaseClient
             .from('appointments')
-            .select('*, profiles!appointments_student_id_fkey(full_name, department)')
+            .select('*, profiles!appointments_student_id_fkey(full_name, department, school_year, section)')
             .eq('faculty_id', this.user.id)
             .order('appointment_date', { ascending: true });
 
@@ -2826,7 +2900,10 @@ const App = {
                             </div>
                             <div>
                                 <div class="fw-medium text-dark">${sanitizeHTML(appt.profiles.full_name)}</div>
-                                <div class="small text-muted" style="font-size: 11px;">${sanitizeHTML(appt.profiles.department || 'Student')}</div>
+                                <div class="small text-muted" style="font-size: 11px;">
+                                    ${sanitizeHTML(appt.profiles.department || 'Student')}
+                                    ${appt.profiles.school_year || appt.profiles.section ? ` | S.Y. ${sanitizeHTML(appt.profiles.school_year || '—')} - ${sanitizeHTML(appt.profiles.section || '—')}` : ''}
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -4324,7 +4401,10 @@ const App = {
                     </td>
                     <td>${sanitizeHTML(u.email)}</td>
                     <td><span class="badge ${badgeClass} rounded-pill px-3 py-1.5 fw-bold text-uppercase" style="font-size:10px;">${sanitizeHTML(u.role)}</span></td>
-                    <td>${sanitizeHTML(u.department || '—')}</td>
+                    <td>
+                        <span class="d-block">${sanitizeHTML(u.department || '—')}</span>
+                        ${u.role === 'student' && (u.school_year || u.section) ? `<span class="text-muted small" style="font-size: 11px;">S.Y. ${sanitizeHTML(u.school_year || '—')} - ${sanitizeHTML(u.section || '—')}</span>` : ''}
+                    </td>
                     <td>${statusBadge}</td>
                     <td class="text-end px-4">
                         <div class="d-inline-flex">
@@ -4387,6 +4467,16 @@ const App = {
         document.getElementById('editUserRole').value = user.role;
         document.getElementById('editUserIsApproved').checked = user.is_approved !== false;
 
+        if (user.role === 'student') {
+            document.getElementById('editUserStudentFields').classList.remove('d-none');
+            document.getElementById('editUserSchoolYear').value = user.school_year || '';
+            document.getElementById('editUserSection').value = user.section || '';
+        } else {
+            document.getElementById('editUserStudentFields').classList.add('d-none');
+            document.getElementById('editUserSchoolYear').value = '';
+            document.getElementById('editUserSection').value = '';
+        }
+
         this.updateEditUserDepartmentDropdown(user.role, user.department || '');
         this.toggleModalApprovalSwitch();
 
@@ -4402,6 +4492,16 @@ const App = {
         } else {
             container.classList.add('d-none');
         }
+
+        const studentFieldsContainer = document.getElementById('editUserStudentFields');
+        if (studentFieldsContainer) {
+            if (role === 'student') {
+                studentFieldsContainer.classList.remove('d-none');
+            } else {
+                studentFieldsContainer.classList.add('d-none');
+            }
+        }
+
         this.updateEditUserDepartmentDropdown(role, document.getElementById('editUserDepartment').value);
     },
 
@@ -4483,6 +4583,9 @@ const App = {
         const department = document.getElementById('editUserDepartment').value;
         const role = document.getElementById('editUserRole').value;
         const isApproved = role === 'faculty' ? document.getElementById('editUserIsApproved').checked : true;
+        
+        const schoolYear = role === 'student' ? document.getElementById('editUserSchoolYear').value : null;
+        const section = role === 'student' ? document.getElementById('editUserSection').value : null;
 
         const btn = document.getElementById('saveEditedUserBtn');
         const oldText = btn.innerHTML;
@@ -4498,7 +4601,9 @@ const App = {
                     id_number: idNumber,
                     department: department,
                     role: role,
-                    is_approved: isApproved
+                    is_approved: isApproved,
+                    school_year: schoolYear,
+                    section: section
                 })
                 .eq('id', id);
 
@@ -4541,6 +4646,158 @@ const App = {
             console.error("Delete user error:", error);
             this.showProfileToast("Failed to delete user: " + error.message, "danger");
         }
+    },
+
+    alarmAudioInterval: null,
+    audioCtx: null,
+
+    getManilaTime: function() {
+        const options = {
+            timeZone: 'Asia/Manila',
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        };
+        const formatter = new Intl.DateTimeFormat('en-US', options);
+        const parts = formatter.formatToParts(new Date());
+        const dateParts = {};
+        parts.forEach(p => { dateParts[p.type] = p.value; });
+        return {
+            dateStr: `${dateParts.year}-${dateParts.month}-${dateParts.day}`,
+            timeStr: `${dateParts.hour}:${dateParts.minute}:${dateParts.second}`,
+            hour: parseInt(dateParts.hour),
+            minute: parseInt(dateParts.minute)
+        };
+    },
+
+    playLoudAlarmSound: function() {
+        if (this.alarmAudioInterval) return;
+        if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playBeepPair = () => {
+            if (!this.audioCtx) return;
+            if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+            const now = this.audioCtx.currentTime;
+            
+            const osc1 = this.audioCtx.createOscillator();
+            const gain1 = this.audioCtx.createGain();
+            osc1.type = 'square';
+            osc1.frequency.setValueAtTime(880, now);
+            gain1.gain.setValueAtTime(0, now);
+            gain1.gain.linearRampToValueAtTime(0.8, now + 0.05);
+            gain1.gain.setValueAtTime(0.8, now + 0.15);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            osc1.connect(gain1); gain1.connect(this.audioCtx.destination);
+            osc1.start(now); osc1.stop(now + 0.25);
+            
+            const osc2 = this.audioCtx.createOscillator();
+            const gain2 = this.audioCtx.createGain();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(880, now + 0.3);
+            gain2.gain.setValueAtTime(0, now + 0.3);
+            gain2.gain.linearRampToValueAtTime(0.8, now + 0.35);
+            gain2.gain.setValueAtTime(0.8, now + 0.45);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+            osc2.connect(gain2); gain2.connect(this.audioCtx.destination);
+            osc2.start(now + 0.3); osc2.stop(now + 0.55);
+        };
+        try { playBeepPair(); } catch (e) { console.error(e); }
+        this.alarmAudioInterval = setInterval(playBeepPair, 1500);
+    },
+
+    stopLoudAlarmSound: function() {
+        if (this.alarmAudioInterval) {
+            clearInterval(this.alarmAudioInterval);
+            this.alarmAudioInterval = null;
+        }
+    },
+
+    showConsultationAlarmOverlay: function(appt) {
+        if (document.getElementById('consultationAlarmOverlay')) return;
+        this.playLoudAlarmSound();
+        const overlay = document.createElement('div');
+        overlay.id = 'consultationAlarmOverlay';
+        overlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.4s ease-out forwards;";
+        
+        if (!document.getElementById('alarmStyles')) {
+            const style = document.createElement('style');
+            style.id = 'alarmStyles';
+            style.textContent = "@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}@keyframes scaleUp{from{transform:scale(0.9);opacity:0;}to{transform:scale(1);opacity:1;}}@keyframes pulseRing{0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0.7);}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(16,185,129,0);}100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0);}}@keyframes bellRing{0%{transform:rotate(0);}10%{transform:rotate(15deg);}20%{transform:rotate(-15deg);}30%{transform:rotate(10deg);}40%{transform:rotate(-10deg);}50%{transform:rotate(5deg);}60%{transform:rotate(-5deg);}70%{transform:rotate(0);}100%{transform:rotate(0);}}.pulse-container{animation:pulseRing 2s infinite;}.bell-animation{animation:bellRing 1.2s infinite;display:inline-block;}";
+            document.head.appendChild(style);
+        }
+        
+        const formattedTime = new Date(`1970-01-01T${appt.start_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        overlay.innerHTML = `
+            <div class="card bg-dark text-white border-0 shadow-lg pulse-container" style="max-width:500px;width:100%;border-radius:24px;background:rgba(30,41,59,0.7)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:scaleUp 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <div class="bg-emerald-soft text-emerald d-inline-flex align-items-center justify-content-center rounded-circle p-4" style="width:80px;height:80px;background:rgba(16,185,129,0.15);color:#10b981;">
+                            <i class="fa-solid fa-bell bell-animation fs-1"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-extrabold mb-2 text-white">Consultation Starting Now!</h3>
+                    <p class="text-white-50 small mb-4">Your approved schedule with <strong>${sanitizeHTML(appt.partner_name)}</strong> is active.</p>
+                    <div class="bg-light bg-opacity-10 p-3 rounded-4 mb-4 text-start border border-white border-opacity-10">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fa-solid fa-calendar text-emerald me-3"></i>
+                            <div>
+                                <small class="text-white-50 d-block" style="font-size: 10px;">TIME</small>
+                                <span class="fw-bold text-white small">${formattedTime} (${sanitizeHTML(appt.appointment_date)})</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-comment-dots text-emerald me-3"></i>
+                            <div>
+                                <small class="text-white-50 d-block" style="font-size: 10px;">PURPOSE</small>
+                                <span class="text-white small">${sanitizeHTML(appt.purpose || 'General Consultation')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="https://meet.jit.si/ConsulTime_${appt.id}" target="_blank" id="btnJoinAlarm" class="btn btn-emerald btn-lg rounded-pill fw-bold text-white shadow" style="background:#10b981;"><i class="fa-solid fa-video me-2"></i>Join Consultation</a>
+                        <button id="btnDismissAlarm" class="btn btn-outline-light btn-lg rounded-pill fw-semibold">Dismiss Alarm</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const dismissHandler = () => {
+            this.stopLoudAlarmSound(); overlay.remove();
+            const dismissed = JSON.parse(localStorage.getItem('dismissedAlarms') || '{}');
+            dismissed[appt.id] = true; localStorage.setItem('dismissedAlarms', JSON.stringify(dismissed));
+        };
+        document.getElementById('btnDismissAlarm').addEventListener('click', dismissHandler);
+        document.getElementById('btnJoinAlarm').addEventListener('click', dismissHandler);
+    },
+
+    checkConsultationAlarms: async function() {
+        if (!this.user || !this.profile) return;
+        try {
+            const { dateStr, timeStr, hour, minute } = this.getManilaTime();
+            const isStudent = this.profile.role === 'student';
+            const { data, error } = await supabaseClient
+                .from('appointments')
+                .select("*, student:profiles!appointments_student_id_fkey(full_name), faculty:profiles!appointments_faculty_id_fkey(full_name)")
+                .or(`student_id.eq.${this.user.id},faculty_id.eq.${this.user.id}`)
+                .eq('status', 'approved')
+                .eq('appointment_date', dateStr);
+            if (error || !data) return;
+            const dismissed = JSON.parse(localStorage.getItem('dismissedAlarms') || '{}');
+            data.forEach(appt => {
+                if (dismissed[appt.id]) return;
+                const [startH, startM] = appt.start_time.split(':').map(Number);
+                const [endH, endM] = appt.end_time.split(':').map(Number);
+                const currentMinutes = hour * 60 + minute;
+                const startMinutes = startH * 60 + startM;
+                const endMinutes = endH * 60 + endM;
+                if (currentMinutes >= (startMinutes - 5) && currentMinutes <= endMinutes) {
+                    const partner = isStudent ? appt.faculty : appt.student;
+                    const partnerName = partner ? partner.full_name : (isStudent ? 'Faculty Member' : 'Student');
+                    this.showConsultationAlarmOverlay({
+                        id: appt.id, appointment_date: appt.appointment_date, start_time: appt.start_time, purpose: appt.purpose, partner_name: partnerName
+                    });
+                }
+            });
+        } catch (err) { console.error("Alarm check error:", err); }
     }
 };
 

@@ -130,6 +130,20 @@
                             </div>
                         </div>
 
+                        <!-- Student-only fields: School Year & Section -->
+                        <div id="studentFieldsContainer" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="schoolYear" class="form-label fw-medium text-dark">School Year</label>
+                                    <input type="text" class="form-control bg-light" id="schoolYear" placeholder="e.g. 2025-2026">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="section" class="form-label fw-medium text-dark">Section</label>
+                                    <input type="text" class="form-control bg-light" id="section" placeholder="e.g. Grade 11 - STEM A">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Cascading Address Selector Container -->
                         <div id="addressSelectContainer">
                             <div class="row">
@@ -352,8 +366,28 @@
         const roleSelect = document.getElementById('role');
         const deptSelect = document.getElementById('department');
 
+        function toggleStudentFields(roleVal) {
+            const container = document.getElementById('studentFieldsContainer');
+            const schoolYearInput = document.getElementById('schoolYear');
+            const sectionInput = document.getElementById('section');
+            if (!container || !schoolYearInput || !sectionInput) return;
+            
+            if (roleVal === 'student') {
+                container.classList.remove('d-none');
+                schoolYearInput.setAttribute('required', 'required');
+                sectionInput.setAttribute('required', 'required');
+            } else {
+                container.classList.add('d-none');
+                schoolYearInput.removeAttribute('required');
+                sectionInput.removeAttribute('required');
+                schoolYearInput.value = '';
+                sectionInput.value = '';
+            }
+        }
+
         roleSelect.addEventListener('change', function() {
             populateDepartments(this.value);
+            toggleStudentFields(this.value);
         });
 
         deptSelect.addEventListener('change', function() {
@@ -371,10 +405,12 @@
 
             // Keep the select populated, refilter based on the new role
             populateDepartments(roleSelect.value, deptValue);
+            toggleStudentFields(roleSelect.value);
         });
 
         // Initialize on page load (fully interactive, showing all options initially unless role is pre-selected)
         populateDepartments(roleSelect.value);
+        toggleStudentFields(roleSelect.value);
     </script>
 </body>
 </html>
