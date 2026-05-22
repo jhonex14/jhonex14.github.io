@@ -875,7 +875,10 @@ const App = {
         const fullName = document.getElementById('fullName').value;
         const role = document.getElementById('role').value;
         const idNumber = document.getElementById('idNumber').value;
-        const department = document.getElementById('department').value;
+        let department = document.getElementById('department').value;
+        if (department === 'Others_Student' || department === 'Others_Faculty') {
+            department = 'Others';
+        }
         
         const address = this.getAddressFromUI('address');
         

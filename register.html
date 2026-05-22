@@ -100,8 +100,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="department" class="form-label fw-medium text-dark">Course / Department</label>
-                                <select class="form-select bg-light" id="department" required disabled>
-                                    <option value="" disabled selected>Please select Account Type first</option>
+                                <select class="form-select bg-light" id="department" required>
+                                    <option value="" disabled selected>Select Course / Department</option>
                                 </select>
                             </div>
                         </div>
@@ -252,77 +252,105 @@
         });
 
         // Dynamic department selection based on role/account type
-        function updateDepartments() {
-            const roleSelect = document.getElementById('role');
-            const role = roleSelect.value;
+        const studentOptions = [
+            { value: "STEM", text: "Senior High: STEM (Science, Technology, Engineering, & Mathematics)" },
+            { value: "ABM", text: "Senior High: ABM (Accountancy, Business, & Management)" },
+            { value: "HUMSS", text: "Senior High: HUMSS (Humanities & Social Sciences)" },
+            { value: "GAS", text: "Senior High: GAS (General Academic Strand)" },
+            { value: "TVL - ICT", text: "Senior High: TVL - ICT (Info. & Comm. Technology)" },
+            { value: "TVL - HE", text: "Senior High: TVL - HE (Home Economics)" },
+            { value: "TVL - IA", text: "Senior High: TVL - IA (Industrial Arts)" },
+            { value: "Grade 7", text: "Junior High: Grade 7" },
+            { value: "Grade 8", text: "Junior High: Grade 8" },
+            { value: "Grade 9", text: "Junior High: Grade 9" },
+            { value: "Grade 10", text: "Junior High: Grade 10" },
+            { value: "Others_Student", text: "Others (Student)" }
+        ];
+
+        const facultyOptions = [
+            { value: "English Department", text: "English Department" },
+            { value: "Mathematics Department", text: "Mathematics Department" },
+            { value: "Science Department", text: "Science Department" },
+            { value: "Filipino Department", text: "Filipino Department" },
+            { value: "Social Studies Department", text: "Social Studies Department" },
+            { value: "MAPEH Department", text: "MAPEH Department" },
+            { value: "TLE / TVL Department", text: "TLE / TVL Department" },
+            { value: "Values Education Department", text: "Values Education Department" },
+            { value: "SHS Department", text: "Senior High School (SHS) Department" },
+            { value: "JHS Department", text: "Junior High School (JHS) Department" },
+            { value: "Guidance & Counseling Department", text: "Guidance & Counseling Department" },
+            { value: "Administrative / Support Staff", text: "Administrative / Support Staff" },
+            { value: "Others_Faculty", text: "Others (Faculty)" }
+        ];
+
+        function populateDepartments(roleFilter, selectedValue = "") {
             const deptSelect = document.getElementById('department');
-            
-            if (!role) {
-                deptSelect.innerHTML = '<option value="" disabled selected>Please select Account Type first</option>';
-                deptSelect.disabled = true;
-                return;
-            }
-
+            const currentVal = selectedValue || deptSelect.value;
             deptSelect.innerHTML = '';
-            deptSelect.disabled = false;
-
-            const studentOptions = [
-                { value: "STEM", text: "Senior High: STEM (Science, Technology, Engineering, & Mathematics)" },
-                { value: "ABM", text: "Senior High: ABM (Accountancy, Business, & Management)" },
-                { value: "HUMSS", text: "Senior High: HUMSS (Humanities & Social Sciences)" },
-                { value: "GAS", text: "Senior High: GAS (General Academic Strand)" },
-                { value: "TVL - ICT", text: "Senior High: TVL - ICT (Info. & Comm. Technology)" },
-                { value: "TVL - HE", text: "Senior High: TVL - HE (Home Economics)" },
-                { value: "TVL - IA", text: "Senior High: TVL - IA (Industrial Arts)" },
-                { value: "Grade 7", text: "Junior High: Grade 7" },
-                { value: "Grade 8", text: "Junior High: Grade 8" },
-                { value: "Grade 9", text: "Junior High: Grade 9" },
-                { value: "Grade 10", text: "Junior High: Grade 10" },
-                { value: "Others", text: "Others" }
-            ];
-
-            const facultyOptions = [
-                { value: "English Department", text: "English Department" },
-                { value: "Mathematics Department", text: "Mathematics Department" },
-                { value: "Science Department", text: "Science Department" },
-                { value: "Filipino Department", text: "Filipino Department" },
-                { value: "Social Studies Department", text: "Social Studies Department" },
-                { value: "MAPEH Department", text: "MAPEH Department" },
-                { value: "TLE / TVL Department", text: "TLE / TVL Department" },
-                { value: "Values Education Department", text: "Values Education Department" },
-                { value: "SHS Department", text: "Senior High School (SHS) Department" },
-                { value: "JHS Department", text: "Junior High School (JHS) Department" },
-                { value: "Guidance & Counseling Department", text: "Guidance & Counseling Department" },
-                { value: "Administrative / Support Staff", text: "Administrative / Support Staff" },
-                { value: "Others", text: "Others" }
-            ];
-
-            let options = [];
-            if (role === 'student') {
-                options = studentOptions;
-            } else if (role === 'faculty') {
-                options = facultyOptions;
-            }
 
             const placeholderOpt = document.createElement('option');
             placeholderOpt.value = "";
             placeholderOpt.disabled = true;
-            placeholderOpt.selected = true;
+            placeholderOpt.selected = !currentVal;
             placeholderOpt.textContent = "Select Course / Department";
             deptSelect.appendChild(placeholderOpt);
 
-            options.forEach(opt => {
-                const el = document.createElement('option');
-                el.value = opt.value;
-                el.textContent = opt.text;
-                deptSelect.appendChild(el);
-            });
+            const appendOptions = (optionsList, parentElement) => {
+                optionsList.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.value;
+                    el.textContent = opt.text;
+                    if (opt.value === currentVal) {
+                        el.selected = true;
+                    }
+                    parentElement.appendChild(el);
+                });
+            };
+
+            if (roleFilter === 'student') {
+                appendOptions(studentOptions, deptSelect);
+            } else if (roleFilter === 'faculty') {
+                appendOptions(facultyOptions, deptSelect);
+            } else {
+                // Show both grouped under optgroup
+                const studentGroup = document.createElement('optgroup');
+                studentGroup.label = "Student Strands / Grades";
+                appendOptions(studentOptions, studentGroup);
+                deptSelect.appendChild(studentGroup);
+
+                const facultyGroup = document.createElement('optgroup');
+                facultyGroup.label = "Faculty Departments";
+                appendOptions(facultyOptions, facultyGroup);
+                deptSelect.appendChild(facultyGroup);
+            }
         }
 
-        document.getElementById('role').addEventListener('change', updateDepartments);
-        
-        // Run immediately in case the browser restored/pre-selected a role on load
-        updateDepartments();
+        const roleSelect = document.getElementById('role');
+        const deptSelect = document.getElementById('department');
+
+        roleSelect.addEventListener('change', function() {
+            populateDepartments(this.value);
+        });
+
+        deptSelect.addEventListener('change', function() {
+            const deptValue = this.value;
+            if (!deptValue) return;
+
+            const isStudent = studentOptions.some(opt => opt.value === deptValue);
+            const isFaculty = facultyOptions.some(opt => opt.value === deptValue);
+
+            if (isStudent && roleSelect.value !== 'student') {
+                roleSelect.value = 'student';
+            } else if (isFaculty && roleSelect.value !== 'faculty') {
+                roleSelect.value = 'faculty';
+            }
+
+            // Keep the select populated, refilter based on the new role
+            populateDepartments(roleSelect.value, deptValue);
+        });
+
+        // Initialize on page load (fully interactive, showing all options initially unless role is pre-selected)
+        populateDepartments(roleSelect.value);
     </script>
 </body>
 </html>
