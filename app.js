@@ -403,7 +403,47 @@ const App = {
         if (logoutBtn) logoutBtn.addEventListener('click', () => this.handleLogout());
 
         const bookForm = document.getElementById('bookForm');
-        if (bookForm) bookForm.addEventListener('submit', (e) => this.handleBooking(e));
+        if (bookForm) {
+            bookForm.addEventListener('submit', (e) => this.handleBooking(e));
+            
+            const purposeSelect = document.getElementById('purposeSelect');
+            const purposeCustom = document.getElementById('purposeCustom');
+            const purposeHidden = document.getElementById('purpose');
+            
+            if (purposeSelect && purposeCustom && purposeHidden) {
+                purposeSelect.addEventListener('change', function() {
+                    const val = purposeSelect.value;
+                    if (val === 'Others concern') {
+                        purposeCustom.classList.remove('d-none');
+                        purposeCustom.setAttribute('required', 'required');
+                        purposeHidden.value = purposeCustom.value.trim();
+                        purposeCustom.focus();
+                    } else {
+                        purposeCustom.classList.add('d-none');
+                        purposeCustom.removeAttribute('required');
+                        purposeCustom.value = '';
+                        purposeHidden.value = val;
+                    }
+                });
+                
+                purposeCustom.addEventListener('input', function() {
+                    if (purposeSelect.value === 'Others concern') {
+                        purposeHidden.value = purposeCustom.value.trim();
+                    }
+                });
+            }
+
+            bookForm.addEventListener('reset', () => {
+                if (purposeCustom) {
+                    purposeCustom.classList.add('d-none');
+                    purposeCustom.removeAttribute('required');
+                    purposeCustom.value = '';
+                }
+                if (purposeHidden) {
+                    purposeHidden.value = '';
+                }
+            });
+        }
 
         const availForm = document.getElementById('availabilityForm');
         if (availForm) availForm.addEventListener('submit', (e) => this.handleAddAvailability(e));

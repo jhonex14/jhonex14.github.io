@@ -224,8 +224,18 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-medium">Purpose of Consultation</label>
-                        <textarea class="form-control bg-light" id="purpose" rows="3" required placeholder="E.g., Capstone project checking, Grade inquiry..."></textarea>
+                        <label class="form-label fw-medium">Purpose of Consultation <span class="text-danger">*</span></label>
+                        <select class="form-select bg-light mb-3" id="purposeSelect" required style="border-radius: 12px; height: 50px; font-size: 14px;">
+                            <option value="" disabled selected>Select purpose of consultation...</option>
+                            <option value="Grades">Grades</option>
+                            <option value="Projects">Projects</option>
+                            <option value="Assignments">Assignments</option>
+                            <option value="Task">Task</option>
+                            <option value="Others concern">Others concern</option>
+                        </select>
+                        <textarea class="form-control bg-light d-none mb-2" id="purposeCustom" rows="2" placeholder="Please specify your custom concern..." style="border-radius: 12px; font-size: 14px; transition: all 0.2s ease;"></textarea>
+                        <!-- Hidden input to hold the final compiled value so it is fully compatible with app.js and database schema -->
+                        <input type="hidden" id="purpose" required>
                     </div>
 
                     <div class="text-end">
