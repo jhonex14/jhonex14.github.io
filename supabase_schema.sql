@@ -7,6 +7,10 @@ CREATE TABLE public.profiles (
     email TEXT UNIQUE NOT NULL,
     role TEXT CHECK (role IN ('student', 'faculty', 'admin')) NOT NULL DEFAULT 'student',
     department TEXT,
+    id_number TEXT,
+    address TEXT,
+    age INTEGER,
+    avatar TEXT,
     is_approved BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -96,12 +100,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_approved_appointment ON public.appointm
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, email, role, is_approved)
+  INSERT INTO public.profiles (id, full_name, email, role, department, id_number, address, age, is_approved)
   VALUES (
     new.id, 
     new.raw_user_meta_data->>'full_name', 
     new.email, 
     COALESCE(new.raw_user_meta_data->>'role', 'student'),
+    new.raw_user_meta_data->>'department',
+    new.raw_user_meta_data->>'id_number',
+    new.raw_user_meta_data->>'address',
+    CASE 
+      WHEN new.raw_user_meta_data->>'age' ~ '^[0-9]+$' THEN (new.raw_user_meta_data->>'age')::integer
+      ELSE NULL
+    END,
     CASE 
       WHEN COALESCE(new.raw_user_meta_data->>'role', 'student') = 'faculty' THEN false 
       ELSE true 
