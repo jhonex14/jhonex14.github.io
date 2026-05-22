@@ -1,4 +1,4 @@
 {
-  "version": "1.0.7",
-  "message": "Update schema fields storage and apply address fix."
+  "version": "1.0.8",
+  "message": "Protocol and domain origin normalization for multi-tab session stability."
 }

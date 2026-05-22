@@ -24,7 +24,7 @@ const App = {
     user: null,
     profile: null,
     charts: {},
-    version: '1.0.7',
+    version: '1.0.8',
 
     get settingsVerified() {
         return sessionStorage.getItem('ct_settings_verified') === 'true';
@@ -33,8 +33,12 @@ const App = {
         sessionStorage.setItem('ct_settings_verified', val ? 'true' : 'false');
     },
 
+    initialized: false,
+
     init: async function () {
         if (!supabaseClient) return;
+        if (this.initialized) return;
+        this.initialized = true;
 
         // Register PWA Service Worker
         if ('serviceWorker' in navigator) {
@@ -442,7 +446,8 @@ const App = {
     },
 
     checkAuthStatus: async function () {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session) {
             this.user = session.user;
@@ -544,9 +549,10 @@ const App = {
             }
 
             // Always try to populate dedicated profile page (profile.html)
-            this.populateProfilePage();
         }
-
+    } catch (error) {
+        console.error("Authentication check error:", error);
+    } finally {
         // Remove fast loader if session is null and staying on guest page
         const fastLoader = document.getElementById('auth-fast-loader');
         if (fastLoader) {
@@ -556,7 +562,8 @@ const App = {
                 fastLoader.remove();
             }
         }
-    },
+    }
+},
 
     routePage: function () {
         const path = window.location.pathname;
@@ -3234,14 +3241,14 @@ const App = {
                 const appt = payload.new;
                 
                 // If I am faculty and someone booked me
-                if (this.profile.role === 'faculty' && appt.faculty_id === this.user.id && payload.eventType === 'INSERT') {
+                if (this.profile && this.profile.role === 'faculty' && appt.faculty_id === this.user.id && payload.eventType === 'INSERT') {
                     sessionStorage.removeItem('notifsViewed');
                     this.showToast('New Appointment Request!', 'A student just booked a consultation.', 'success');
                     this.fetchFacultyRequests();
                 }
                 
                 // If I am student and my booking was updated
-                if (this.profile.role === 'student' && appt.student_id === this.user.id && payload.eventType === 'UPDATE') {
+                if (this.profile && this.profile.role === 'student' && appt.student_id === this.user.id && payload.eventType === 'UPDATE') {
                     sessionStorage.removeItem('notifsViewed');
                     this.showToast('Status Updated!', 'Your appointment is now ' + appt.status + '.', 'info');
                     this.fetchStudentAppointments();
@@ -3852,9 +3859,10 @@ window.App = App;
 document.head.insertAdjacentHTML('beforeend', '<style>@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }</style>');
 
 document.addEventListener('DOMContentLoaded', () => App.init());
-window.addEventListener('pageshow', () => {
+window.addEventListener('pageshow', (event) => {
     // If the browser loaded the page from the Back/Forward Cache, re-check auth state instantly
-    if (typeof App !== 'undefined' && App.init) {
+    if (event.persisted && typeof App !== 'undefined' && App.init) {
+        App.initialized = false;
         App.init();
     }
 });

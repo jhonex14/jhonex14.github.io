@@ -2,6 +2,30 @@
 <html lang="en">
 <head>
     <script>
+        // Protocol and Domain normalization (Canonical Redirect)
+        (function() {
+            let targetHref = null;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Redirect HTTP to HTTPS unless testing locally
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            if (protocol === 'http:' && !isLocal) {
+                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            // Redirect www.consultime.me to consultime.me
+            if (hostname === 'www.consultime.me') {
+                const proto = targetHref ? 'https://' : protocol + '//';
+                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            if (targetHref) {
+                window.location.replace(targetHref);
+            }
+        })();
+    </script>
+    <script>
         // Synchronously check for cached Supabase session to prevent register screen flicker
         (function() {
             const sbKey = 'sb-uximseyeqkhoghsrksds-auth-token';
@@ -37,7 +61,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=9">
+    <link rel="stylesheet" href="styles.css?v=10">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
@@ -221,7 +245,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
     <script>
         document.getElementById('toggleRegPassword').addEventListener('click', function() {
             const pwd = document.getElementById('regPassword');
