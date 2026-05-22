@@ -52,6 +52,12 @@ const App = {
 
         this.attachEventListeners();
 
+        // Initialize registration address selectors if present
+        if (document.getElementById('addressRegion')) {
+            this.initAddressSelectors('address');
+        }
+
+
         // Check for password recovery hash (Supabase redirects to login.html#access_token=...&type=recovery)
         if (window.location.hash && window.location.hash.includes('type=recovery')) {
             const recoveryModalEl = document.getElementById('recoveryModal');
@@ -871,16 +877,7 @@ const App = {
         const idNumber = document.getElementById('idNumber').value;
         const department = document.getElementById('department').value;
         
-        let address = '';
-        const addressBarangayEl = document.getElementById('addressBarangay');
-        const addressStreetEl = document.getElementById('addressStreet');
-        if (addressBarangayEl && addressStreetEl) {
-            const barangayVal = addressBarangayEl.value;
-            const streetVal = addressStreetEl.value.trim();
-            address = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
-        } else {
-            address = document.getElementById('address') ? document.getElementById('address').value : '';
-        }
+        const address = this.getAddressFromUI('address');
         
         const age = document.getElementById('age') ? document.getElementById('age').value : '';
         const email = document.getElementById('regEmail').value;
@@ -1099,35 +1096,477 @@ const App = {
     },
 
     // --- PROFILE LOGIC ---
-    parseAddress: function (fullAddress) {
-        if (!fullAddress) return { barangay: '', street: '' };
+    // --- CASCADING ADDRESS SELECTOR HELPERS ---
+    fetchPSGC: async function(endpoint) {
+        try {
+            const res = await fetch(`https://psgc.cloud/api/${endpoint}`);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.error(`PSGC API Error for ${endpoint}:`, e);
+            throw e;
+        }
+    },
+
+    regionsPromise: null,
+    fetchRegionsCached: function() {
+        if (this.regionsPromise) return this.regionsPromise;
+        this.regionsPromise = this.fetchPSGC('regions').then(regions => {
+            regions.sort((a, b) => a.name.localeCompare(b.name));
+            return regions;
+        }).catch(err => {
+            this.regionsPromise = null; // Reset on failure so it can retry
+            throw err;
+        });
+        return this.regionsPromise;
+    },
+
+    profileAddressInitDone: false,
+    addressAddressInitDone: false,
+
+    initAddressSelectors: async function(prefix) {
+        const isProfile = (prefix === 'profile');
+        if (isProfile && this.profileAddressInitDone) return;
+        if (!isProfile && this.addressAddressInitDone) return;
         
-        const barangays = [
-            "Tibungco, Davao City", "Panacan, Davao City", "Bunawan, Davao City",
-            "Ilang, Davao City", "Lasang, Davao City", "Mudiang, Davao City",
-            "Sasa, Davao City", "Cabantian, Davao City", "Buhangin, Davao City",
-            "Indangan, Davao City", "Licanan, Davao City", "Mahayag, Davao City",
-            "Catitipan, Davao City", "Communal, Davao City", "Pampanga, Davao City",
-            "Lanang, Davao City", "Agdao, Davao City", "Toril, Davao City",
-            "Calinan, Davao City", "Mintal, Davao City", "Matina, Davao City",
-            "Talomo, Davao City", "Bajada, Davao City"
-        ];
-        
-        for (const barangay of barangays) {
-            if (fullAddress.endsWith(barangay)) {
-                let street = fullAddress.substring(0, fullAddress.length - barangay.length).trim();
-                if (street.endsWith(',')) {
-                    street = street.substring(0, street.length - 1).trim();
+        if (isProfile) this.profileAddressInitDone = true;
+        else this.addressAddressInitDone = true;
+
+        const regionEl = document.getElementById(isProfile ? 'profileRegion' : 'addressRegion');
+        const provinceEl = document.getElementById(isProfile ? 'profileProvince' : 'addressProvince');
+        const provinceWrapper = document.getElementById(isProfile ? 'profileProvinceWrapper' : 'addressProvinceWrapper');
+        const cityEl = document.getElementById(isProfile ? 'profileCity' : 'addressCity');
+        const barangayEl = document.getElementById(isProfile ? 'profileBarangay' : 'addressBarangay');
+        const streetEl = document.getElementById(isProfile ? 'profileStreet' : 'addressStreet');
+        const manualEl = document.getElementById(isProfile ? 'profileManual' : 'addressManual');
+        const selectContainer = document.getElementById(isProfile ? 'profileAddressSelectContainer' : 'addressSelectContainer');
+        const manualContainer = document.getElementById(isProfile ? 'profileAddressManualContainer' : 'addressManualContainer');
+        const toggleManualBtn = document.getElementById(isProfile ? 'toggleProfileManualAddress' : 'toggleManualAddress');
+        const toggleSelectBtn = document.getElementById(isProfile ? 'toggleProfileSelectAddress' : 'toggleSelectAddress');
+
+        if (!regionEl) return;
+
+        const showManualMode = (show) => {
+            if (show) {
+                if (selectContainer) selectContainer.classList.add('d-none');
+                if (manualContainer) manualContainer.classList.remove('d-none');
+                regionEl.removeAttribute('required');
+                if (provinceEl) provinceEl.removeAttribute('required');
+                if (cityEl) cityEl.removeAttribute('required');
+                if (barangayEl) barangayEl.removeAttribute('required');
+                if (manualEl) manualEl.setAttribute('required', 'required');
+            } else {
+                if (manualContainer) manualContainer.classList.add('d-none');
+                if (selectContainer) selectContainer.classList.remove('d-none');
+                regionEl.setAttribute('required', 'required');
+                if (provinceWrapper && !provinceWrapper.classList.contains('d-none') && provinceEl) {
+                    provinceEl.setAttribute('required', 'required');
+                } else if (provinceEl) {
+                    provinceEl.removeAttribute('required');
                 }
-                return { barangay: barangay, street: street };
+                if (cityEl) cityEl.setAttribute('required', 'required');
+                if (barangayEl) barangayEl.setAttribute('required', 'required');
+                if (manualEl) manualEl.removeAttribute('required');
+            }
+        };
+
+        if (toggleManualBtn) {
+            toggleManualBtn.onclick = (e) => {
+                e.preventDefault();
+                showManualMode(true);
+            };
+        }
+        if (toggleSelectBtn) {
+            toggleSelectBtn.onclick = (e) => {
+                e.preventDefault();
+                showManualMode(false);
+            };
+        }
+
+        // Handle Region Change
+        regionEl.onchange = async () => {
+            const regionCode = regionEl.value;
+            if (provinceEl) {
+                provinceEl.innerHTML = '<option value="" disabled selected>Select Region first</option>';
+                provinceEl.disabled = true;
+            }
+            if (cityEl) {
+                cityEl.innerHTML = '<option value="" disabled selected>Select Province first</option>';
+                cityEl.disabled = true;
+            }
+            if (barangayEl) {
+                barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
+                barangayEl.disabled = true;
+            }
+
+            if (!regionCode) return;
+
+            try {
+                if (provinceEl) provinceEl.innerHTML = '<option value="" disabled selected>Loading Provinces...</option>';
+                const provinces = await this.fetchPSGC(`regions/${regionCode}/provinces`);
+
+                if (provinces && provinces.length > 0 && provinceEl) {
+                    if (provinceWrapper) provinceWrapper.classList.remove('d-none');
+                    provinceEl.disabled = false;
+                    const isManualActive = manualContainer && !manualContainer.classList.contains('d-none');
+                    if (!isManualActive) {
+                        provinceEl.setAttribute('required', 'required');
+                    } else {
+                        provinceEl.removeAttribute('required');
+                    }
+
+                    provinces.sort((a, b) => a.name.localeCompare(b.name));
+                    provinceEl.innerHTML = '<option value="" disabled selected>Select Province</option>';
+                    provinces.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.code;
+                        opt.textContent = p.name;
+                        provinceEl.appendChild(opt);
+                    });
+                } else {
+                    if (provinceWrapper) provinceWrapper.classList.add('d-none');
+                    if (provinceEl) {
+                        provinceEl.innerHTML = '';
+                        provinceEl.removeAttribute('required');
+                        provinceEl.disabled = true;
+                    }
+
+                    // Direct cities fetch for NCR / regions without provinces
+                    if (cityEl) {
+                        cityEl.innerHTML = '<option value="" disabled selected>Loading Cities...</option>';
+                        cityEl.disabled = false;
+                    }
+                    const cities = await this.fetchPSGC(`regions/${regionCode}/cities-municipalities`);
+                    cities.sort((a, b) => a.name.localeCompare(b.name));
+                    if (cityEl) {
+                        cityEl.innerHTML = '<option value="" disabled selected>Select City / Municipality</option>';
+                        cities.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.code;
+                            opt.textContent = c.name;
+                            cityEl.appendChild(opt);
+                        });
+                    }
+                }
+            } catch (err) {
+                showManualMode(true);
+            }
+        };
+
+        // Handle Province Change
+        if (provinceEl) {
+            provinceEl.onchange = async () => {
+                const provinceCode = provinceEl.value;
+                if (cityEl) {
+                    cityEl.innerHTML = '<option value="" disabled selected>Select Province first</option>';
+                    cityEl.disabled = true;
+                }
+                if (barangayEl) {
+                    barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
+                    barangayEl.disabled = true;
+                }
+
+                if (!provinceCode) return;
+
+                try {
+                    if (cityEl) {
+                        cityEl.innerHTML = '<option value="" disabled selected>Loading Cities...</option>';
+                        cityEl.disabled = false;
+                    }
+                    const cities = await this.fetchPSGC(`provinces/${provinceCode}/cities-municipalities`);
+                    cities.sort((a, b) => a.name.localeCompare(b.name));
+                    if (cityEl) {
+                        cityEl.innerHTML = '<option value="" disabled selected>Select City / Municipality</option>';
+                        cities.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.code;
+                            opt.textContent = c.name;
+                            cityEl.appendChild(opt);
+                        });
+                    }
+                } catch (err) {
+                    showManualMode(true);
+                }
+            };
+        }
+
+        // Handle City Change
+        if (cityEl) {
+            cityEl.onchange = async () => {
+                const cityCode = cityEl.value;
+                if (barangayEl) {
+                    barangayEl.innerHTML = '<option value="" disabled selected>Select City first</option>';
+                    barangayEl.disabled = true;
+                }
+
+                if (!cityCode) return;
+
+                try {
+                    if (barangayEl) {
+                        barangayEl.innerHTML = '<option value="" disabled selected>Loading Barangays...</option>';
+                        barangayEl.disabled = false;
+                    }
+                    const barangays = await this.fetchPSGC(`cities-municipalities/${cityCode}/barangays`);
+                    barangays.sort((a, b) => a.name.localeCompare(b.name));
+                    if (barangayEl) {
+                        barangayEl.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+                        barangays.forEach(b => {
+                            const opt = document.createElement('option');
+                            opt.value = b.code;
+                            opt.textContent = b.name;
+                            barangayEl.appendChild(opt);
+                        });
+                    }
+                } catch (err) {
+                    showManualMode(true);
+                }
+            };
+        }
+
+        // Load Initial Regions
+        try {
+            regionEl.innerHTML = '<option value="" disabled selected>Loading Regions...</option>';
+            const regions = await this.fetchRegionsCached();
+            regionEl.innerHTML = '<option value="" disabled selected>Select Region</option>';
+            regions.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.code;
+                opt.textContent = r.name;
+                regionEl.appendChild(opt);
+            });
+        } catch (err) {
+            showManualMode(true);
+            if (manualEl) {
+                manualEl.placeholder = "API offline. Please type your full address here.";
             }
         }
-        
-        return { barangay: 'Others', street: fullAddress };
     },
+
+    setAddressFromParsed: async function(prefix, fullAddress) {
+        const isProfile = (prefix === 'profile');
+        const regionEl = document.getElementById(isProfile ? 'profileRegion' : 'addressRegion');
+        const provinceEl = document.getElementById(isProfile ? 'profileProvince' : 'addressProvince');
+        const provinceWrapper = document.getElementById(isProfile ? 'profileProvinceWrapper' : 'addressProvinceWrapper');
+        const cityEl = document.getElementById(isProfile ? 'profileCity' : 'addressCity');
+        const barangayEl = document.getElementById(isProfile ? 'profileBarangay' : 'addressBarangay');
+        const streetEl = document.getElementById(isProfile ? 'profileStreet' : 'addressStreet');
+        const manualEl = document.getElementById(isProfile ? 'profileManual' : 'addressManual');
+        const selectContainer = document.getElementById(isProfile ? 'profileAddressSelectContainer' : 'addressSelectContainer');
+        const manualContainer = document.getElementById(isProfile ? 'profileAddressManualContainer' : 'addressManualContainer');
+
+        if (!regionEl) return;
+
+        const showManualMode = (show) => {
+            if (show) {
+                if (selectContainer) selectContainer.classList.add('d-none');
+                if (manualContainer) manualContainer.classList.remove('d-none');
+                regionEl.removeAttribute('required');
+                if (provinceEl) provinceEl.removeAttribute('required');
+                if (cityEl) cityEl.removeAttribute('required');
+                if (barangayEl) barangayEl.removeAttribute('required');
+                if (manualEl) manualEl.setAttribute('required', 'required');
+            } else {
+                if (manualContainer) manualContainer.classList.add('d-none');
+                if (selectContainer) selectContainer.classList.remove('d-none');
+                regionEl.setAttribute('required', 'required');
+                if (provinceWrapper && !provinceWrapper.classList.contains('d-none') && provinceEl) {
+                    provinceEl.setAttribute('required', 'required');
+                } else if (provinceEl) {
+                    provinceEl.removeAttribute('required');
+                }
+                if (cityEl) cityEl.setAttribute('required', 'required');
+                if (barangayEl) barangayEl.setAttribute('required', 'required');
+                if (manualEl) manualEl.removeAttribute('required');
+            }
+        };
+
+        if (!fullAddress) {
+            showManualMode(false);
+            return;
+        }
+
+        const parts = fullAddress.split(',').map(s => s.trim());
+        // Standard cascading address expects 4 or 5 segments
+        if (parts.length < 4) {
+            showManualMode(true);
+            if (manualEl) manualEl.value = fullAddress;
+            return;
+        }
+
+        try {
+            let regionPart, provincePart, cityPart, barangayPart, streetPart;
+            if (parts.length === 5) {
+                streetPart = parts[0];
+                barangayPart = parts[1];
+                cityPart = parts[2];
+                provincePart = parts[3];
+                regionPart = parts[4];
+            } else {
+                // 4 parts: Street, Barangay, City, Region (no province, like NCR)
+                streetPart = parts[0];
+                barangayPart = parts[1];
+                cityPart = parts[2];
+                regionPart = parts[3];
+                provincePart = null;
+            }
+
+            // Ensure regions are loaded
+            let regions = Array.from(regionEl.options).filter(o => o.value);
+            if (regions.length === 0) {
+                const rawRegions = await this.fetchRegionsCached();
+                regionEl.innerHTML = '<option value="" disabled selected>Select Region</option>';
+                rawRegions.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.code;
+                    opt.textContent = r.name;
+                    regionEl.appendChild(opt);
+                });
+                regions = Array.from(regionEl.options).filter(o => o.value);
+            }
+
+            // Find matching region
+            const matchedRegion = regions.find(o => o.textContent.toLowerCase() === regionPart.toLowerCase());
+            if (!matchedRegion) throw new Error(`Region matching "${regionPart}" not found`);
+            regionEl.value = matchedRegion.value;
+
+            // Load provinces or cities directly
+            const regionCode = regionEl.value;
+            const provinces = await this.fetchPSGC(`regions/${regionCode}/provinces`);
+
+            if (provinces && provinces.length > 0 && provinceEl) {
+                if (provinceWrapper) provinceWrapper.classList.remove('d-none');
+                provinceEl.disabled = false;
+                provinceEl.setAttribute('required', 'required');
+
+                provinces.sort((a, b) => a.name.localeCompare(b.name));
+                provinceEl.innerHTML = '<option value="" disabled selected>Select Province</option>';
+                provinces.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.code;
+                    opt.textContent = p.name;
+                    provinceEl.appendChild(opt);
+                });
+
+                if (!provincePart) throw new Error("Province segment expected but not found in address");
+                const matchedProvince = Array.from(provinceEl.options).find(o => o.textContent.toLowerCase() === provincePart.toLowerCase());
+                if (!matchedProvince) throw new Error(`Province matching "${provincePart}" not found`);
+                provinceEl.value = matchedProvince.value;
+
+                // Load cities for province
+                if (cityEl) {
+                    cityEl.disabled = false;
+                    const cities = await this.fetchPSGC(`provinces/${provinceEl.value}/cities-municipalities`);
+                    cities.sort((a, b) => a.name.localeCompare(b.name));
+                    cityEl.innerHTML = '<option value="" disabled selected>Select City / Municipality</option>';
+                    cities.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.code;
+                        opt.textContent = c.name;
+                        cityEl.appendChild(opt);
+                    });
+                }
+            } else {
+                if (provinceWrapper) provinceWrapper.classList.add('d-none');
+                if (provinceEl) {
+                    provinceEl.innerHTML = '';
+                    provinceEl.removeAttribute('required');
+                    provinceEl.disabled = true;
+                }
+
+                // Direct load cities for NCR
+                if (cityEl) {
+                    cityEl.disabled = false;
+                    const cities = await this.fetchPSGC(`regions/${regionCode}/cities-municipalities`);
+                    cities.sort((a, b) => a.name.localeCompare(b.name));
+                    cityEl.innerHTML = '<option value="" disabled selected>Select City / Municipality</option>';
+                    cities.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.code;
+                        opt.textContent = c.name;
+                        cityEl.appendChild(opt);
+                    });
+                }
+            }
+
+            // Find matching city
+            if (cityEl) {
+                const matchedCity = Array.from(cityEl.options).find(o => o.textContent.toLowerCase() === cityPart.toLowerCase());
+                if (!matchedCity) throw new Error(`City matching "${cityPart}" not found`);
+                cityEl.value = matchedCity.value;
+
+                // Load barangays
+                if (barangayEl) {
+                    barangayEl.disabled = false;
+                    const barangays = await this.fetchPSGC(`cities-municipalities/${cityEl.value}/barangays`);
+                    barangays.sort((a, b) => a.name.localeCompare(b.name));
+                    barangayEl.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+                    barangays.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b.code;
+                        opt.textContent = b.name;
+                        barangayEl.appendChild(opt);
+                    });
+                }
+            }
+
+            // Find matching barangay
+            if (barangayEl) {
+                const matchedBarangay = Array.from(barangayEl.options).find(o => o.textContent.toLowerCase() === barangayPart.toLowerCase());
+                if (!matchedBarangay) throw new Error(`Barangay matching "${barangayPart}" not found`);
+                barangayEl.value = matchedBarangay.value;
+            }
+
+            // Set street
+            if (streetEl) streetEl.value = streetPart;
+
+            showManualMode(false);
+        } catch (err) {
+            console.warn("Failed to parse address into dropdowns, falling back to manual entry:", err);
+            showManualMode(true);
+            if (manualEl) manualEl.value = fullAddress;
+        }
+    },
+
+    getAddressFromUI: function(prefix) {
+        const isProfile = (prefix === 'profile');
+        const manualContainer = document.getElementById(isProfile ? 'profileAddressManualContainer' : 'addressManualContainer');
+        const manualEl = document.getElementById(isProfile ? 'profileManual' : 'addressManual');
+        
+        if (manualContainer && !manualContainer.classList.contains('d-none')) {
+            return manualEl ? manualEl.value.trim() : '';
+        }
+        
+        const regionEl = document.getElementById(isProfile ? 'profileRegion' : 'addressRegion');
+        const provinceEl = document.getElementById(isProfile ? 'profileProvince' : 'addressProvince');
+        const provinceWrapper = document.getElementById(isProfile ? 'profileProvinceWrapper' : 'addressProvinceWrapper');
+        const cityEl = document.getElementById(isProfile ? 'profileCity' : 'addressCity');
+        const barangayEl = document.getElementById(isProfile ? 'profileBarangay' : 'addressBarangay');
+        const streetEl = document.getElementById(isProfile ? 'profileStreet' : 'addressStreet');
+        
+        const street = streetEl ? streetEl.value.trim() : '';
+        const barangay = (barangayEl && barangayEl.selectedIndex > 0) ? barangayEl.options[barangayEl.selectedIndex].text : '';
+        const city = (cityEl && cityEl.selectedIndex > 0) ? cityEl.options[cityEl.selectedIndex].text : '';
+        const province = (provinceWrapper && !provinceWrapper.classList.contains('d-none') && provinceEl && provinceEl.selectedIndex > 0) ? provinceEl.options[provinceEl.selectedIndex].text : '';
+        const region = (regionEl && regionEl.selectedIndex > 0) ? regionEl.options[regionEl.selectedIndex].text : '';
+        
+        const parts = [];
+        if (street) parts.push(street);
+        if (barangay) parts.push(barangay);
+        if (city) parts.push(city);
+        if (province) parts.push(province);
+        if (region) parts.push(region);
+        
+        return parts.join(', ');
+    },
+
 
     populateProfileView: function() {
         if (!document.getElementById('profileName')) return;
+        
+        if (document.getElementById('profileRegion') && !this.profileAddressInitDone) {
+            this.profileAddressInitDone = true;
+            this.initAddressSelectors('profile');
+        }
         
         document.getElementById('profileName').value = this.profile.full_name;
         const profileDeptEl = document.getElementById('profileDept');
@@ -1147,9 +1586,7 @@ const App = {
         const profileBarangayEl = document.getElementById('profileBarangay');
         const profileStreetEl = document.getElementById('profileStreet');
         if (profileBarangayEl && profileStreetEl) {
-            const parsed = this.parseAddress(this.profile.address || '');
-            profileBarangayEl.value = parsed.barangay || '';
-            profileStreetEl.value = parsed.street || '';
+            this.setAddressFromParsed('profile', this.profile.address || '');
         } else if (document.getElementById('profileAddress')) {
             document.getElementById('profileAddress').value = this.profile.address || '';
         }
@@ -1242,6 +1679,10 @@ const App = {
         // Edit form
         const profileNameInput = document.getElementById('profileName');
         if (profileNameInput) {
+            if (document.getElementById('profileRegion') && !this.profileAddressInitDone) {
+                this.profileAddressInitDone = true;
+                this.initAddressSelectors('profile');
+            }
             profileNameInput.value = p.full_name;
             if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = p.email;
             if (document.getElementById('profileIdNumber')) document.getElementById('profileIdNumber').value = p.id_number || '';
@@ -1259,9 +1700,7 @@ const App = {
             const profileBarangayEl = document.getElementById('profileBarangay');
             const profileStreetEl = document.getElementById('profileStreet');
             if (profileBarangayEl && profileStreetEl) {
-                const parsed = this.parseAddress(p.address || '');
-                profileBarangayEl.value = parsed.barangay || '';
-                profileStreetEl.value = parsed.street || '';
+                this.setAddressFromParsed('profile', p.address || '');
             } else if (document.getElementById('profileAddress')) {
                 document.getElementById('profileAddress').value = p.address || '';
             }
@@ -1294,16 +1733,7 @@ const App = {
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i>Saving...';
                 btn.disabled = true;
 
-                let addressVal = '';
-                const profileBarangayEl = document.getElementById('profileBarangay');
-                const profileStreetEl = document.getElementById('profileStreet');
-                if (profileBarangayEl && profileStreetEl) {
-                    const barangayVal = profileBarangayEl.value;
-                    const streetVal = profileStreetEl.value.trim();
-                    addressVal = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
-                } else if (document.getElementById('profileAddress')) {
-                    addressVal = document.getElementById('profileAddress').value;
-                }
+                const addressVal = this.getAddressFromUI('profile');
 
                 const updates = {
                     full_name: document.getElementById('profileName').value,
@@ -1393,16 +1823,7 @@ const App = {
         const dept = document.getElementById('profileDept').value;
         const idNumber = document.getElementById('profileIdNumber') ? document.getElementById('profileIdNumber').value : '';
         
-        let address = '';
-        const profileBarangayEl = document.getElementById('profileBarangay');
-        const profileStreetEl = document.getElementById('profileStreet');
-        if (profileBarangayEl && profileStreetEl) {
-            const barangayVal = profileBarangayEl.value;
-            const streetVal = profileStreetEl.value.trim();
-            address = streetVal ? `${streetVal}, ${barangayVal}` : barangayVal;
-        } else {
-            address = document.getElementById('profileAddress') ? document.getElementById('profileAddress').value : '';
-        }
+        const address = this.getAddressFromUI('profile');
         
         const age = document.getElementById('profileAge') ? document.getElementById('profileAge').value : '';
         

@@ -325,46 +325,65 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-5 mb-3">
-                                    <label class="form-label fw-medium">Barangay / Area</label>
-                                    <select class="form-select bg-light" id="profileBarangay" required>
-                                        <option value="" disabled selected>Select Barangay</option>
-                                        <option value="Tibungco, Davao City">Tibungco, Davao City</option>
-                                        <option value="Panacan, Davao City">Panacan, Davao City</option>
-                                        <option value="Bunawan, Davao City">Bunawan, Davao City</option>
-                                        <option value="Ilang, Davao City">Ilang, Davao City</option>
-                                        <option value="Lasang, Davao City">Lasang, Davao City</option>
-                                        <option value="Mudiang, Davao City">Mudiang, Davao City</option>
-                                        <option value="Sasa, Davao City">Sasa, Davao City</option>
-                                        <option value="Cabantian, Davao City">Cabantian, Davao City</option>
-                                        <option value="Buhangin, Davao City">Buhangin, Davao City</option>
-                                        <option value="Indangan, Davao City">Indangan, Davao City</option>
-                                        <option value="Licanan, Davao City">Licanan, Davao City</option>
-                                        <option value="Mahayag, Davao City">Mahayag, Davao City</option>
-                                        <option value="Catitipan, Davao City">Catitipan, Davao City</option>
-                                        <option value="Communal, Davao City">Communal, Davao City</option>
-                                        <option value="Pampanga, Davao City">Pampanga, Davao City</option>
-                                        <option value="Lanang, Davao City">Lanang, Davao City</option>
-                                        <option value="Agdao, Davao City">Agdao, Davao City</option>
-                                        <option value="Toril, Davao City">Toril, Davao City</option>
-                                        <option value="Calinan, Davao City">Calinan, Davao City</option>
-                                        <option value="Mintal, Davao City">Mintal, Davao City</option>
-                                        <option value="Matina, Davao City">Matina, Davao City</option>
-                                        <option value="Talomo, Davao City">Talomo, Davao City</option>
-                                        <option value="Bajada, Davao City">Bajada, Davao City</option>
-                                        <option value="Others">Others</option>
-                                    </select>
+                                <!-- Cascading Address Selector Container -->
+                                <div id="profileAddressSelectContainer">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Region</label>
+                                            <select class="form-select bg-light" id="profileRegion" required>
+                                                <option value="" disabled selected>Loading Regions...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="profileProvinceWrapper">
+                                            <label class="form-label fw-medium">Province</label>
+                                            <select class="form-select bg-light" id="profileProvince" required>
+                                                <option value="" disabled selected>Select Region first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">City / Municipality</label>
+                                            <select class="form-select bg-light" id="profileCity" required>
+                                                <option value="" disabled selected>Select Province first</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Barangay</label>
+                                            <select class="form-select bg-light" id="profileBarangay" required>
+                                                <option value="" disabled selected>Select City first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label fw-medium">Street / Purok / Subdivision</label>
+                                            <input type="text" class="form-control bg-light" id="profileStreet" placeholder="e.g. Purok 9, Luardo Compound">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileManualAddress" class="text-muted small text-decoration-none"><i class="fa-solid fa-keyboard me-1"></i>Having trouble? Enter address manually</a>
+                                    </div>
                                 </div>
-                                <div class="col-md-5 mb-3">
-                                    <label class="form-label fw-medium">Street / Purok / Subdivision</label>
-                                    <input type="text" class="form-control bg-light" id="profileStreet" placeholder="e.g. Purok 9, Luardo Compound">
+
+                                <!-- Manual Address Entry Container -->
+                                <div id="profileAddressManualContainer" class="d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">Full Address (Manual Entry)</label>
+                                        <input type="text" class="form-control bg-light" id="profileManual" placeholder="e.g. Purok 9, Luardo Compound, Panacan, Davao City">
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileSelectAddress" class="text-primary small text-decoration-none"><i class="fa-solid fa-list me-1"></i>Use automated dropdowns</a>
+                                    </div>
                                 </div>
-                                <div class="col-md-2 mb-3">
-                                    <label class="form-label fw-medium">Age</label>
-                                    <input type="number" class="form-control bg-light" id="profileAge" min="15">
+
+                                <!-- Age Input -->
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-medium">Age</label>
+                                        <input type="number" class="form-control bg-light" id="profileAge" min="15">
+                                    </div>
                                 </div>
-                            </div>
                             <div class="mb-4">
                                 <label class="form-label fw-medium">Email Address</label>
                                 <input type="email" class="form-control bg-light text-muted" id="profileEmail" disabled>
