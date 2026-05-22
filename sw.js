@@ -1,4 +1,4 @@
-const CACHE_NAME = 'consultime-v12';
+const CACHE_NAME = 'consultime-v13';
 const ASSETS = [
   './',
   './login.html',

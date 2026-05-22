@@ -2325,10 +2325,10 @@ const App = {
     },
 
     getExpectedSchoolYear: function () {
-        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-        const month = now.getMonth() + 1; // 1-indexed (1 to 12)
-        const date = now.getDate();
-        const currentYear = now.getFullYear();
+        const manila = this.getManilaTime();
+        const month = manila.month;
+        const date = manila.day;
+        const currentYear = manila.year;
 
         if (month > 4 || (month === 4 && date >= 15)) {
             return `${currentYear}-${currentYear + 1}`;
@@ -2529,9 +2529,9 @@ const App = {
     autoExpireAppointments: async function () {
         try {
             // Use Philippines time (UTC+8)
-            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-            const todayStr = now.toISOString().split('T')[0];
-            const currentTime = now.toTimeString().substring(0, 8); // "HH:MM:SS"
+            const manila = this.getManilaTime();
+            const todayStr = manila.dateStr;
+            const currentTime = manila.timeStr;
 
             // 1. Auto-cancel: pending appointments whose date has already passed entirely
             const { error: cancelErr } = await supabaseClient
@@ -2554,9 +2554,9 @@ const App = {
 
             // 3. Auto no-show: approved appointments whose end_time + 15min grace period has passed
             // Calculate time minus 15 minutes (grace period)
-            const graceDate = new Date(now.getTime() - 15 * 60 * 1000);
-            const graceDateStr = graceDate.toISOString().split('T')[0];
-            const graceTimeStr = graceDate.toTimeString().substring(0, 8);
+            const graceManila = this.getManilaTime(new Date(Date.now() - 15 * 60 * 1000));
+            const graceDateStr = graceManila.dateStr;
+            const graceTimeStr = graceManila.timeStr;
 
             // Past days: any approved appointment from a previous date → no_show
             const { error: noShowPastErr } = await supabaseClient
@@ -2845,15 +2845,12 @@ const App = {
         slotsDiv.innerHTML = '';
 
         // Generate 30-min slots based on availability
-        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-        const nowY = now.getFullYear();
-        const nowM = String(now.getMonth() + 1).padStart(2, '0');
-        const nowD = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${nowY}-${nowM}-${nowD}`;
+        const manila = this.getManilaTime();
+        const todayStr = manila.dateStr;
 
         const isToday = (dateVal === todayStr);
-        const currentH = now.getHours();
-        const currentM = now.getMinutes();
+        const currentH = manila.hour;
+        const currentM = manila.minute;
 
         availability.forEach(avail => {
             let start = new Date(`1970-01-01T${avail.start_time}`);
@@ -4935,7 +4932,7 @@ const App = {
     alarmAudioInterval: null,
     audioCtx: null,
 
-    getManilaTime: function() {
+    getManilaTime: function(date = new Date()) {
         const options = {
             timeZone: 'Asia/Manila',
             year: 'numeric', month: '2-digit', day: '2-digit',
@@ -4943,14 +4940,20 @@ const App = {
             hour12: false
         };
         const formatter = new Intl.DateTimeFormat('en-US', options);
-        const parts = formatter.formatToParts(new Date());
+        const parts = formatter.formatToParts(date);
         const dateParts = {};
         parts.forEach(p => { dateParts[p.type] = p.value; });
+        let hour = parseInt(dateParts.hour, 10);
+        if (hour === 24) hour = 0;
         return {
             dateStr: `${dateParts.year}-${dateParts.month}-${dateParts.day}`,
             timeStr: `${dateParts.hour}:${dateParts.minute}:${dateParts.second}`,
-            hour: parseInt(dateParts.hour),
-            minute: parseInt(dateParts.minute)
+            hour: hour,
+            minute: parseInt(dateParts.minute, 10),
+            second: parseInt(dateParts.second, 10),
+            year: parseInt(dateParts.year, 10),
+            month: parseInt(dateParts.month, 10),
+            day: parseInt(dateParts.day, 10)
         };
     },
 
