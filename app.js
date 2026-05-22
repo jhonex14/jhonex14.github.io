@@ -736,6 +736,7 @@ const App = {
                                     }
                                 };
                             }
+                            this.populateProfilePage();
                             this.loadProfilePageStatsAndTimeline();
                         },
                         () => {
@@ -755,6 +756,7 @@ const App = {
                             }
                         };
                     }
+                    this.populateProfilePage();
                     this.loadProfilePageStatsAndTimeline();
                 }
             } else if (isDashboard) {
@@ -1919,8 +1921,9 @@ const App = {
 
     populateProfilePage: function() {
         if (!document.getElementById('heroName')) return;
+        if (!this.profile) return;
         const p = this.profile;
-        const initials = p.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        const initials = p.full_name ? p.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() : 'US';
 
         // Hero section
         document.getElementById('heroName').textContent = p.full_name;
@@ -2222,6 +2225,7 @@ const App = {
 
     loadProfilePageStatsAndTimeline: async function() {
         if (!document.getElementById('profileStatTotal')) return;
+        if (!this.profile) return;
 
         try {
             const role = this.profile.role;
