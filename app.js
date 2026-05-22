@@ -90,18 +90,32 @@ const App = {
 
         await this.checkAuthStatus();
 
-        // Listen for auth state changes to dynamically update navbar or handle redirect
+        // Listen for auth state changes — page-aware to prevent redirect loops
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            console.log("Auth state change detected:", event, session);
+            console.log("Auth state change detected:", event, session ? session.user?.id : 'null');
+
+            const path = window.location.pathname;
+            const isAuthPage = path.includes('login.html') || path.includes('register.html');
+            const isDashboard = path.includes('dashboard.html');
+            const isProfilePage = path.includes('profile.html');
+            const isIndexPage = !isAuthPage && !isDashboard && !isProfilePage;
+
             if (session) {
                 this.user = session.user;
-                // If profile is not loaded or user changed, fetch profile
-                if (!this.profile || this.profile.id !== this.user.id) {
-                    await this.checkAuthStatus();
-                } else {
-                    // Update userMenu navbar links just in case
+
+                if (isAuthPage) {
+                    // On login/register: load profile then redirect to the correct dashboard
+                    if (!this.profile || this.profile.id !== this.user.id) {
+                        await this.checkAuthStatus();
+                    }
+                    this.routePage();
+                } else if (isIndexPage) {
+                    // On the landing page (index.html): just update the navbar buttons
+                    if (!this.profile || this.profile.id !== this.user.id) {
+                        await this.checkAuthStatus();
+                    }
                     const userMenu = document.getElementById('userMenu');
-                    if (userMenu) {
+                    if (userMenu && this.profile) {
                         const userRole = this.profile.role || 'student';
                         const dashboardLink = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
                         userMenu.innerHTML = `
@@ -110,18 +124,26 @@ const App = {
                         `;
                     }
                 }
-                this.routePage();
+                // On dashboard/profile pages: do NOT call routePage() — the page is already loaded.
+                // routePage() will be called by checkAuthStatus() during init() instead.
+
             } else {
-                this.user = null;
-                this.profile = null;
-                const userMenu = document.getElementById('userMenu');
-                if (userMenu) {
-                    userMenu.innerHTML = `
-                        <a href="login.html" class="btn btn-outline-light me-2 rounded-pill px-4">Login</a>
-                        <a href="register.html" class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm">Get Started</a>
-                    `;
+                // Session is null — only react to explicit SIGNED_OUT, not to brief token-refresh gaps
+                if (event === 'SIGNED_OUT') {
+                    this.user = null;
+                    this.profile = null;
+                    const userMenu = document.getElementById('userMenu');
+                    if (userMenu) {
+                        userMenu.innerHTML = `
+                            <a href="login.html" class="btn btn-outline-light me-2 rounded-pill px-4">Login</a>
+                            <a href="register.html" class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm">Get Started</a>
+                        `;
+                    }
+                    // Only redirect to login if we were on a protected page
+                    if (isDashboard || isProfilePage) {
+                        window.location.replace('login.html');
+                    }
                 }
-                this.routePage();
             }
         });
         
