@@ -620,14 +620,8 @@ const App = {
             const isBackForward = navEntries && navEntries.length > 0 && navEntries[0].type === 'back_forward';
 
             if (isAuthPage) {
-                // If they landed here via browser back/forward buttons, force redirect back to dashboard
-                if (isBackForward) {
-                    window.location.replace(dash);
-                } else if (document.referrer && document.referrer.includes('dashboard.html')) {
-                    window.location.replace('index.html');
-                } else {
-                    window.location.replace(dash);
-                }
+                // Always redirect logged-in users to their dashboard — no matter where they came from
+                window.location.replace(dash);
             } else if (isProfilePage) {
                 // Track user presence to prevent duplicate concurrent logins
                 this.trackPresence(this.user.id);
@@ -749,7 +743,7 @@ const App = {
 
             checkChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
-                    // Wait 1.2 seconds for presence state to sync from Supabase Realtime
+                    // Wait 600ms (down from 1200ms) for presence state to sync from Supabase Realtime
                     setTimeout(async () => {
                         const state = checkChannel.presenceState();
                         const activeSessions = [];
@@ -810,9 +804,11 @@ const App = {
                                             event: 'kickout',
                                             payload: {}
                                         });
-                                        // Wait 1 second for event propagation, then reload into dashboard
+                                        // Wait 1 second for event propagation, then navigate to dashboard
                                         setTimeout(() => {
-                                            window.location.reload();
+                                            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
+                                            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+                                            window.location.replace(dash);
                                         }, 1000);
                                     }
                                 });
@@ -826,10 +822,12 @@ const App = {
                             });
 
                         } else {
-                            // Proceed with login reload
-                            window.location.reload();
+                            // No conflicting session — navigate directly to dashboard without a page reload
+                            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
+                            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+                            window.location.replace(dash);
                         }
-                    }, 1200);
+                    }, 600);
                 }
             });
         } catch (error) {
