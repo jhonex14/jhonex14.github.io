@@ -89,6 +89,41 @@ const App = {
         }
 
         await this.checkAuthStatus();
+
+        // Listen for auth state changes to dynamically update navbar or handle redirect
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log("Auth state change detected:", event, session);
+            if (session) {
+                this.user = session.user;
+                // If profile is not loaded or user changed, fetch profile
+                if (!this.profile || this.profile.id !== this.user.id) {
+                    await this.checkAuthStatus();
+                } else {
+                    // Update userMenu navbar links just in case
+                    const userMenu = document.getElementById('userMenu');
+                    if (userMenu) {
+                        const userRole = this.profile.role || 'student';
+                        const dashboardLink = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+                        userMenu.innerHTML = `
+                            <a href="${dashboardLink}" class="btn btn-outline-light me-2 rounded-pill px-4">Dashboard</a>
+                            <button onclick="App.handleLogout()" class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm">Logout</button>
+                        `;
+                    }
+                }
+                this.routePage();
+            } else {
+                this.user = null;
+                this.profile = null;
+                const userMenu = document.getElementById('userMenu');
+                if (userMenu) {
+                    userMenu.innerHTML = `
+                        <a href="login.html" class="btn btn-outline-light me-2 rounded-pill px-4">Login</a>
+                        <a href="register.html" class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm">Get Started</a>
+                    `;
+                }
+                this.routePage();
+            }
+        });
         
         // Initialize global components
         this.initRealtime();
@@ -458,17 +493,18 @@ const App = {
                 .single();
 
             // If profile is missing from database, fall back to user_metadata to prevent crash and loss of session
-            if (!profile && this.user.user_metadata) {
+            if (!profile) {
+                const meta = this.user.user_metadata || {};
                 profile = {
                     id: this.user.id,
-                    full_name: this.user.user_metadata.full_name || 'User',
-                    role: this.user.user_metadata.role || 'student',
-                    department: this.user.user_metadata.department || '',
-                    id_number: this.user.user_metadata.id_number || '',
-                    address: this.user.user_metadata.address || '',
-                    age: this.user.user_metadata.age || null,
+                    full_name: meta.full_name || 'User',
+                    role: meta.role || 'student',
+                    department: meta.department || '',
+                    id_number: meta.id_number || '',
+                    address: meta.address || '',
+                    age: meta.age || null,
                     email: this.user.email,
-                    is_approved: this.user.user_metadata.role !== 'faculty'
+                    is_approved: meta.role !== 'faculty'
                 };
             }
 
@@ -549,6 +585,9 @@ const App = {
             }
 
             // Always try to populate dedicated profile page (profile.html)
+        } else {
+            this.user = null;
+            this.profile = null;
         }
     } catch (error) {
         console.error("Authentication check error:", error);
