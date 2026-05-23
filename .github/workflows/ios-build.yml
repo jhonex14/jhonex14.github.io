@@ -44,7 +44,7 @@ jobs:
           cp *.html app.js sw.js styles.css manifest.json version.json www/
 
       - name: Sync web assets
-        run: npx cap sync ios --verbose
+        run: npx cap sync ios
 
       - name: Build Simulator App
         run: |
