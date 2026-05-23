@@ -38,6 +38,11 @@ jobs:
             echo "iOS platform directory already exists, skipping npx cap add ios."
           fi
 
+      - name: Copy web assets to www directory
+        run: |
+          mkdir -p www
+          cp *.html app.js sw.js styles.css manifest.json version.json www/
+
       - name: Sync web assets
         run: npx cap sync ios
 
