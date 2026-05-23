@@ -10,6 +10,13 @@ jobs:
   build-ios:
     name: Build iOS App
     runs-on: macos-latest
+    env:
+      APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,12 +58,7 @@ jobs:
           path: build/Build/Products/Release-iphonesimulator/ConsulTime-Simulator.zip
 
       - name: Install Apple Certificate and Provisioning Profile
-        if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12 }}
-          P12_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        if: ${{ env.APPLE_CERTIFICATE_P12 != '' }}
         run: |
           # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
@@ -64,8 +66,8 @@ jobs:
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
           # import certificate and provisioning profile from secrets
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > $PP_PATH
+          echo -n "$APPLE_CERTIFICATE_P12" | base64 --decode > $CERTIFICATE_PATH
+          echo -n "$APPLE_PROVISIONING_PROFILE" | base64 --decode > $PP_PATH
 
           # create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -73,7 +75,7 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
           # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # apply provisioning profile
@@ -81,15 +83,15 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Prepare export options
-        if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
+        if: ${{ env.APPLE_CERTIFICATE_P12 != '' }}
         run: |
           cp ios/App/App/exportOptions.plist ios/App/App/exportOptions.tmp.plist
-          sed -i '' "s/YOUR_TEAM_ID/${{ secrets.APPLE_TEAM_ID }}/g" ios/App/App/exportOptions.tmp.plist
-          sed -i '' "s/YOUR_PROVISIONING_PROFILE/${{ secrets.PROVISIONING_PROFILE }}/g" ios/App/App/exportOptions.tmp.plist
+          sed -i '' "s/YOUR_TEAM_ID/$APPLE_TEAM_ID/g" ios/App/App/exportOptions.tmp.plist
+          sed -i '' "s/YOUR_PROVISIONING_PROFILE/$APPLE_PROVISIONING_PROFILE/g" ios/App/App/exportOptions.tmp.plist
           mv ios/App/App/exportOptions.tmp.plist ios/App/App/exportOptions.plist
 
       - name: Build iOS archive
-        if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
+        if: ${{ env.APPLE_CERTIFICATE_P12 != '' }}
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
@@ -97,7 +99,7 @@ jobs:
             -archivePath ${{ runner.temp }}/App.xcarchive archive
 
       - name: Export IPA
-        if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
+        if: ${{ env.APPLE_CERTIFICATE_P12 != '' }}
         run: |
           xcodebuild -exportArchive \
             -archivePath ${{ runner.temp }}/App.xcarchive \
@@ -105,7 +107,7 @@ jobs:
             -exportPath ${{ runner.temp }}/ipa
 
       - name: Upload IPA artifact
-        if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
+        if: ${{ env.APPLE_CERTIFICATE_P12 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ConsulTime-iOS-IPA
