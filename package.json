@@ -7,7 +7,9 @@
     "start": "electron .",
     "build": "electron-builder",
     "cap:sync": "npx cap sync",
-    "cap:open": "npx cap open android"
+    "cap:open": "npx cap open android",
+    "cap:sync-ios": "npx cap sync ios",
+    "cap:open-ios": "npx cap open ios"
   },
   "keywords": [
     "consultation",
@@ -18,11 +20,12 @@
   "author": "ConsulTime Team",
   "license": "ISC",
   "dependencies": {
-    "@capacitor/core": "^5.0.0"
+    "@capacitor/core": "^8.3.4"
   },
   "devDependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/cli": "^5.0.0",
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "electron": "^25.3.0",
     "electron-builder": "^24.6.3"
   },

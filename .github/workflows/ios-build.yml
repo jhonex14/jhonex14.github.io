@@ -1,0 +1,130 @@
+name: Build iOS (Capacitor)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-ios-simulator:
+    name: Build iOS Simulator App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Add iOS platform (if not present)
+        run: npx cap add ios
+
+      - name: Sync web assets
+        run: npx cap sync ios
+
+      - name: Build Simulator App
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            -destination 'generic/platform=iOS Simulator' \
+            clean build
+
+      - name: Compress Simulator Build
+        run: |
+          cd build/Build/Products/Release-iphonesimulator
+          zip -r ConsulTime-Simulator.zip App.app
+
+      - name: Upload Simulator App
+        uses: actions/upload-artifact@v4
+        with:
+          name: ConsulTime-iOS-Simulator
+          path: build/Build/Products/Release-iphonesimulator/ConsulTime-Simulator.zip
+
+  build-ios-ipa:
+    name: Build Signed iOS IPA
+    runs-on: macos-latest
+    if: ${{ secrets.APPLE_CERTIFICATE_P12 != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Add iOS platform (if not present)
+        run: npx cap add ios
+
+      - name: Sync web assets
+        run: npx cap sync ios
+
+      - name: Install Apple Certificate and Provisioning Profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # apply provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Prepare export options
+        run: |
+          cp ios/App/App/exportOptions.plist ios/App/App/exportOptions.tmp.plist
+          sed -i '' "s/YOUR_TEAM_ID/${{ secrets.APPLE_TEAM_ID }}/g" ios/App/App/exportOptions.tmp.plist
+          sed -i '' "s/YOUR_PROVISIONING_PROFILE/${{ secrets.PROVISIONING_PROFILE }}/g" ios/App/App/exportOptions.tmp.plist
+          mv ios/App/App/exportOptions.tmp.plist ios/App/App/exportOptions.plist
+
+      - name: Build iOS archive
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath ${{ runner.temp }}/App.xcarchive archive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath ${{ runner.temp }}/App.xcarchive \
+            -exportOptionsPlist ios/App/App/exportOptions.plist \
+            -exportPath ${{ runner.temp }}/ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ConsulTime-iOS-IPA
+          path: ${{ runner.temp }}/ipa/*.ipa
