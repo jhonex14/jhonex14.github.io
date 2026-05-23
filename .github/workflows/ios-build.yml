@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Simulator App
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphonesimulator \
@@ -111,7 +111,7 @@ jobs:
 
       - name: Build iOS archive
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath ${{ runner.temp }}/App.xcarchive archive
