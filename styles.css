@@ -35,6 +35,7 @@ body {
 .text-accent { color: var(--accent-color) !important; }
 .bg-accent-soft { background-color: rgba(16, 185, 129, 0.1); }
 .border-accent { border-color: var(--accent-color) !important; }
+.text-white-75 { color: rgba(255, 255, 255, 0.75) !important; }
 
 /* Navbar Animations */
 .navbar {
