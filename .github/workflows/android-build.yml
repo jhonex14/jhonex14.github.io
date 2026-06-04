@@ -34,7 +34,6 @@ jobs:
         run: |
           mkdir -p www
           cp *.html *.css *.js *.json *.png www/ || true
-          npx cap add android
           npx cap sync android
 
       - name: Make gradlew executable
