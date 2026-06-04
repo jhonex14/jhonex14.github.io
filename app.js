@@ -3,7 +3,7 @@
 const GOOGLE_CLIENT_ID = '354413155894-3j42tctmks8o90vpt56mlln7l3tms44f.apps.googleusercontent.com';
 
 // Update Notification Config
-const REQUIRED_APK_VERSION = "1.0.1"; // Change this whenever you want to force users to download a new APK
+const REQUIRED_APK_VERSION = "1.0"; // Change this whenever you want to force users to download a new APK
 const MEDIAFIRE_LINK = "https://www.mediafire.com/"; // Replace with actual MediaFire link
 const GOOGLE_DRIVE_LINK = "https://drive.google.com/"; // Replace with actual Google Drive link
 const supabaseUrl = 'https://uximseyeqkhoghsrksds.supabase.co';
