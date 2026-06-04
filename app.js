@@ -93,6 +93,7 @@ const App = {
                 loginAlert.innerHTML = `<i class="fa-solid fa-circle-exclamation me-2"></i><strong>Session Terminated:</strong> You have been logged out because this account was signed in on another device or browser.`;
                 loginAlert.classList.remove('d-none');
             }
+            window.history.replaceState(null, null, window.location.pathname);
         }
 
         await this.checkAuthStatus();
@@ -111,6 +112,7 @@ const App = {
                 this.user = session.user;
 
                 if (isAuthPage) {
+                    if (App.isLoggingIn) return; // Prevent early redirect during manual login flow
                     // On login/register: load profile then redirect to the correct dashboard
                     if (!this.profile || this.profile.id !== this.user.id) {
                         await this.checkAuthStatus();
@@ -172,7 +174,7 @@ const App = {
 
         // Start session monitor to forcefully log out if logged in elsewhere (runs every 15s)
         setInterval(async () => {
-            if (this.user) {
+            if (this.user && !App.isLoggingIn) {
                 const localSessionId = localStorage.getItem('ct_active_session');
                 if (localSessionId) {
                     const { data: prof } = await supabaseClient.from('profiles').select('active_session_id').eq('id', this.user.id).single();
@@ -678,7 +680,7 @@ const App = {
 
             // Single Active Session Verification
             const localSessionId = localStorage.getItem('ct_active_session');
-            if (profile && profile.active_session_id && localSessionId !== profile.active_session_id) {
+            if (!App.isLoggingIn && profile && profile.active_session_id && localSessionId !== profile.active_session_id) {
                 // Another device/browser logged in recently and took over
                 await supabaseClient.auth.signOut();
                 localStorage.removeItem('ct_active_session');
@@ -885,6 +887,7 @@ const App = {
         const originalText = btn.innerHTML;
 
         try {
+            App.isLoggingIn = true;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Credentials...';
             btn.disabled = true;
 
@@ -932,6 +935,7 @@ const App = {
                 }
             });
         } catch (error) {
+            App.isLoggingIn = false;
             alertBox.textContent = error.message;
             alertBox.classList.remove('d-none');
             btn.innerHTML = originalText;
@@ -1124,6 +1128,7 @@ const App = {
     },
 
     handleLogout: async function () {
+        localStorage.removeItem('ct_active_session');
         await supabaseClient.auth.signOut();
         window.location.replace('login.html');
     },
