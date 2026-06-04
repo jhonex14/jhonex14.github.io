@@ -148,8 +148,8 @@ const App = {
             }
         });
         
-        // Initialize global components
         this.initRealtime();
+        this.startAppointmentMonitor(); // Start background interval for alerts and auto-reject
         this.requestNotificationPermission(); // Ask for OS notification permission
         if (this.profile && this.profile.role === 'student') {
             this.initChatbot();
@@ -4222,6 +4222,89 @@ const App = {
                     faculty_notes: 'System Auto-Rejected: Consultation time expired without attendance.'
                 }).eq('id', appt.id);
             }
+        }
+    },
+
+    startAppointmentMonitor: function() {
+        if (this.monitorInterval) clearInterval(this.monitorInterval);
+        
+        // Check immediately, then every 1 minute
+        this._checkUpcomingAppointments();
+        this.monitorInterval = setInterval(() => {
+            this._checkUpcomingAppointments();
+        }, 60000);
+    },
+
+    _checkUpcomingAppointments: async function() {
+        if (!this.user || !this.profile) return;
+        
+        const manila = this.getManilaTime();
+        const currentDate = manila.dateStr;
+        const currentTotalMins = manila.hour * 60 + manila.minute;
+        
+        // Fetch approved appointments for today
+        let query = supabaseClient.from('appointments').select('*')
+            .eq('appointment_date', currentDate)
+            .eq('status', 'approved');
+            
+        if (this.profile.role === 'student') {
+            query = query.eq('student_id', this.user.id);
+        } else if (this.profile.role === 'faculty') {
+            query = query.eq('faculty_id', this.user.id);
+        }
+        
+        const { data, error } = await query;
+        if (error || !data) return;
+        
+        // We track notified alerts in sessionStorage to prevent spamming
+        let notifiedAlerts = JSON.parse(sessionStorage.getItem('ct_alerts') || '{}');
+        let needsDbRefresh = false;
+
+        for (let appt of data) {
+            if (!appt.start_time || !appt.end_time) continue;
+
+            const [startH, startM] = appt.start_time.split(':').map(Number);
+            const startTotalMins = startH * 60 + startM;
+            const diffMins = startTotalMins - currentTotalMins;
+            
+            const [endH, endM] = appt.end_time.split(':').map(Number);
+            const endTotalMins = endH * 60 + endM;
+            
+            // 1. Check Auto-Reject in real-time (time expired)
+            if (currentTotalMins >= endTotalMins) {
+                await supabaseClient.from('appointments').update({
+                    status: 'rejected',
+                    faculty_notes: 'System Auto-Rejected: Consultation time expired without attendance.'
+                }).eq('id', appt.id);
+                
+                this.sendNativeNotification('⏳ Consultation Expired', 'An appointment was auto-rejected because it was not attended.');
+                needsDbRefresh = true;
+                continue; 
+            }
+
+            // 2. Alert Checks
+            if (diffMins === 10 && !notifiedAlerts[`${appt.id}_10`]) {
+                this.sendNativeNotification('⏰ Upcoming Consultation', `Your consultation starts in exactly 10 minutes!`);
+                this.showToast('Upcoming Consultation', `Starts in 10 minutes!`, 'warning');
+                notifiedAlerts[`${appt.id}_10`] = true;
+            }
+            else if (diffMins === 5 && !notifiedAlerts[`${appt.id}_5`]) {
+                this.sendNativeNotification('🚨 Consultation Starting Soon', `Your consultation starts in 5 minutes. Get ready!`);
+                this.showToast('Starting Soon', `Starts in 5 minutes!`, 'warning');
+                notifiedAlerts[`${appt.id}_5`] = true;
+            }
+            else if (diffMins === 0 && !notifiedAlerts[`${appt.id}_0`]) {
+                this.sendNativeNotification('▶️ Consultation Started', `Your consultation is starting right now!`);
+                this.showToast('Consultation Started', `It is time for your consultation!`, 'success');
+                notifiedAlerts[`${appt.id}_0`] = true;
+            }
+        }
+        
+        sessionStorage.setItem('ct_alerts', JSON.stringify(notifiedAlerts));
+        
+        if (needsDbRefresh) {
+            if (this.profile.role === 'student') this.fetchStudentAppointments();
+            if (this.profile.role === 'faculty') this.fetchFacultyRequests();
         }
     },
 
