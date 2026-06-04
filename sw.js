@@ -1,4 +1,4 @@
-const CACHE_NAME = 'consultime-v17';
+const CACHE_NAME = 'consultime-v19';
 const ASSETS = [
   './',
   './login.html',
@@ -45,6 +45,52 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request).catch(() => {
       return caches.match(e.request, { ignoreSearch: true });
+    })
+  );
+});
+
+// ── Background Notification Handler ──────────────────────────────────────────
+// When app.js calls postMessage({ type: 'SHOW_NOTIFICATION', ... }),
+// the Service Worker shows it as a real OS notification even if app is minimized.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, icon, badge, tag, url } = event.data;
+
+    event.waitUntil(
+      self.registration.showNotification(title, {
+        body: body,
+        icon: icon || './consultime_mobile_mockup.png',
+        badge: badge || './consultime_mobile_mockup.png',
+        tag: tag || 'consultime-alert',
+        renotify: true,
+        vibrate: [200, 100, 200, 100, 200],
+        data: { url: url || '/' }
+      })
+    );
+  }
+});
+
+// ── Notification Click Handler ────────────────────────────────────────────────
+// When user taps the notification from the top of the screen, open the app.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If app is already open, focus it
+      for (const client of clientList) {
+        if (client.url === targetUrl && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
     })
   );
 });

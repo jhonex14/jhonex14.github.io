@@ -150,6 +150,7 @@ const App = {
         
         // Initialize global components
         this.initRealtime();
+        this.requestNotificationPermission(); // Ask for OS notification permission
         if (this.profile && this.profile.role === 'student') {
             this.initChatbot();
         }
@@ -3019,15 +3020,15 @@ const App = {
                 start.setMinutes(start.getMinutes() + 30);
                 let slotEnd = start.toTimeString().substring(0, 5);
 
-                // Filter out past time slots when booking for today.
-                // A slot is hidden if its END time is already in the past
-                // (i.e. slotH:slotM30 <= currentH:currentM in 24h format).
+                // Implement 30-minute advance booking rule.
+                // A slot is hidden if it starts less than 30 minutes from the current time.
                 if (isToday) {
                     const [slotH, slotM] = slotStart.split(':').map(Number);
-                    const slotEndH = Math.floor((slotH * 60 + slotM + 30) / 60);
-                    const slotEndM = (slotH * 60 + slotM + 30) % 60;
-                    // Hide slot if its end time is at or before current time
-                    if (slotEndH < currentH || (slotEndH === currentH && slotEndM <= currentM)) {
+                    const slotStartTotalMinutes = slotH * 60 + slotM;
+                    const currentTotalMinutes = currentH * 60 + currentM;
+                    
+                    // If the slot starts less than 30 minutes from now, hide it
+                    if (slotStartTotalMinutes < currentTotalMinutes + 30) {
                         continue;
                     }
                 }
@@ -3154,6 +3155,8 @@ const App = {
             .order('start_time', { ascending: false });
 
         if (error) return;
+        
+        await this._processAutoRejects(data);
 
         let upcoming = 0;
         let pending = 0;
@@ -3279,6 +3282,9 @@ const App = {
             .order('appointment_date', { ascending: true });
 
         if (error) return;
+        
+        await this._processAutoRejects(data);
+        
         this.facultyRequests = data; // Cache the data globally for printing/exporting
 
         let pending = 0;
@@ -4184,6 +4190,41 @@ const App = {
     },
 
     // Purpose-based dropdown configurations for the "Complete Consultation" modal
+    _processAutoRejects: async function(appointments) {
+        if (!appointments || appointments.length === 0) return;
+
+        const manila = this.getManilaTime();
+        const currentDate = manila.dateStr;
+        const currentTotalMins = manila.hour * 60 + manila.minute;
+
+        const expiredAppts = appointments.filter(appt => {
+            if (appt.status !== 'pending' && appt.status !== 'approved') return false;
+            
+            if (appt.appointment_date < currentDate) return true; // Past day
+            
+            if (appt.appointment_date === currentDate && appt.end_time) {
+                const [endH, endM] = appt.end_time.split(':').map(Number);
+                const endTotalMins = endH * 60 + endM;
+                if (currentTotalMins >= endTotalMins) return true; // Time has passed today
+            }
+            return false;
+        });
+
+        if (expiredAppts.length > 0) {
+            for (let appt of expiredAppts) {
+                // Update locally so UI renders it correctly immediately
+                appt.status = 'rejected';
+                appt.faculty_notes = 'System Auto-Rejected: Consultation time expired without attendance.';
+                
+                // Update in DB asynchronously
+                await supabaseClient.from('appointments').update({
+                    status: 'rejected',
+                    faculty_notes: 'System Auto-Rejected: Consultation time expired without attendance.'
+                }).eq('id', appt.id);
+            }
+        }
+    },
+
     _purposeConfig: {
         grades: {
             alert: null,
@@ -4927,19 +4968,73 @@ const App = {
                 // If I am faculty and someone booked me
                 if (this.profile && this.profile.role === 'faculty' && appt.faculty_id === this.user.id && payload.eventType === 'INSERT') {
                     sessionStorage.removeItem('notifsViewed');
-                    this.showToast('New Appointment Request!', 'A student just booked a consultation.', 'success');
+                    const title = '📋 New Appointment Request!';
+                    const body = `A student just booked a consultation for ${appt.appointment_date}.`;
+                    this.showToast(title, body, 'success');
+                    this.sendNativeNotification(title, body);
                     this.fetchFacultyRequests();
                 }
                 
                 // If I am student and my booking was updated
                 if (this.profile && this.profile.role === 'student' && appt.student_id === this.user.id && payload.eventType === 'UPDATE') {
                     sessionStorage.removeItem('notifsViewed');
-                    this.showToast('Status Updated!', 'Your appointment is now ' + appt.status + '.', 'info');
+                    const statusMap = {
+                        approved: { title: '✅ Appointment Approved!', body: 'Your consultation has been confirmed by the faculty.', type: 'success' },
+                        rejected: { title: '❌ Appointment Rejected', body: 'Your consultation request was not approved. Check the notes for details.', type: 'danger' },
+                        completed: { title: '🎓 Consultation Completed!', body: 'Your consultation has been marked as completed. Check your remarks.', type: 'primary' },
+                        no_show: { title: '⚠️ Marked as No-Show', body: 'You were marked as absent for your consultation. Please rebook.', type: 'warning' },
+                    };
+                    const info = statusMap[appt.status] || { title: '🔔 Appointment Updated', body: 'Your appointment status has changed to: ' + appt.status, type: 'info' };
+                    this.showToast(info.title, info.body, info.type);
+                    this.sendNativeNotification(info.title, info.body);
                     this.fetchStudentAppointments();
                 }
             }
         )
         .subscribe();
+    },
+
+    requestNotificationPermission: async function() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('ConsulTime: Notification permission granted.');
+            }
+        }
+    },
+
+    sendNativeNotification: function(title, body) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+
+        // If service worker is available, use it for background-safe notifications
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SHOW_NOTIFICATION',
+                title: title,
+                body: body,
+                icon: './consultime_mobile_mockup.png',
+                badge: './consultime_mobile_mockup.png',
+                tag: 'consultime-alert-' + Date.now(),
+                url: window.location.href
+            });
+        } else {
+            // Fallback: direct Notification API
+            try {
+                const n = new Notification(title, {
+                    body: body,
+                    icon: './consultime_mobile_mockup.png',
+                    badge: './consultime_mobile_mockup.png',
+                    tag: 'consultime-alert',
+                    renotify: true,
+                    vibrate: [200, 100, 200]
+                });
+                n.onclick = () => { window.focus(); n.close(); };
+            } catch(e) {
+                console.warn('Native notification failed:', e);
+            }
+        }
     },
 
     showToast: function(title, message, type='primary') {
