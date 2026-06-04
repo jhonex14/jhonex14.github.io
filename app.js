@@ -660,6 +660,18 @@ const App = {
                 return;
             }
 
+            // Single Active Session Verification
+            const localSessionId = localStorage.getItem('ct_active_session');
+            if (profile && profile.active_session_id && localSessionId !== profile.active_session_id) {
+                // Another device/browser logged in recently and took over
+                await supabaseClient.auth.signOut();
+                localStorage.removeItem('ct_active_session');
+                this.user = null;
+                this.profile = null;
+                window.location.replace('login.html?kicked=true');
+                return;
+            }
+
             this.profile = profile;
 
             // Setup User Menu if on index
@@ -869,6 +881,13 @@ const App = {
             
             // Save login state locally
             localStorage.setItem('consultime_session', data.session.access_token);
+            
+            // Generate a unique session ID for this browser tab
+            const activeSessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+            localStorage.setItem('ct_active_session', activeSessionId);
+            
+            // Update the user's profile with the new active_session_id
+            await supabaseClient.from('profiles').update({ active_session_id: activeSessionId }).eq('id', data.user.id);
             
             const forceChannel = supabaseClient.channel(`presence_${data.user.id}`, {
                 config: {

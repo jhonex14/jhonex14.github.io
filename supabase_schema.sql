@@ -14,6 +14,7 @@ CREATE TABLE public.profiles (
     is_approved BOOLEAN NOT NULL DEFAULT true,
     school_year TEXT,
     section TEXT,
+    active_session_id TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
