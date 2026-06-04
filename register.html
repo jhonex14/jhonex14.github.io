@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // Protocol and Domain normalization (Canonical Redirect)
+        (function() {
+            let targetHref = null;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Redirect HTTP to HTTPS unless testing locally
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            if (protocol === 'http:' && !isLocal) {
+                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            // Redirect www.consultime.me to consultime.me
+            if (hostname === 'www.consultime.me') {
+                const proto = targetHref ? 'https://' : protocol + '//';
+                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            if (targetHref) {
+                window.location.replace(targetHref);
+            }
+        })();
+    </script>
+    <script>
+        // Synchronously check for cached Supabase session to prevent register screen flicker
+        (function() {
+            const sbKey = 'sb-uximseyeqkhoghsrksds-auth-token';
+            const cachedSession = localStorage.getItem(sbKey);
+            if (cachedSession) {
+                try {
+                    const parsed = JSON.parse(cachedSession);
+                    if (parsed && (parsed.currentSession || parsed.session || parsed.user)) {
+                        // Instantly hide document element before browser draws any register elements
+                        document.documentElement.style.display = 'none';
+                        
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Restore display and prepend gorgeous fullscreen loading screen
+                            document.documentElement.style.display = '';
+                            document.body.insertAdjacentHTML('afterbegin', `
+                                <div id="auth-fast-loader" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999999; color: #fff; font-family: 'Outfit', sans-serif;">
+                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3.5rem; height: 3.5rem;"></div>
+                                    <h5 class="fw-bold mb-1" style="letter-spacing: 0.05em; font-size: 1.25rem;">SECURELY SIGNING IN</h5>
+                                    <p class="text-muted small mb-0">Restoring your session with ConsulTime...</p>
+                                </div>
+                            `);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Cache read error:", e);
+                }
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - ConsulTime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body class="bg-light">
+
+    <div class="container d-flex align-items-center justify-content-center min-vh-100 py-5">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 900px; width: 100%;">
+            <div class="row g-0">
+                <!-- Branding Section -->
+                <div class="col-md-4 bg-primary-custom text-white p-5 d-flex flex-column justify-content-center position-relative d-none d-md-flex">
+                    <div class="hero-bg-shapes opacity-50">
+                        <div class="shape shape-2" style="width: 200px; height: 200px;"></div>
+                    </div>
+                    <div class="z-index-1">
+                        <a href="index.html" class="text-white text-decoration-none d-flex align-items-center mb-4">
+                            <i class="fa-solid fa-clock text-accent fs-2 me-2"></i>
+                            <h3 class="fw-bold mb-0">ConsulTime</h3>
+                        </a>
+                        <h2 class="fw-bold mb-3">Join Us!</h2>
+                        <p class="text-white-75 mb-4">Create an account to start booking consultations or managing your academic schedule.</p>
+                        <div class="mt-auto">
+                            <p class="small text-white-50">Already have an account?</p>
+                            <a href="login.html" class="btn btn-outline-light rounded-pill px-4">Sign In here</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Registration Form Section -->
+                <div class="col-md-8 p-5 bg-white">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold text-dark">Create an Account</h3>
+                        <p class="text-muted">Register as a Student or Faculty member</p>
+                    </div>
+
+                    <div id="registerAlert" class="alert alert-danger d-none" role="alert"></div>
+
+                    <form id="registerForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fullName" class="form-label fw-medium text-dark">Full Name</label>
+                                <input type="text" class="form-control bg-light" id="fullName" required placeholder="Juan Dela Cruz">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label fw-medium text-dark">Account Type</label>
+                                <select class="form-select bg-light" id="role" required>
+                                    <option value="" disabled selected>Select Role</option>
+                                    <option value="student">Student</option>
+                                    <option value="faculty">Faculty Member</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="idNumber" id="idNumberLabel" class="form-label fw-medium text-dark">ID Number</label>
+                                <input type="text" class="form-control bg-light" id="idNumber" required placeholder="e.g. 2026-0001">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label fw-medium text-dark">Course / Department</label>
+                                <select class="form-select bg-light" id="department" required>
+                                    <option value="" disabled selected>Select Course / Department</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Student-only fields: School Year & Section -->
+                        <div id="studentFieldsContainer" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="schoolYear" class="form-label fw-medium text-dark">School Year <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control bg-light" id="schoolYear" placeholder="e.g. 2025-2026">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="section" class="form-label fw-medium text-dark">Section <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control bg-light" id="section" placeholder="e.g. Grade 11 - STEM A">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cascading Address Selector Container -->
+                        <div id="addressSelectContainer">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="addressRegion" class="form-label fw-medium text-dark">Region</label>
+                                    <select class="form-select bg-light" id="addressRegion" required>
+                                        <option value="" disabled selected>Loading Regions...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3" id="addressProvinceWrapper">
+                                    <label for="addressProvince" class="form-label fw-medium text-dark">Province</label>
+                                    <select class="form-select bg-light" id="addressProvince" required>
+                                        <option value="" disabled selected>Select Region first</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="addressCity" class="form-label fw-medium text-dark">City / Municipality</label>
+                                    <select class="form-select bg-light" id="addressCity" required>
+                                        <option value="" disabled selected>Select Province first</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="addressBarangay" class="form-label fw-medium text-dark">Barangay</label>
+                                    <select class="form-select bg-light" id="addressBarangay" required>
+                                        <option value="" disabled selected>Select City first</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="addressStreet" class="form-label fw-medium text-dark">Street / Purok / Subdivision</label>
+                                    <input type="text" class="form-control bg-light" id="addressStreet" placeholder="e.g. Purok 9, Luardo Compound">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <a href="#" id="toggleManualAddress" class="text-muted small text-decoration-none"><i class="fa-solid fa-keyboard me-1"></i>Having trouble? Enter address manually</a>
+                            </div>
+                        </div>
+
+                        <!-- Manual Address Entry Container -->
+                        <div id="addressManualContainer" class="d-none">
+                            <div class="mb-3">
+                                <label for="addressManual" class="form-label fw-medium text-dark">Full Address (Manual Entry)</label>
+                                <input type="text" class="form-control bg-light" id="addressManual" placeholder="e.g. Purok 9, Luardo Compound, Panacan, Davao City">
+                            </div>
+                            <div class="mb-3">
+                                <a href="#" id="toggleSelectAddress" class="text-primary small text-decoration-none"><i class="fa-solid fa-list me-1"></i>Use automated dropdowns</a>
+                            </div>
+                        </div>
+
+                        <!-- Age & University Email Inputs -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="age" class="form-label fw-medium text-dark">Age</label>
+                                <input type="number" class="form-control bg-light" id="age" required min="15" placeholder="18">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="regEmail" class="form-label fw-medium text-dark">University Email Address</label>
+                                <input type="email" class="form-control bg-light" id="regEmail" required placeholder="juan@university.edu">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="regPassword" class="form-label fw-medium text-dark">Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control bg-light" id="regPassword" required placeholder="••••••••" minlength="6">
+                                    <button class="btn btn-light border" type="button" id="toggleRegPassword">
+                                        <i class="fa-regular fa-eye text-muted"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="confirmPassword" class="form-label fw-medium text-dark">Confirm Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control bg-light" id="confirmPassword" required placeholder="••••••••" minlength="6">
+                                    <button class="btn btn-light border" type="button" id="toggleConfirmPassword">
+                                        <i class="fa-regular fa-eye text-muted"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" value="" id="termsCheck" required>
+                            <label class="form-check-label small text-muted" for="termsCheck">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-accent w-100 py-2 rounded-pill fw-bold mb-3 d-flex justify-content-center align-items-center gap-2" id="registerBtn">
+                            Register Account <i class="fa-solid fa-user-plus"></i>
+                        </button>
+                        
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <p class="small text-muted mb-2">Prefer using the mobile app?</p>
+                            <a href="https://www.mediafire.com/file/euvwn6ttzail5qu/consultime.apk/file" target="_blank" class="btn btn-outline-dark rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm transition">
+                                <i class="fa-brands fa-android fs-5 text-success"></i>
+                                <span class="fw-semibold small">Download Android App (.APK)</span>
+                            </a>
+                        </div>
+                        
+                        <div class="text-center d-md-none mt-3">
+                            <p class="small text-muted mb-1">Already have an account?</p>
+                            <a href="login.html" class="text-primary fw-medium">Sign In here</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js?v=16"></script>
+    <script>
+        document.getElementById('toggleRegPassword').addEventListener('click', function() {
+            const pwd = document.getElementById('regPassword');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+            const pwd = document.getElementById('confirmPassword');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Dynamic department selection based on role/account type
+        const studentOptions = [
+            { value: "STEM", text: "Senior High: STEM (Science, Technology, Engineering, & Mathematics)" },
+            { value: "ABM", text: "Senior High: ABM (Accountancy, Business, & Management)" },
+            { value: "HUMSS", text: "Senior High: HUMSS (Humanities & Social Sciences)" },
+            { value: "GAS", text: "Senior High: GAS (General Academic Strand)" },
+            { value: "TVL - ICT", text: "Senior High: TVL - ICT (Info. & Comm. Technology)" },
+            { value: "TVL - HE", text: "Senior High: TVL - HE (Home Economics)" },
+            { value: "TVL - IA", text: "Senior High: TVL - IA (Industrial Arts)" },
+            { value: "Grade 7", text: "Junior High: Grade 7" },
+            { value: "Grade 8", text: "Junior High: Grade 8" },
+            { value: "Grade 9", text: "Junior High: Grade 9" },
+            { value: "Grade 10", text: "Junior High: Grade 10" },
+            { value: "Others_Student", text: "Others (Student)" }
+        ];
+
+        const facultyOptions = [
+            { value: "English Department", text: "English Department" },
+            { value: "Mathematics Department", text: "Mathematics Department" },
+            { value: "Science Department", text: "Science Department" },
+            { value: "Filipino Department", text: "Filipino Department" },
+            { value: "Social Studies Department", text: "Social Studies Department" },
+            { value: "MAPEH Department", text: "MAPEH Department" },
+            { value: "TLE / TVL Department", text: "TLE / TVL Department" },
+            { value: "Values Education Department", text: "Values Education Department" },
+            { value: "SHS Department", text: "Senior High School (SHS) Department" },
+            { value: "JHS Department", text: "Junior High School (JHS) Department" },
+            { value: "Guidance & Counseling Department", text: "Guidance & Counseling Department" },
+            { value: "Administrative / Support Staff", text: "Administrative / Support Staff" },
+            { value: "Others_Faculty", text: "Others (Faculty)" }
+        ];
+
+        function populateDepartments(roleFilter, selectedValue = "") {
+            const deptSelect = document.getElementById('department');
+            const currentVal = selectedValue || deptSelect.value;
+            deptSelect.innerHTML = '';
+
+            const placeholderOpt = document.createElement('option');
+            placeholderOpt.value = "";
+            placeholderOpt.disabled = true;
+            placeholderOpt.selected = !currentVal;
+            placeholderOpt.textContent = "Select Course / Department";
+            deptSelect.appendChild(placeholderOpt);
+
+            const appendOptions = (optionsList, parentElement) => {
+                optionsList.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.value;
+                    el.textContent = opt.text;
+                    if (opt.value === currentVal) {
+                        el.selected = true;
+                    }
+                    parentElement.appendChild(el);
+                });
+            };
+
+            if (roleFilter === 'student') {
+                appendOptions(studentOptions, deptSelect);
+            } else if (roleFilter === 'faculty') {
+                appendOptions(facultyOptions, deptSelect);
+            } else {
+                // Show both grouped under optgroup
+                const studentGroup = document.createElement('optgroup');
+                studentGroup.label = "Student Strands / Grades";
+                appendOptions(studentOptions, studentGroup);
+                deptSelect.appendChild(studentGroup);
+
+                const facultyGroup = document.createElement('optgroup');
+                facultyGroup.label = "Faculty Departments";
+                appendOptions(facultyOptions, facultyGroup);
+                deptSelect.appendChild(facultyGroup);
+            }
+        }
+
+        const roleSelect = document.getElementById('role');
+        const deptSelect = document.getElementById('department');
+
+        function toggleStudentFields(roleVal) {
+            const container = document.getElementById('studentFieldsContainer');
+            const schoolYearInput = document.getElementById('schoolYear');
+            const sectionInput = document.getElementById('section');
+            
+            // Toggle ID label & placeholder based on role
+            const idLabel = document.getElementById('idNumberLabel');
+            const idInput = document.getElementById('idNumber');
+            if (idLabel && idInput) {
+                if (roleVal === 'student') {
+                    idLabel.textContent = 'LRN Number';
+                    idInput.placeholder = 'e.g. 101234567890';
+                } else if (roleVal === 'faculty') {
+                    idLabel.textContent = 'Employee ID Number';
+                    idInput.placeholder = 'e.g. 2026-0001';
+                } else {
+                    idLabel.textContent = 'ID Number';
+                    idInput.placeholder = 'e.g. 2026-0001';
+                }
+            }
+
+            if (!container || !schoolYearInput || !sectionInput) return;
+            
+            if (roleVal === 'student') {
+                container.classList.remove('d-none');
+                schoolYearInput.setAttribute('required', 'required');
+                schoolYearInput.setAttribute('readonly', 'readonly');
+                
+                // Calculate and pre-fill upcoming school year
+                const options = {
+                    timeZone: 'Asia/Manila',
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour12: false
+                };
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const parts = formatter.formatToParts(new Date());
+                const dateParts = {};
+                parts.forEach(p => { dateParts[p.type] = p.value; });
+                
+                const month = parseInt(dateParts.month, 10);
+                const date = parseInt(dateParts.day, 10);
+                const currentYear = parseInt(dateParts.year, 10);
+                let expectedSY = '';
+                if (month > 4 || (month === 4 && date >= 15)) {
+                    expectedSY = `${currentYear}-${currentYear + 1}`;
+                } else {
+                    expectedSY = `${currentYear - 1}-${currentYear}`;
+                }
+                schoolYearInput.value = expectedSY;
+                
+                sectionInput.setAttribute('required', 'required');
+            } else {
+                container.classList.add('d-none');
+                schoolYearInput.removeAttribute('required');
+                schoolYearInput.removeAttribute('readonly');
+                sectionInput.removeAttribute('required');
+                schoolYearInput.value = '';
+                sectionInput.value = '';
+            }
+        }
+
+        roleSelect.addEventListener('change', function() {
+            populateDepartments(this.value);
+            toggleStudentFields(this.value);
+        });
+
+        deptSelect.addEventListener('change', function() {
+            const deptValue = this.value;
+            if (!deptValue) return;
+
+            const isStudent = studentOptions.some(opt => opt.value === deptValue);
+            const isFaculty = facultyOptions.some(opt => opt.value === deptValue);
+
+            if (isStudent && roleSelect.value !== 'student') {
+                roleSelect.value = 'student';
+            } else if (isFaculty && roleSelect.value !== 'faculty') {
+                roleSelect.value = 'faculty';
+            }
+
+            // Keep the select populated, refilter based on the new role
+            populateDepartments(roleSelect.value, deptValue);
+            toggleStudentFields(roleSelect.value);
+        });
+
+        // Initialize on page load (fully interactive, showing all options initially unless role is pre-selected)
+        populateDepartments(roleSelect.value);
+        toggleStudentFields(roleSelect.value);
+    </script>
+</body>
+</html>
+
+
+
+

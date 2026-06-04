@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // Protocol and Domain normalization (Canonical Redirect)
+        (function() {
+            let targetHref = null;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Redirect HTTP to HTTPS unless testing locally
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            if (protocol === 'http:' && !isLocal) {
+                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            // Redirect www.consultime.me to consultime.me
+            if (hostname === 'www.consultime.me') {
+                const proto = targetHref ? 'https://' : protocol + '//';
+                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            if (targetHref) {
+                window.location.replace(targetHref);
+            }
+        })();
+    </script>
+    <script>
+        // Domain Guard: Redirect to real site if on wrong domain
+        (function() {
+            const allowedDomains = ['consultime.me', '127.0.0.1', 'localhost'];
+            const currentHost = window.location.hostname;
+            const isAllowed = allowedDomains.some(d => currentHost === d || currentHost.endsWith('.' + d));
+            if (!isAllowed && currentHost !== '') {
+                document.documentElement.innerHTML = '<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;text-align:center;padding:20px"><div style="background:#1e293b;border:2px solid #22c55e;border-radius:16px;padding:40px;max-width:480px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><h1 style="color:#f87171;font-size:24px;margin-bottom:12px">Wrong Website!</h1><p style="color:#94a3b8;margin-bottom:20px">You are on a <strong style="color:#f87171">fake/unauthorized</strong> version of ConsulTime. Your data is NOT safe here.</p><p style="color:#94a3b8;margin-bottom:24px">The real website is:</p><a href="https://consultime.me" style="background:#22c55e;color:#fff;padding:12px 28px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block">Go to consultime.me ✓</a></div></div>';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - ConsulTime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="styles.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar shadow-sm d-flex flex-column" style="overflow-y: auto;">
+        <div class="p-4 border-bottom d-flex align-items-center flex-shrink-0">
+            <i class="fa-solid fa-clock text-accent fs-3 me-2"></i>
+            <h4 class="fw-bold mb-0 text-primary">ConsulTime</h4>
+        </div>
+        
+        <!-- Profile Card in Sidebar (Now at the top) -->
+        <div class="px-3 w-100 mt-3 mb-2 flex-shrink-0">
+            <div class="card bg-white p-0 text-center border-0 shadow-sm overflow-hidden rounded-4">
+                <div class="pt-3 pb-4" style="background-color: #1a3b5c;"></div>
+                <div class="position-relative d-inline-block mx-auto mb-1" style="margin-top: -35px;">
+                    <div id="sidebarUserInitials" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-3 border-white mx-auto" style="width: 65px; height: 65px; font-size: 24px; font-weight: bold;">
+                        FA
+                    </div>
+                </div>
+                <div class="card-body pt-0 pb-3 px-2">
+                    <h6 class="fw-bold text-dark mb-0" id="sidebarUserName" style="font-size: 13px;">Loading...</h6>
+                    <p class="text-muted mb-2 text-truncate" id="sidebarUserEmail" style="font-size: 10px;">Loading...</p>
+                    <span class="badge bg-success rounded-pill px-2 py-1 fw-bold w-100 text-uppercase mb-0" style="font-size: 10px;" id="sidebarUserRole">FACULTY</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Section (Now below profile card) -->
+        <div class="p-3 flex-grow-1 flex-shrink-0">
+            <p class="text-xs fw-bold text-muted text-uppercase tracking-wide mb-2 px-3">Faculty Menu</p>
+            <nav class="nav flex-column gap-1">
+                <a class="sidebar-link active" href="#" id="nav-dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
+                <a class="sidebar-link" href="#" id="nav-requests"><i class="fa-solid fa-clipboard-list"></i> Appointment Requests</a>
+                <a class="sidebar-link" href="#" id="nav-availability"><i class="fa-solid fa-calendar-week"></i> Manage Availability</a>
+                <a class="sidebar-link" href="#" id="nav-weekly-reports"><i class="fa-solid fa-file-lines"></i> Weekly Reports</a>
+                <a class="sidebar-link" href="#" id="nav-profile"><i class="fa-solid fa-gear"></i> Settings</a>
+                <a class="sidebar-link" href="#" id="nav-about" onclick="App.showAboutModal()"><i class="fa-solid fa-circle-info"></i> About</a>
+            </nav>
+        </div>
+
+        <div class="p-3 border-top w-100 bg-white z-index-1 mt-auto flex-shrink-0">
+            <button class="btn btn-light w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 mb-2 border" onclick="App.toggleDarkMode()">
+                <i class="fa-solid fa-moon"></i> Dark Mode
+            </button>
+            <button class="btn btn-outline-danger w-100 rounded-pill d-flex align-items-center justify-content-center gap-2" id="logoutBtn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none rounded-3 p-2 shadow-sm" id="sidebarToggle" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-bars fs-5"></i>
+                </button>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" id="pageTitle">Faculty Dashboard</h2>
+                    <p class="text-muted mb-0">Manage your consultations and schedule.</p>
+                </div>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <!-- Real-time Clock and Calendar Widget -->
+                <div class="d-none d-md-flex align-items-center gap-2 bg-light border rounded-pill px-3 py-1.5 shadow-sm text-dark" style="font-size: 13px; font-weight: 500;">
+                    <i class="fa-regular fa-calendar-days text-primary"></i>
+                    <span id="headerDate">Loading date...</span>
+                    <span class="mx-1 text-muted">|</span>
+                    <i class="fa-regular fa-clock text-primary"></i>
+                    <span id="headerTime" class="fw-bold">00:00:00 AM</span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-light rounded-circle position-relative p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
+                        <i class="fa-regular fa-bell fs-5 text-dark"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" id="notifBadge" style="display:none; font-size: 0.65rem;">
+                            0
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" style="width: 300px; max-height: 400px; overflow-y: auto;" id="notificationList">
+                        <li><h6 class="dropdown-header fw-bold">Notifications</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item text-center text-muted small">No new notifications</span></li>
+                    </ul>
+                </div>
+                <a href="profile.html" class="btn btn-outline-primary rounded-pill px-3 fw-semibold d-none d-md-flex align-items-center gap-2" style="font-size:13px;">
+                    <i class="fa-solid fa-circle-user"></i> My Profile
+                </a>
+                <button class="btn btn-outline-secondary rounded-pill px-4 fw-bold shadow-sm d-none d-md-block ms-2" onclick="App.exportFacultyReport()">
+                    <i class="fa-solid fa-download me-1"></i> Export Report
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <div id="view-dashboard">
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-warning">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-medium text-muted mb-1">Pending Requests</h6>
+                                <h2 class="fw-bold text-dark mb-0" id="stat-pending">0</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fa-solid fa-hourglass-half fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-success">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-medium text-muted mb-1">Today's Appointments</h6>
+                                <h2 class="fw-bold text-dark mb-0" id="stat-today">0</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fa-solid fa-calendar-day fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-medium text-muted mb-1">Total Consultations</h6>
+                                <h2 class="fw-bold text-dark mb-0" id="stat-total">0</h2>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fa-solid fa-users fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Charts -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-8">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Consultations This Week</h6>
+                        <canvas id="weeklyChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Status Overview</h6>
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <canvas id="statusChart" style="max-height: 220px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        <!-- Weekly Reports View -->
+        <div id="view-weekly-reports" class="d-none">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-4 flex-column flex-md-row">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">Weekly Reports</h5>
+                    <p class="text-muted mb-0">Review this week’s consultations, save a report to Supabase, and see stored report history.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary rounded-pill" onclick="App.loadFacultyWeeklyReport()"><i class="fa-solid fa-arrows-rotate me-1"></i> Refresh</button>
+                    <button class="btn btn-primary rounded-pill" onclick="App.saveFacultyWeeklyReport()"><i class="fa-solid fa-floppy-disk me-1"></i> Save Weekly Report</button>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Week Range</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportPeriod">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-warning">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Total Consultations</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportTotal">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-warning">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Pending</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportPending">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-success">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Approved</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportApproved">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Completed</h6>
+                            <h2 class="fw-bold text-dark mb-0" id="weekReportCompleted">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-info">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Busiest Day</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportBusiestDay">—</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-secondary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Avg. Consultation</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportAverageDuration">0 min</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100 border-start border-4 border-primary">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-1">Top Department</h6>
+                            <p class="fw-bold text-dark mb-0" id="weekReportTopDept">—</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-column flex-md-row gap-3">
+                            <h6 class="fw-bold mb-0 text-dark">Weekly Appointment Details</h6>
+                            <div class="position-relative" style="width: 280px;">
+                                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                                <input type="text" id="weeklyReportSearch" class="form-control bg-light py-1.5 ps-5 rounded-pill" placeholder="Search student name, dept, purpose..." style="font-size: 13px;">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Student</th>
+                                        <th>Purpose / Concern</th>
+                                        <th>Result of Consultation</th>
+                                        <th>Action Taken / Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="weeklyReportTableBody">
+                                    <tr><td colspan="5" class="text-center py-4 text-muted">Loading weekly appointments...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4">
+                        <h6 class="fw-bold mb-3 text-dark">Weekly Insights</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light p-3 rounded-4 h-100">
+                                    <h6 class="fw-semibold text-dark mb-2">Status Distribution</h6>
+                                    <canvas id="weeklyStatusChart" style="max-height: 220px;"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light p-3 rounded-4 h-100">
+                                    <h6 class="fw-semibold text-dark mb-2">Daily Appointment Volume</h6>
+                                    <canvas id="weeklyDailyChart" style="max-height: 220px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Departmental Peer Benchmarks -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4 h-100 border-start border-4 border-info shadow-sm rounded-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-family: 'Outfit', sans-serif;">
+                                <i class="fa-solid fa-ranking-star text-info"></i> Departmental Peer Benchmarks (This Week)
+                            </h6>
+                            <span class="badge bg-info-subtle text-info rounded-pill fw-bold px-3 py-1.5" id="peerReportDeptName">Loading Department...</span>
+                        </div>
+                        <div class="row g-4" id="peerBenchmarksContainer">
+                            <!-- Peer analytics cards populated dynamically by JS -->
+                            <div class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading departmental benchmark comparison...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-12">
+                    <div class="card dash-card bg-white p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-dark">Saved Report History</h6>
+                        <div id="savedWeeklyReportsList" class="small text-muted" style="min-height: 220px;">
+                            Loading stored reports...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="weeklyReportStatus" class="alert alert-info d-none" role="status"></div>
+        </div>
+        <!-- Appointment Requests View -->
+        <div id="view-requests" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold text-dark mb-0">Manage Appointment Requests</h5>
+            </div>
+            <div class="card dash-card bg-white">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4">Student</th>
+                                    <th class="py-3">Date & Time</th>
+                                    <th class="py-3">Purpose</th>
+                                    <th class="py-3">Status</th>
+                                    <th class="py-3 text-end px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestsTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Availability View -->
+        <div id="view-availability" class="d-none">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white p-4">
+                        <h5 class="fw-bold mb-4">Add Weekly Schedule</h5>
+                        <form id="availabilityForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium d-block">Select Days of Week</label>
+                                <div class="d-flex flex-wrap gap-2" id="daysCheckboxContainer">
+                                    <input type="checkbox" class="btn-check day-checkbox" id="dayMon" value="1">
+                                    <label class="day-check-badge" for="dayMon">Mon</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="dayTue" value="2">
+                                    <label class="day-check-badge" for="dayTue">Tue</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="dayWed" value="3">
+                                    <label class="day-check-badge" for="dayWed">Wed</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="dayThu" value="4">
+                                    <label class="day-check-badge" for="dayThu">Thu</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="dayFri" value="5">
+                                    <label class="day-check-badge" for="dayFri">Fri</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="daySat" value="6">
+                                    <label class="day-check-badge" for="daySat">Sat</label>
+
+                                    <input type="checkbox" class="btn-check day-checkbox" id="daySun" value="0">
+                                    <label class="day-check-badge" for="daySun">Sun</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium d-block">Quick Time Slots</label>
+                                <div class="d-flex flex-wrap gap-2 mb-2" id="quickTimeSlots">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="08:00" data-end="12:00" style="font-size: 11px; font-weight: 500;">8:00 AM - 12:00 PM</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="13:00" data-end="17:00" style="font-size: 11px; font-weight: 500;">1:00 PM - 5:00 PM</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="08:00" data-end="17:00" style="font-size: 11px; font-weight: 500;">8:00 AM - 5:00 PM</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="09:00" data-end="12:00" style="font-size: 11px; font-weight: 500;">9:00 AM - 12:00 PM</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="13:00" data-end="15:00" style="font-size: 11px; font-weight: 500;">1:00 PM - 3:00 PM</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-time-btn rounded-pill px-2.5 py-1" data-start="15:00" data-end="17:00" style="font-size: 11px; font-weight: 500;">3:00 PM - 5:00 PM</button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Or Set Custom Start Time</label>
+                                <input type="time" class="form-control bg-light" id="availStartTime" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Custom End Time</label>
+                                <input type="time" class="form-control bg-light" id="availEndTime" required>
+                            </div>
+                            <button type="submit" class="btn btn-accent w-100 py-2 rounded-pill fw-bold">Add Availability</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card dash-card bg-white p-4">
+                        <h5 class="fw-bold mb-4">Your Current Availability</h5>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Day of Week</th>
+                                        <th>Time Slot</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="availabilityTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="view-profile" class="d-none">
+            <h5 class="fw-bold mb-3 text-dark">Settings</h5>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white p-0 text-center border-0 shadow-sm overflow-hidden">
+                        <!-- Blue Header Background -->
+                        <div class="pt-4 pb-5 position-relative" style="background-color: #1a3b5c;">
+                            <label for="avatarUpload" class="btn btn-sm btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="fa-solid fa-pen text-primary"></i>
+                            </label>
+                            <input type="file" id="avatarUpload" class="d-none" accept="image/*">
+                        </div>
+                        
+                        <!-- Overlapping Avatar -->
+                        <div class="position-relative d-inline-block mx-auto mb-2" style="margin-top: -50px;">
+                            <img id="profileAvatarPreview" src="" class="rounded-circle shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #fff; display: none;">
+                            <div id="profileAvatarInitials" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto" style="width: 100px; height: 100px; font-size: 35px; border: 4px solid #fff;">
+                                FA
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="card-body pt-0 pb-4">
+                            <h5 class="fw-bold text-dark mb-1" id="profileNameDisplay">Loading...</h5>
+                            <p class="text-muted small mb-3" id="profileEmailDisplay">Loading...</p>
+                            <span class="badge bg-success rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;" id="profileRoleBadge">FACULTY</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm">
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <input type="text" class="form-control bg-light" id="profileName" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">ID Number</label>
+                                    <input type="text" class="form-control bg-light" id="profileIdNumber">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Course / Department</label>
+                                    <select class="form-select bg-light" id="profileDept" required>
+                                        <option value="" disabled selected>Select Department</option>
+                                        <option value="English Department">English Department</option>
+                                        <option value="Mathematics Department">Mathematics Department</option>
+                                        <option value="Science Department">Science Department</option>
+                                        <option value="Filipino Department">Filipino Department</option>
+                                        <option value="Social Studies Department">Social Studies Department</option>
+                                        <option value="MAPEH Department">MAPEH Department</option>
+                                        <option value="TLE / TVL Department">TLE / TVL Department</option>
+                                        <option value="Values Education Department">Values Education Department</option>
+                                        <option value="SHS Department">Senior High School (SHS) Department</option>
+                                        <option value="JHS Department">Junior High School (JHS) Department</option>
+                                        <option value="Guidance & Counseling Department">Guidance & Counseling Department</option>
+                                        <option value="Administrative / Support Staff">Administrative / Support Staff</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                                <!-- Cascading Address Selector Container -->
+                                <div id="profileAddressSelectContainer">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Region</label>
+                                            <select class="form-select bg-light" id="profileRegion" required>
+                                                <option value="" disabled selected>Loading Regions...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="profileProvinceWrapper">
+                                            <label class="form-label fw-medium">Province</label>
+                                            <select class="form-select bg-light" id="profileProvince" required>
+                                                <option value="" disabled selected>Select Region first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">City / Municipality</label>
+                                            <select class="form-select bg-light" id="profileCity" required>
+                                                <option value="" disabled selected>Select Province first</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Barangay</label>
+                                            <select class="form-select bg-light" id="profileBarangay" required>
+                                                <option value="" disabled selected>Select City first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label fw-medium">Street / Purok / Subdivision</label>
+                                            <input type="text" class="form-control bg-light" id="profileStreet" placeholder="e.g. Purok 9, Luardo Compound">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileManualAddress" class="text-muted small text-decoration-none"><i class="fa-solid fa-keyboard me-1"></i>Having trouble? Enter address manually</a>
+                                    </div>
+                                </div>
+
+                                <!-- Manual Address Entry Container -->
+                                <div id="profileAddressManualContainer" class="d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">Full Address (Manual Entry)</label>
+                                        <input type="text" class="form-control bg-light" id="profileManual" placeholder="e.g. Purok 9, Luardo Compound, Panacan, Davao City">
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileSelectAddress" class="text-primary small text-decoration-none"><i class="fa-solid fa-list me-1"></i>Use automated dropdowns</a>
+                                    </div>
+                                </div>
+
+                                <!-- Age Input -->
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-medium">Age</label>
+                                        <input type="number" class="form-control bg-light" id="profileAge" min="15">
+                                    </div>
+                                </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Email Address</label>
+                                <input type="email" class="form-control bg-light text-muted" id="profileEmail" disabled>
+                                <small class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-lock me-1"></i>Email address cannot be changed.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold" id="saveProfileBtn">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Change Password (Dashboard Settings View) -->
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm mt-4">
+                        <h6 class="fw-bold text-dark mb-3">Change Password</h6>
+                        <form id="passwordForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">New Password</label>
+                                    <input type="password" class="form-control bg-light" id="newPassword" minlength="6" placeholder="Min. 6 characters">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Confirm New Password</label>
+                                    <input type="password" class="form-control bg-light" id="confirmNewPassword" placeholder="Repeat password">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold" id="changePasswordBtn">
+                                <i class="fa-solid fa-key me-1"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Action Modal -->
+    <div class="modal fade" id="actionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="actionModalTitle">Review Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="actionApptId">
+                    <input type="hidden" id="actionType">
+                    <p id="actionModalDesc" class="text-muted">Are you sure you want to proceed?</p>
+                    
+                    <!-- Complete Consultation Options -->
+                    <div id="completedConsultationDetails" style="display: none;" class="mb-3">
+
+                        <!-- Dynamic Alert Banner (shown for critical concerns like bullying) -->
+                        <div id="purposeAlertBanner" class="alert mb-3 py-2 d-none" role="alert" style="font-size:13px;">
+                            <i id="purposeAlertIcon" class="me-2"></i>
+                            <span id="purposeAlertText"></span>
+                        </div>
+
+                        <!-- 1. Consultation Outcome -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium text-dark small">1. Consultation Outcome / Result <span class="text-danger">*</span></label>
+                            <select class="form-select bg-light" id="consultationOutcome">
+                                <option value="" disabled selected>Select outcome...</option>
+                            </select>
+                        </div>
+
+                        <!-- 2. Action Taken -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium text-dark small">2. Action Taken / Solution / Intervention <span class="text-danger">*</span></label>
+                            <select class="form-select bg-light" id="actionTakenSelect">
+                                <option value="" disabled selected>Select action taken...</option>
+                            </select>
+                        </div>
+
+                        <!-- 3. Follow-up Plan -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium text-dark small">3. Next Steps / Follow-up Plan <span class="text-muted">(Optional)</span></label>
+                            <select class="form-select bg-light" id="followUpPlan">
+                                <option value="">— No follow-up needed —</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" id="actionNotesLabel">Notes (Optional)</label>
+                        <textarea class="form-control bg-light" id="actionNotes" rows="2" placeholder="Message to student..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Availability Modal -->
+    <div class="modal fade" id="editAvailabilityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Edit Availability Slot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editAvailabilityForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editAvailId">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Select Day of Week</label>
+                            <select class="form-select bg-light" id="editDayOfWeek" required>
+                                <option value="" disabled selected>Select day...</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                                <option value="6">Saturday</option>
+                                <option value="0">Sunday</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Start Time</label>
+                            <input type="time" class="form-control bg-light" id="editAvailStartTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">End Time</label>
+                            <input type="time" class="form-control bg-light" id="editAvailEndTime" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="app.js?v=17"></script>
+</body>
+</html>
+
+
+
+

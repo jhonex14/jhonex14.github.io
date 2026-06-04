@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // Protocol and Domain normalization (Canonical Redirect)
+        (function() {
+            let targetHref = null;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Redirect HTTP to HTTPS unless testing locally
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            if (protocol === 'http:' && !isLocal) {
+                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            // Redirect www.consultime.me to consultime.me
+            if (hostname === 'www.consultime.me') {
+                const proto = targetHref ? 'https://' : protocol + '//';
+                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            if (targetHref) {
+                window.location.replace(targetHref);
+            }
+        })();
+    </script>
+    <script>
+        // Synchronously check for cached Supabase session to prevent login screen flicker
+        (function() {
+            const sbKey = 'sb-uximseyeqkhoghsrksds-auth-token';
+            const cachedSession = localStorage.getItem(sbKey);
+            if (cachedSession) {
+                try {
+                    const parsed = JSON.parse(cachedSession);
+                    if (parsed && (parsed.currentSession || parsed.session || parsed.user)) {
+                        // Instantly hide document element before browser draws any login elements
+                        document.documentElement.style.display = 'none';
+                        
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Restore display and prepend gorgeous fullscreen loading screen
+                            document.documentElement.style.display = '';
+                            document.body.insertAdjacentHTML('afterbegin', `
+                                <div id="auth-fast-loader" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999999; color: #fff; font-family: 'Outfit', sans-serif;">
+                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3.5rem; height: 3.5rem;"></div>
+                                    <h5 class="fw-bold mb-1" style="letter-spacing: 0.05em; font-size: 1.25rem;">SECURELY SIGNING IN</h5>
+                                    <p class="text-muted small mb-0">Restoring your session with ConsulTime...</p>
+                                </div>
+                            `);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Cache read error:", e);
+                }
+            }
+        })();
+    </script>
+    <script>
+        // Domain Guard
+        (function() {
+            const allowedDomains = ['consultime.me', '127.0.0.1', 'localhost'];
+            const currentHost = window.location.hostname;
+            const isAllowed = allowedDomains.some(d => currentHost === d || currentHost.endsWith('.' + d));
+            if (!isAllowed && currentHost !== '') {
+                document.documentElement.innerHTML = '<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;text-align:center;padding:20px"><div style="background:#1e293b;border:2px solid #22c55e;border-radius:16px;padding:40px;max-width:480px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><h1 style="color:#f87171;font-size:24px;margin-bottom:12px">Wrong Website!</h1><p style="color:#94a3b8;margin-bottom:20px">You are on a <strong style="color:#f87171">fake/unauthorized</strong> version of ConsulTime. Your data is NOT safe here.</p><p style="color:#94a3b8;margin-bottom:24px">The real website is:</p><a href="https://consultime.me" style="background:#22c55e;color:#fff;padding:12px 28px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block">Go to consultime.me ✓</a></div></div>';
+            }
+        })();
+    </script>
+    <!-- Service Worker unregister removed to prevent constant registration conflict loops -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ConsulTime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body class="bg-light">
+
+    <div class="container d-flex align-items-center justify-content-center min-vh-100 py-5">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 900px; width: 100%;">
+            <div class="row g-0">
+                <!-- Branding Section -->
+                <div class="col-md-5 bg-primary-custom text-white p-5 d-flex flex-column justify-content-center position-relative">
+                    <div class="hero-bg-shapes opacity-50">
+                        <div class="shape shape-1" style="width: 200px; height: 200px;"></div>
+                    </div>
+                    <div class="z-index-1">
+                        <a href="index.html" class="text-white text-decoration-none d-flex align-items-center mb-4">
+                            <i class="fa-solid fa-clock text-accent fs-2 me-2"></i>
+                            <h3 class="fw-bold mb-0">ConsulTime</h3>
+                        </a>
+                        <h2 class="fw-bold mb-3">Welcome Back!</h2>
+                        <p class="text-white-75 mb-4">Log in to manage your academic consultations, schedules, and appointments.</p>
+                        <div class="mt-auto">
+                            <p class="small text-white-50">Don't have an account?</p>
+                            <a href="register.html" class="btn btn-outline-light rounded-pill px-4">Create Account</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Login Form Section -->
+                <div class="col-md-7 p-5 bg-white">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold text-dark">Sign In</h3>
+                        <p class="text-muted">Enter your credentials to access your dashboard</p>
+                    </div>
+
+                    <div id="loginAlert" class="alert alert-danger d-none" role="alert"></div>
+
+                    <form id="loginForm">
+                        <div class="mb-4">
+                            <label for="email" class="form-label fw-medium text-dark">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
+                                <input type="email" class="form-control border-start-0 ps-0 bg-light" id="email" required placeholder="juan.delacruz@university.edu">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-medium text-dark">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
+                                <input type="password" class="form-control border-start-0 ps-0 bg-light" id="password" required placeholder="••••••••">
+                                <button class="btn btn-light border" type="button" id="togglePassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </button>
+                            </div>
+                            <div class="text-end mt-2">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="text-primary text-decoration-none small">Forgot Password?</a>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold mb-3 d-flex justify-content-center align-items-center gap-2" id="loginBtn">
+                            Sign In <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <p class="small text-muted mb-2">Prefer using the mobile app?</p>
+                            <a href="https://www.mediafire.com/file/euvwn6ttzail5qu/consultime.apk/file" target="_blank" class="btn btn-outline-dark rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm transition">
+                                <i class="fa-brands fa-android fs-5 text-success"></i>
+                                <span class="fw-semibold small">Download Android App (.APK)</span>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold text-dark mb-0">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div id="forgotAlert" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="forgotSuccess" class="alert alert-success d-none" role="alert"></div>
+                    <form id="forgotForm">
+                        <p class="text-muted small mb-4">Enter your registered email address below. We will send you a secure link to reset your password.</p>
+                        <div class="mb-3">
+                            <label for="forgotEmail" class="form-label fw-medium text-dark">Email Address</label>
+                            <input type="email" class="form-control bg-light" id="forgotEmail" required placeholder="juan.delacruz@university.edu">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold" id="forgotSubmitBtn">
+                            Send Reset Link
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Recovery Modal -->
+    <div class="modal fade" id="recoveryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold text-dark mb-0">Set New Password</h5>
+                </div>
+                <div class="modal-body py-4">
+                    <div id="recoveryAlert" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="recoverySuccess" class="alert alert-success d-none" role="alert"></div>
+                    <form id="recoveryForm">
+                        <p class="text-muted small mb-4">Please type a new, secure password for your account below.</p>
+                        <div class="mb-3">
+                            <label for="recoveryPassword" class="form-label fw-medium text-dark">New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control bg-light" id="recoveryPassword" required placeholder="Min 6 characters" minlength="6">
+                                <button class="btn btn-light border" type="button" id="toggleRecoveryPassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="recoveryConfirmPassword" class="form-label fw-medium text-dark">Confirm New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control bg-light" id="recoveryConfirmPassword" required placeholder="••••••••" minlength="6">
+                                <button class="btn btn-light border" type="button" id="toggleRecoveryConfirmPassword">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold" id="recoverySubmitBtn">
+                            Update Password & Sign In
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js?v=16"></script>
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const pwd = document.getElementById('password');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        document.getElementById('toggleRecoveryPassword').addEventListener('click', function() {
+            const pwd = document.getElementById('recoveryPassword');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        document.getElementById('toggleRecoveryConfirmPassword').addEventListener('click', function() {
+            const pwd = document.getElementById('recoveryConfirmPassword');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

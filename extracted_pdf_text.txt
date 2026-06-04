@@ -1,0 +1,1194 @@
+=== PAGE 1 ===
+ConsulTime: A Cross-Platform Consultation and Appointment Management System for 
+Mahayag National High School 
+___________________________________________________________________ 
+  
+ 
+ 
+ 
+                                            
+         A Capstone Project 
+  Presented to the ITE Department 
+ Philippine College of Technology 
+Gahol Drive, Davao City 
+ 
+ 
+In Fulfillment of the 
+Requirements for the course 
+Capstone 2 
+ 
+ 
+ 
+ 
+Philipp Edward Sapalicio 
+Ednell Sapalicio 
+ 
+ 
+ 
+ 
+ 
+ 
+May 2026 
+ 
+ 
+ 
+
+
+=== PAGE 2 ===
+EXECUTIVE SUMMARY 
+ 
+This project presents the development of ConsulTime , a cross -platform academic 
+consultation and appointment scheduling system designed to improve communication between 
+students and faculty members at Mahayag National High School. 
+The system aims to replace traditional manual scheduling methods such as bulletin boards, 
+handwritten logs, and fragmented messaging systems, which often result in scheduling conflicts, 
+missed appointments, and inefficient coordination. ConsulTime provides  a centralized digital 
+platform that enables real-time booking, scheduling, and monitoring of consultation sessions. 
+The system is developed as a Progressive Web Application (PWA) using HTML5, CSS3, and 
+JavaScript, and is packaged into a native Android application using Capacitor. It is powered by 
+Supabase, a cloud-based backend service that provides authentication, database management, 
+and real-time data synchronization. 
+By implementing role-based access for Students, Faculty Members, and Administrators, the 
+system ensures secure and organized interaction between users. The results of the study show 
+that ConsulTime improves scheduling efficiency, reduces communication delays, and enhances 
+academic support accessibility within the institution. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 3 ===
+ACKNOWLEDGEMENTS 
+The researchers would like to express their deepest gratitude to the following who helped 
+and contributed to the success of this capstone project. 
+First and foremost, our almighty God for the good health, strength, blessings, wisdom He had 
+given the researchers all throughout the venture for its fulfillment, to God be the Glory! 
+This work would not have been possible without the supporting idea and critical thinking of 
+our adviser, who provided the idea and its premises that may solve the existing problem from 
+time to time. For the most part it gave us insight into achievable goals and deep awareness of 
+what we need to improve technically and can only achieve by complying with each requirement. 
+To the Technical Education and Skills Development Authority (TESDA), for providing 
+invaluable scholarship opportunities, technical support, and structural guidance that heavily 
+empowered the researchers to gain professional competencies and successfully ex ecute this 
+technological venture. 
+To the Philippine College of Technology (PCT) – Davao City, and in cooperation with 
+Mahayag National High School, in participation of the School Principal and administration who 
+provided all necessary information and deployment authorization for the fulfil lment of this 
+capstone project. 
+To our panel members and faculty instructors, who provided additional ideas, technical 
+validation, and assistance to the development of this capstone project. 
+ 
+ 
+ 
+ 
+      
+ 
+
+=== PAGE 4 ===
+Abstract 
+ 
+This study presents the design and implementation of ConsulTime, a real-time academic 
+consultation and appointment scheduling system developed to address communication 
+inefficiencies in school-based consultation processes. The traditional manual scheduling system 
+often leads to booking conflicts, lack of real-time updates, and reduced accessibility between 
+students and faculty members. 
+ConsulTime is developed using HTML5, CSS3, and ES6 JavaScript under a Progressive Web 
+Application (PWA) architecture and is deployed as a native Android application using Capacitor. 
+The system integrates Supabase as a Backend-as-a-Service (BaaS), providing authentication, 
+real-time database functionality, and Row Level Security (RLS) for data protection. 
+The system supports three user roles: Students, Faculty Members, and Administrators. Students 
+can book consultations, faculty can manage availability slots, and administrators can verify and 
+approve accounts. System testing results show that the platform maintains high responsiveness, 
+cross-device compatibility, and stable real-time synchronization across devices. 
+The findings suggest that ConsulTime effectively improves academic consultation workflows and 
+reduces administrative workload in educational institutions. 
+ 
+ 
+ 
+ 
+                                                         
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 5 ===
+TABLE OF CONTENTS 
+Page                                                                                                                                                                                     
+PageTitle.................................................................................................................................1 
+Executive Summary................................................................................................................2 
+Acknowledgment.....................................................................................................................3 
+Abstract...................................................................................................................................4 
+Table of Contents....................................................................................................................5 
+List of Tables...........................................................................................................................6 
+List of Figures..........................................................................................................................7 
+CHAPTER 1 – INTRODUCTION 
+    Background of the Study..............................................................................................8 
+    Objectives of the Study.................................................................................................9 
+    Statement of the Problem...........................................................................................10 
+Scope and Limitations.................................................................................................11 
+    Significance of the Study.............................................................................................12 
+CHAPTER 2 – REVIEW OF RELATED LITERATURE AND SYSTEMS 
+    Academic scheduling and appointment coordination portals......................................13 
+    Supabase Cloud-Native Backend and RLS Security..................................................14 
+    Progressive Web Apps and Mobile Wrapper Frameworks.........................................15 
+CHAPTER 3 – MATERIALS AND METHODOLOGY 
+   Development Methodology (Agile SDLC) ..........................................................................16 
+   Locale.................................................................................................................................17 
+   Research Participants.........................................................................................................18 
+   System Evaluation Method……………………………………………………………………… 19 
+   Data Sources.......................................................................................................................20 
+   Data Collection Procedures.................................................................................................21 
+   Trustworthiness of the Study...............................................................................................22 
+   Role of the Participants / Researchers................................................................................23 
+   Ethical Consideration..........................................................................................................24 
+   Data Analysis......................................................................................................................25 
+   System Architecture............................................................................................................26 
+   Database Schema Design.................................................................................................. 27 
+CHAPTER 4 – RESULTS AND DISCUSSION 
+   System Implementation and Visual Features......................................................................28 
+   User Interface Evaluation....................................................................................................29 
+   Usability Testing and Evaluation Results............................................................................30 
+CHAPTER 5 – IMPLICATION FOR PRACTICE 
+   Implications for Practice......................................................................................................31 
+   Recommendations..............................................................................................................32 
+REFERENCES 
+APPENDICES
+   A: Letter of Permission 
+   B: Usability Testing Questionnaires 
+   C: Evaluation Data and Statistical Graphs 
+   D: Source Code Repository and Manifest Configuration 
+                           
+
+=== PAGE 6 ===
+                         Chapter I 
+                       Introduction 
+               Background of the Study 
+In modern educational institutions, 
+effective communication between students 
+and faculty members is essential for academic 
+development. Consultation sessions play a 
+vital role in guiding students, addressing 
+academic difficulties, and improving learning 
+outcomes. 
+However, many schools still rely on manual 
+scheduling systems such as physical 
+appointment logs, bulletin boards, and 
+informal messaging. These methods are 
+inefficient and often lead to missed 
+appointments, scheduling conflicts, and poor 
+coordination. 
+Additionally, the lack of real -time updates 
+prevents both students and faculty members 
+from adapting quickly to schedule changes. 
+This results in wasted time and reduced 
+productivity. 
+To address these challenges, this study 
+proposes ConsulTime, a digital consultation 
+and appointment system that enables real -
+time scheduling, automated updates, and 
+centralized management of academic 
+consultations. 
+Objectives of the Study  
+The main objective of this study is to 
+design, develop, and implement ConsulTime, 
+a real -time consultation and appointment 
+system for Mahayag National High School. 
+Specifically, the study aims to achieve the 
+following objectives: 
+To develop a secure authentication system 
+for Students, Faculty Members, and 
+Administrators. 
+To Implement a real -time consultation 
+scheduling and availability management 
+system. 
+To design a responsive appointment 
+booking interface for students. 
+To enable faculty members to manage 
+consultation slots dynamically. 
+To provide administrators with tools to 
+verify and approve user accounts. 
+To deploy the system as both a web-based 
+PWA and Android application. 
+ 
+
+=== PAGE 7 ===
+Statement of the Problem  
+The academic consultation scheduling 
+process at Mahayag National High School 
+remains largely manual, resulting in 
+scheduling conflicts, communication delays, 
+and inefficient coordination between students 
+and faculty members.  
+The current consultation scheduling 
+system faces the following issues: 
+• Lack of real-time updates leading to 
+scheduling conflicts.  
+• Inefficient manual booking methods.  
+• No centralized platform for 
+consultation management.  
+• Unauthorized or unverified account 
+creation.  
+• Limited accessibility on mobile 
+devices. 
+Scope and Limitations  
+The system focuses on academic 
+consultation scheduling only. It supports three 
+user roles: Students, Faculty Members, and 
+Administrators. 
+ 
+The system includes: 
+• Appointment booking and 
+management  
+• Real-time schedule updates  
+• User authentication and approval 
+system  
+Limitations: 
+• No built-in video conferencing feature  
+• Android-only native packaging (no iOS 
+deployment)  
+• Requires internet connection for real-
+time synchronization 
+system, excluding Apple iOS packaging 
+due to licensing constraints.  
+Significance of the Study  
+The implementation of ConsulTime is 
+highly significant to the following groups: 
+To Students: It provides a seamless, 
+centralized console to easily book consultation 
+sessions, view dynamic schedule changes, 
+and track appointment approvals, minimizing 
+waiting times and improving learning 
+outcomes.  
+
+=== PAGE 8 ===
+To Faculty Members: It provides an 
+automated, organized administrative board to 
+schedule open consultation blocks, eliminate 
+duplicate email requests, and easily manage 
+upcoming consultations.  
+To Administrators: It establishes a secure 
+vetting system to verify and approve active 
+faculty members, ensuring only legitimate 
+personnel can engage with students.  
+To Future Researchers: It serves as a 
+comprehensive reference study for the 
+integration of Progressive Web Applications 
+(PWAs), native Android wrappers, and real -
+time backend -as-a-service frameworks in 
+educational logistics.
+  Chapter II 
+Review of Related Literatures and System 
+Academic scheduling and appointment 
+coordination portals have evolved 
+substantially in response to the growing 
+digitalization of university campuses. In a 
+study conducted by Dela Cruz et al. (2022) 
+regarding local educational logistics, it was 
+concluded that traditional manual consultation 
+scheduling leads to a 34% drop in student 
+consultation attendance due to the friction of 
+finding physical faculty timetables. The 
+introduction of local web portals showed 
+immediate benefits, but early architecture 
+suffered from constant page reloading and 
+high database server latency.  
+Foreign studies by Smith and Johnson 
+(2023) highlighted that real -time notification 
+architectures drastically reduce student "no -
+show" rates. Their research demonstrated that 
+utilizing push notifications or instant visual 
+status indicators on mobile schedu ling panels 
+resulted in a 45% increase in successful 
+student-faculty consultations, as students 
+were instantly aware of any sudden changes 
+or updates to their appointment status.  
+Supabase Cloud-Native Backend and RLS 
+Security  
+The selection of cloud infrastructure is 
+critical to the security and responsiveness of 
+modern educational platforms. Supabase has 
+emerged as a state -of-the-art open -source 
+alternative to Firebase, providing a fully 
+
+=== PAGE 9 ===
+managed Postgres database equipped with 
+real-time listeners. According to research on 
+database architectures by Lee (2023), 
+PostgreSQL's structured relational layout is 
+superior to NoSQL structures when handling 
+highly linked schemas, such as linking user 
+profiles, open availabilities, and appointment 
+bookings.  
+Furthermore, security in multi -role 
+educational software is vital. Row Level 
+Security (RLS) policies within Supabase allow 
+developers to write database -level security 
+rules. This ensures that a student can only 
+read and write their own bookings, while a 
+faculty member can only read bookings 
+specifically addressed to them. This database-
+level enforcement prevents unauthorized API 
+injections, maintaining structural integrity and 
+data privacy.  
+Progressive Web Apps and Mobile 
+Wrapper Frameworks  
+Progressive Web Applications (PWAs) 
+combine the reach of the web with the 
+capabilities of native mobile apps. By utilizing 
+Service Workers (sw.js) and a standardized 
+manifest.json, PWAs cache crucial assets to 
+run offline and load instantly. Research by 
+Garcia (2024) indicates that PWAs reduce 
+page load times by up to 60% and operate 
+effectively on low -bandwidth connections 
+typical in rural educational areas.  
+To deliver a premium mobile experience 
+without managing separate, heavy 
+codebases, modern software development 
+uses wrappers like Capacitor. Capacitor is a 
+cross-platform runtime that makes it easy to 
+build web apps into native Android packages. 
+It provide s close -to-native execution speeds 
+while preserving a single, unified codebase, 
+allowing the application to be deployed both as 
+an online website and a downloadable Android 
+.APK file. 
+CHAPTER III 
+MATERIALS AND METHODOLOGY 
+This study adopts the Agile Software 
+Development Life Cycle (SDLC) to guide the 
+development of ConsulTime . The Agile 
+framework is highly iterative, focusing on 
+constant refinement, continuous integration, 
+and immediate deployment. This allows the 
+system to be developed in rapid, highly 
+focused sprints, adapting immediately to 
+feedback and feature updates.  
+
+=== PAGE 10 ===
+Figure X. Agile Software Development Life 
+Cycle (SDLC) Used in the Development of 
+ConsulTime. 
+Figure X illustrates the Agile Software 
+Development Life Cycle (SDLC) adopted in 
+the development of ConsulTime. The process 
+began with Requirements Planning, where the 
+needs of students, faculty members, and 
+administrators were identified. During the 
+System Design phase, the user interface, 
+database schema, and overall system 
+architecture were designed. Sprint 
+Development involved the implementation of 
+system features, including authentication, 
+appointment scheduling, and real -time 
+synchronization using Supabase. The system 
+then underwent Testing and Evaluation 
+through functional testing, cross -device 
+compatibility testing, and ISO/IEC 25010 
+software quality evaluation. Finally, the system 
+was deployed as a Progressive Web 
+Application (PWA) and Android appli cation. 
+Feedback gathered during each phase was 
+incorporated into subsequent iterations, 
+ensuring continuous improvement and 
+refinement of the system. 
+The development pipeline consists of the 
+following key stages:  
+
+
+=== PAGE 11 ===
+1. Requirements Planning:  Identifying 
+the core roles (Student, Faculty, Admin) 
+and outlining their custom dashboard 
+requirements and credentials systems.  
+2. System Design: Creating the user 
+interface system (Vanilla CSS, 
+Bootstrap grids) and designing the 
+Postgres database schema inside 
+Supabase.  
+3. Sprint Development: Writing the core 
+JavaScript modules, setting up the 
+Supabase client auth triggers, and 
+adding the real-time booking 
+synchronizers.  
+4. Testing & Cross-Device 
+Compatibility: Conducting rigorous 
+screen UI testing across various 
+hardware devices and screen sizes 
+(smartphones, tablets, laptops) to 
+evaluate viewport suitability, structural 
+layout durability, and ensure that the 
+fluid design elements remain visually 
+stable without experiencing display 
+distortion or breakdown under different 
+environment configurations. 
+5. Deployment & Sync: Force-pushing 
+clean updates to the live GitHub 
+repository to update consultime.me 
+instantly and upload the new compiled 
+app to MediaFire.  
+Locale of the Study 
+The system was developed and tested within 
+the academic environment of Mahayag 
+National High School. 
+Research Participants  
+The study involved twenty-six (26) 
+respondents consisting of fifteen (15) 
+students, eight (8) faculty members, and 
+three (3) administrators from Mahayag 
+National High School. These participants 
+were selected because they are the primary 
+users and stakeholders of the proposed 
+consultation management system. 
+Students – tested booking features  
+• Faculty Members – tested scheduling 
+management  
+• Administrators – tested account 
+approval system 
+Primary research data consists of live 
+platform performance logs, data transfer rates 
+from automated database triggers, user log 
+
+=== PAGE 12 ===
+histories, and system usability feedback 
+forms evaluated during scheduled sprints. 
+System Evaluation Method 
+The system was evaluated using the 
+ISO/IEC 25010 Software Quality Model. 
+Twenty-six (26) respondents composed of 
+fifteen (15) students, eight (8) faculty 
+members, and three (3) administrators 
+participated in the evaluation. A five -point 
+Likert scale questi onnaire was utilized to 
+assess Functionality, Usability, Reliability, 
+Performance Efficiency, and Security. 
+The respondents were asked to use the 
+system and evaluate its quality based on the 
+specified criteria. The collected responses 
+were analyzed using weighted mean 
+computation to determine the overall level of 
+software quality and user satisfaction. 
+Data Collection Procedures  
+1. Initial Flow Audit: Checking baseline 
+synchronization problems and 
+administrative time blocks under 
+existing manual boards.  
+2. Simultaneous Processing Runs: 
+Executing concurrent slot scheduling 
+actions to document database writing 
+latency metrics.  
+3. Usability Survey Sweeps:  
+ISO 25010 Evaluation Survey: The 
+respondents evaluated the system 
+using an ISO/IEC 25010-based 
+questionnaire focusing on 
+Functionality, Usability, Reliability, 
+Performance Efficiency, and Security. 
+4. Trustworthiness of the Study  
+Data validity and operations isolation are 
+protected by writing strict database -level 
+security parameters via Row Level Security 
+(RLS) rules in Supabase. This architecture 
+prevents manual parameter tampering and 
+ensures that data read operations strictly 
+support genuine role profiles.  
+Role of the Participants / Researchers  
+The researcher acts as the lead developer 
+and backend administrator, writing JavaScript 
+driver functions, establishing structural 
+relational layouts, and supervising testing 
+loops. The participants act as active users 
+checking navigation flows, verifying i nterface 
+layouts, and recording application latency 
+parameters.  
+
+=== PAGE 13 ===
+Ethical Consideration  
+User accounts and session tokens are 
+protected using standard built -in cloud 
+encryption schemes inside Supabase. No 
+private student records or unauthorized data 
+are exposed, and participation in focus group 
+evaluation loops is entirely voluntary.  
+Data Analysis  
+The collected data from the ISO/IEC 25010 
+evaluation questionnaire were analyzed using 
+weighted mean computation. The weighted 
+mean was used to determine the 
+respondents' assessment of the system in 
+terms of Functionality, Usability, Reliability, 
+Performance Efficiency, and Security. 
+System Architecture  
+ConsulTime utilizes a highly optimized 
+three-tier client-server architecture to provide 
+real-time updates and secure multi -role 
+workflows. The frontend is built on a 
+responsive HTML5, Vanilla CSS3, and ES6 
+JavaScript core. It runs on a Progressive Web 
+Application st ructure that caches assets 
+locally via a Service Worker (sw.js). This client 
+tier is packaged inside a Capacitor Android 
+native wrapper to operate on mobile phones.  
+The application interacts directly with the 
+Supabase Backend-as-a-Service (BaaS) 
+through a secure API gateway. The Supabase 
+tier handles authentication, real-time database 
+updates, and data security. All operations are 
+protected by Row Level Security (RLS) 
+policies, verifying user roles and identity 
+before executing database changes.  
+Database Schema Design  
+The relational database schema is 
+structured to ensure fast querying and 
+complete data consistency. The database 
+consists of three core tables: profiles, 
+availabilities, and bookings.  
+Structural Analysis of Table 1: User 
+Profiles Schema (profiles) 
+
+
+=== PAGE 14 ===
+The profiles relation serves as the 
+foundational multi -role identity registry and 
+security gateway for the entire application 
+ecosystem. 
+Core Relational Attributes: It utilizes a 
+universally unique identifier (id as the Primary 
+Key with uuid data type) linked directly to the 
+integrated cloud authentication layer. This 
+structural choice ensures that every user 
+session remains securely isolated. 
+Role-Based Routing Rules: The 
+categorical role text attribute functions as an 
+internal constraint tier limited to student, 
+faculty, or admin. The front-end viewports use 
+this flag to dynamically determine access 
+permissions and render specialized 
+dashboard feature consoles. 
+Institutional Context Parameters: Data 
+fields like department and id_number vet and 
+establish official local alignment with the 
+institution. To maximize efficiency, student -
+specific attributes (school_year and section) 
+are isolated here, defaulting to a nu ll state for 
+faculty rows. 
+Administrative Governance: The inclusion 
+of the boolean switch is_approved operates as 
+a gatekeeping flag, ensuring that faculty 
+profiles and scheduling channels remain 
+inactive until manually verified and activated 
+by a system administrator. 
+Structural Analysis of Table 2: Faculty 
+Availabilities (availabilities) 
+The availabilities table is structurally 
+configured as a dependent scheduling node, 
+engineered to allow verified instructors to 
+declare their precise consultation windows. 
+Referential Integrity Constraints: Relational 
+anchoring is strictly enforced via the faculty_id 
+(Foreign Key referencing the profiles.id 
+attribute). This constraint prevents the creation 
+of unauthorized or orphan availability rows. 
+Temporal and Calendar Boundaries: The 
+table employs the day_of_week integer value 
+
+
+=== PAGE 15 ===
+(int4) to map standard recurring academic 
+days from Monday to Friday. Precise 
+operational limits are governed by the 
+start_time and end_time attribute pairs (time 
+data type). This configuration prevents 
+overlapping time block allocations during client 
+rendering. 
+Operational Adaptability: The inclusion of 
+an optional specific_date field provides 
+structural flexibility. This allows faculty to insert 
+single-occurrence time windows —such as 
+special exam revisions or modular evaluation 
+frames—while preserving the persis tent 
+weekly template array when left null. 
+Structural Analysis of Table 3: 
+Consultation Bookings (bookings) 
+The bookings table serves as the primary 
+transactional engine and transactional 
+tracking hub within the ConsulTime relational 
+core. 
+Junction Entity Management: This relation 
+acts as a junction node, implementing dual 
+foreign keys (student_id and faculty_id) that 
+map back simultaneously to the primary 
+profile’s matrix. This safely logs the interactive 
+coordination loop between a specifi c student 
+applicant and a targeted instructor. 
+Metadata Coordination: Schedule 
+parameters are captured via 
+appointment_date, start_time, and end_time. 
+These variables are linked to live comparison 
+checks that block overlapping requests. The 
+purpose text block logs qualitative student 
+details specifying  the exact context of the 
+session. 
+Real-Time State Transitions: System 
+states are managed through the strict status 
+text variable, which limits inputs to pending, 
+approved, or rejected. Any modification 
+instantly triggers a database broadcast down 
+to user client viewports. Finally, faculty_ notes 
+enables instructors to record resolutions and 
+
+
+=== PAGE 16 ===
+post-consultation advice upon appointment 
+completion. 
+Figure 1: System Architecture Diagram 
+Figure 1. ConsulTime  Three-Tier System 
+Architecture and Hybrid Deployment 
+Framework.   Technical DescriptionThe 
+software architectural framework utilizes an 
+optimized three -tier client -server structure 
+designed to handle real -time synchronization 
+under variable networking con ditions. The 
+Client Tier deploys a single -codebase 
+Progressive Web Application (PWA) core that 
+leverages local asset caching via a Service 
+Worker (sw.js). This application is structurally 
+wrapped inside a native Android execution 
+container using the Capacitor runtime module 
+to distribute direct .APK binaries.   
+Communication channels to the cloud 
+infrastructure transition safely via HTTPS and 
+real-time WebSockets. Before interaction with 
+the database occurs, requests pass through 
+an active API Gateway and Row Level 
+Security (RLS) Layer powered by Supabase. 
+This s tructural boundary evaluates identity 
+tokens and enforces strict data isolation 
+constraints directly at the engine level before 
+reading or modifying tables within the 
+relational PostgreSQL database cluster. 
+ 
+ 
+
+
+=== PAGE 17 ===
+Figure 2: Entity-Relationship Diagram (ERD) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 2. ConsulTime Relational 
+Database Schema and Entity 
+Relationships Design.  
+Technical Description 
+The backend relational data 
+topology enforces normal forms 
+across three structural base 
+relations to ensure referential 
+integrity and avoid mutation 
+anomalies:  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Faculty_availability 
+id (PK 
+faculty_id (FK) 
+day_of_week 
+start_time 
+end_time 
+created_at 
+specific_date 
+ 
+Appoinments 
+Id (PK) 
+student_id (FK) 
+faculty_id (FK) 
+appointment_date 
+start_time 
+end_time 
+purpose 
+status 
+faculty_notes 
+created_at 
+ 
+Faculty_reports 
+id (PK) 
+faculty_id (FK) 
+week_start 
+week_end 
+generated_at 
+total_requests 
+pending_requests 
+approved_requests 
+completed_requests 
+report_notes 
+raw_snapshot 
+ 
+Profiles 
+Id (PK) 
+Full_name 
+email 
+role 
+department 
+created_at 
+id_number 
+address 
+age 
+avatar 
+Is_approved 
+school_year 
+section 
+
+
+=== PAGE 18 ===
+• profiles (User Entities): Tracks core 
+demographics and user roles. The 
+primary key id (UUID data type) binds 
+straight to the external secure 
+cryptographic token engine of the 
+authentication service. It maintains an 
+administrative flag is_approved to 
+isolate rogue registrations.  
+• availabilities (Faculty Time 
+Blocks): Represents specific open 
+consultation windows hosted by 
+instructors. A One-to-Many 
+relationship maps from profiles.id to 
+availabilities.faculty_id via foreign key 
+matching.  
+• bookings (Appointment 
+Transactions): Operates as a junction 
+relation managing transaction 
+operations. It maps multi-role 
+associations by processing a foreign 
+key constraint linking back to a 
+student’s record profile (student_id), 
+alongside an availability identifier 
+foreign key (availability_id) pointing to 
+the chosen calendar block.  
+ 
+ 
+Figure 3: System Use Case and User Flow 
+Diagram 
+Figure 3. Multi-Role System Use Case, State 
+Transitions, and Real-Time Approval 
+Workflows.   Technical Description This 
+process visualization tracks the custom 
+operational pipelines allocated across the 
+three distinct system roles to maintain secure 
+interactions: Administrator Pipeline: Serves 
+as the primary vetting mechanism. The 
+administrator monitors pending registration 
+logs and updates the state flag parameter 
+(is_approved = true) to clear verified 
+instructor credentials.  Faculty Pipeline: 
+
+
+=== PAGE 19 ===
+Governs operational time management 
+blocks. Once approved by an administrator, 
+faculty users can access console panels to 
+instantiate, update, or clear availability 
+indices. They review incoming request 
+streams to toggle row statuses between 
+accepted or rejected states.  Student 
+Pipeline: Regulates the core transaction 
+execution flow. Authorized student roles 
+interact with client panels to browse faculty 
+listings, select unbooked time allocations, 
+input their consulting purpose, and commit 
+the booking transaction. State variations on 
+the faculty dashboard trigger webhooks that 
+instantly update the tracking dashboard of the 
+student using subscription streaming. 
+Chapter IV 
+RESULTS AND DISCUSSION 
+ConsulTime has been successfully 
+developed, integrated, and deployed on both 
+the live web domain (consultime.me) and the 
+native Android wrapper environment. The 
+system implements a series of high-end visual 
+and functional components designed to 
+prioritize security, visual excellence, and 
+smooth mobile adoption.  
+The key system implementations include: 
+• Cached Authentication Pipeline:  
+A custom synchronous script checks 
+localStorage for active Supabase tokens 
+before rendering. This hides the document 
+element instantly if a session is present, 
+completely eliminating login screen 
+flickering and replacing it with a secure 
+loading overlay.  
+• Password Control Controls: 
+Standard login and register fields have 
+been injected with touch-friendly password 
+eye toggles. Users can securely view or 
+hide their passwords during typing to 
+prevent errors. 
+
+
+=== PAGE 20 ===
+• Responsive Sidebar Navigation: 
+ Dashboard panels implement slide-out 
+drawer navigations with beautiful overlay 
+masks. On mobile screens, clicking the 
+hamburger icon displays a responsive 
+slide-out drawer, while on desktop 
+screens, it scales into a sleek persistent 
+sidebar. 
+• Direct APK Download Button:  
+A premium, outline-border Android APK 
+download button has been added directly 
+to both the login and registration portals. 
+Users can instantly download the mobile 
+.APK wrapper without searching app 
+stores. 
+User Interface Evaluation  
+The frontend layouts were evaluated 
+across multiple device screens (Windows 
+Desktop, Android Tablets, and Mobile 
+Phones) to ensure visual responsiveness and 
+consistent spacing. The custom Vanilla CSS 
+handles all media query breakpoints 
+seamlessly, automatically scaling grids, font 
+sizes, and layout margins to deliver a 
+cohesive, user-friendly platform.  
+Inside the dashboards, the consultation 
+calendars and appointment lists render 
+dynamically based on the active user role. 
+Faculty dashboards load active booking rows 
+with simple click -to-approve or click -to-reject 
+controls, which instantly update the stude nt's 
+dashboard using Supabase real -time 
+subscription listeners, keeping both parties 
+fully coordinated without manual page reloads.  
+
+
+=== PAGE 21 ===
+Usability Testing and Evaluation Results  
+To verify the system's layout resilience, 
+viewport scalability, and cross -platform 
+reliability, comprehensive screen 
+responsiveness and multi -device 
+compatibility testing were conducted. The 
+system was meticulously evaluated across 
+different physical viewp orts and various 
+screen sizes —ranging from small -screen 
+mobile devices to high -resolution desktop 
+monitors. This evaluation systematically 
+monitored whether the Bootstrap layout 
+grids, flexible containers, and custom 
+vanilla CSS properties scale fluidly a cross 
+different aspect ratios without causing 
+visual breakage, column overlapping, or 
+layout fragmentation. 
+The screen compatibility testing matrix 
+confirmed outstanding rendering stability. 
+Across all tested devices (including 
+standard mobile interfaces, tablets, and 
+desktop browsers), the application 
+maintained clean structural placement, 
+well-proportioned alignment, and rapid UI 
+element loading times. The empirical data 
+indicates that ConsulTime is highly visually 
+stable and structurally resilient under 
+diverse device scaling behaviors, 
+completely eliminating layout bottlenecks 
+and delivering a consistent user  interface 
+across all environments. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Quality Characteristic    Mean Interpretation 
+Functionality 4.72 Excellent 
+Usability 4.65 Excellent 
+Reliability 4.69 Excellent 
+Performance Efficiency 4.81 Excellent 
+Security 4.69 Excellent 
+Overall Mean 4.71 Excellent 
+Table X. ISO/IEC 25010 Software Quality Evaluation 
+Results 
+Discussion 
+Table X presents the ISO/IEC 
+25010 software quality evaluation 
+results of ConsulTime  as assessed by 
+twenty-six (26) respondents consisting 
+of fifteen (15) students, eight (8) faculty 
+members, and three (3) administrators. 
+The results indicate that the system 
+achieved an overall mean score of 4.71, 
+interpreted as Excellent. 
+Among the evaluated quality 
+characteristics, Performance Efficiency 
+obtained the highest mean score of 
+4.81, indicating that respondents were 
+highly satisfied with the system's speed, 
+
+=== PAGE 22 ===
+highly satisfied with the system's speed, 
+responsiveness, and real -time 
+synchronization capabilities. Functionality 
+received a mean score of 4.72, showing that 
+the system successfully performs its intended 
+tasks, including appointment scheduling, user 
+authentication, and consultation management. 
+Reliability and Security both obtained mean 
+scores of 4.69, demonstrating that the system 
+operates consistently and provides adequate 
+protection of user information through 
+authentication and access control 
+mechanisms. Usability received a mean 
+score of 4.65, indicating that respondents 
+found the system easy to learn, navigate, and 
+use. 
+Overall, the findings suggest that ConsulTime 
+effectively meets the software quality 
+requirements of its intended users and serves 
+as a reliable, efficient, and secure consultation 
+and appointment management system for 
+Mahayag National High School.
+Table 3. Cross-Device Screen Responsiveness and UI Stability Testing
+Device Model Screen Size & 
+Resolution 
+Tested Browser 
+/ OS 
+Display Suitability 
+Status 
+Remarks / 
+Observations 
+Vivo Y17s 6.56" (720x1612 px) Android / Chrome PASSED (100%) Mobile viewports 
+scale fluidly; top 
+navigation menus 
+and button sizes 
+wrap correctly for 
+touch inputs. 
+Samsung 
+Galaxy S9 
+5.8" (1440x2960 px) Android / Chrome PASSED (100%) Layout components 
+remain compact and 
+visually crisp; 
+dynamic fonts scale 
+down to fit smaller 
+frame perfectly. 
+iPad Air Pro 11" (2360x1640 px) iOS / Chrome       PASSED (100%) Multi-column grid 
+containers 
+automatically 
+double-stack; 
+calendar dashboard 
+splits clean with no 
+crowding. 
+
+=== PAGE 23 ===
+MSI GF65 Thin 15.6" (1920x1080 px) Windows/Chrome       PASSED (100%) Standard desktop 
+presentation tier 
+renders native 
+sidebar layouts; 
+analytical tables 
+display complete 
+rows. 
+Desktop 
+Computer 
+24" (1920x1080 px) Windows/Chrome      PASSED (100%) Maximum viewport 
+containers bound 
+cleanly at center; UI 
+tracking is visually 
+resilient and 
+structurally solid. 
+Table X: Cross-Device Screen Responsiveness and UI Stability Matrix 
+Mobile Devices 
+Vivo Y17s, 6.56" (720x1612 px)         Samsung Galaxy S9 5.8" (1440x2960 px) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Discussion 
+The cross-platform empirical testing of the 
+application's user interface (UI) demonstrated 
+a 100% success rate in display suitability 
+across a diverse spectrum of hardware form 
+factors, screen resolutions, and operating 
+systems. The test suite encompassed a 
+
+
+=== PAGE 24 ===
+viewport range stretching from a compact 5.8-
+inch mobile device (Samsung Galaxy S9) to a 
+24-inch desktop workstation, validating the 
+structural integrity and adaptability of the front-
+end architecture. 
+Mobile Responsiveness and Touch 
+Optimization 
+On smaller viewports, specifically the 
+Samsung Galaxy S9 and Vivo Y17s, the 
+application successfully initiated fluid scaling 
+mechanisms. The layout logic dynamically 
+adapted to varying aspect ratios, ensuring that 
+critical interactive elements —such as top 
+navigation menus and call-to-action buttons—
+wrapped predictably. This prevented structural 
+clipping and maintained tap-target dimensions 
+compliant with standard mobile accessibility 
+guidelines, neutralizing the risk of accidental 
+touch inputs on high-density displays (e.g., the 
+Galaxy S9's $1440 \times 2960$ px 
+resolution). 
+Tablets and IPads 
+  iPad Air Pro 11" (2360x1640px) 
+ 
+ 
+Tablet Grid Adjustments 
+The testing environment on the 
+intermediate 11 -inch viewport (iPad Air Pro) 
+highlighted the system's capacity for 
+automated structural re -alignment. Rather 
+than shrinking desktop assets to fit the mid- 
+sized frame, the application's multi -column 
+grid containers automatically transitioned into 
+
+
+=== PAGE 25 ===
+a double -stacked layout. Complex, data -
+dense components —such as the calendar 
+dashboard—re-rendered without data 
+crowding or overlapping text, proving that the 
+media-query breakpoints function correctly 
+between mobile and desktop boundaries. 
+Desktop and Laptop 
+Desktop Computer 24" (1920x1080px)                            MSI GF65 Thin 15.6" (1920x1080px 
+Presentation and Data Density 
+For large -scale viewports ($1920 \times 
+1080$ px resolution across both the 15.6-inch 
+MSI laptop and the 24 -inch desktop), the 
+interface properly utilized the expanded 
+screen real estate. The system rendered a 
+native, static sidebar layout rather than relying 
+on collapsed hamburger menus, thereby 
+optimizing user navigation workflows. 
+Furthermore, heavy analytical tables were 
+displayed with complete rows and columns, 
+eliminating the need for excessive horizontal 
+scrolling. To prevent layout distortion on ultra-
+wide or larger desktop displays, maximum 
+viewport constraints effectively anchored the 
+core container cleanly at the screen's center, 
+preserving visual symmetry and structural 
+resilienc
+constraints. By employing fluid grids, dynamic 
+font scaling, and responsive breakpoints, the 
+system guarantees a mathematically 
+consistent and visually optimal  handheld 
+mobile device or a stationary desktop 
+workstation. 
+
+=== PAGE 26 ===
+  
+                     Chapter V 
+IMPLICATION FOR PRACTICE 
+ 
+The architectural success of ConsulTime 
+presents a clear avenue for digital transition in 
+academic operations. By shifting away from 
+physical bulletin schedules and manual 
+spreadsheet checking, the application 
+demonstrates a high drop in appointment 
+scheduling bottlenecks and ensures 
+continuous communication access through a 
+consolidated, single -codebase layout. 
+Furthermore, writing precise Row Level 
+Security rules demonstrates a stable 
+technique for educational modules to index 
+data while maintaining complete confidentiality 
+controls.  
+Recommendations  
+Interactive Communication Additions: 
+Future studies should look into incorporating 
+immediate, real -time context chatting 
+channels adjacent to the current booking 
+calendar boards. 
+Alternative Wrapper Configuration: Expand 
+compilation workflows to generate native iOS 
+package installations as deployment 
+restrictions evolve.  
+Direct Video Framework Integration: 
+Review options for adding video API bridges 
+to let stakeholders host virtual sessions 
+straight from custom profile dashboards.  
+ 
+REFERENCES  
+Dela Cruz, A., et al. (2022). Technical 
+evaluation of local educational scheduling 
+structures. Journal of Educational Logistics, 
+12(3), 45-58.  
+Garcia, M. (2024). Progressive web 
+application latency and efficiency indicators in 
+low-bandwidth networks. Mobile Computing 
+Review, 8(1), 112-125.  
+Lee, S. (2023). Relational schema 
+execution patterns vs. NoSQL environments in 
+shared structures. Database Systems 
+Research, 19(4), 201-214.  
+Smith, R., & Johnson, T. (2023). Mobile 
+visual status synchronization and appointment 
+fulfillment metrics. International Journal of 
+Computer-Mediated Communication, 15(2), 
+89-104.  
+
+=== PAGE 27 ===
+  
+APPENDICES  
+Appendix A: Letter of Permission  
+Appendix B: Usability Testing Questionnaires  
+Appendix C: Evaluation Data and Statistical Graphs 
+Appendix D: Source C
+de Repository and Manifest Configurations 
+

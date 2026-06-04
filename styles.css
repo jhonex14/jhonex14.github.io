@@ -1,0 +1,694 @@
+/* Custom CSS for ConsulTime */
+
+:root {
+    --primary-color: #1e3a8a; /* Deep Academic Navy */
+    --primary-light: #3b82f6; /* Bright Blue */
+    --accent-color: #10b981; /* Emerald Green */
+    --accent-light: #34d399;
+    --text-dark: #1f2937;
+    --text-muted: #6b7280;
+    --bg-light: #f8fafc;
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-dark);
+    background-color: var(--bg-light);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Typography & Weights */
+.fw-800 { font-weight: 800; }
+.tracking-wide { letter-spacing: 0.05em; }
+
+/* Colors & Backgrounds */
+.bg-primary-custom { background-color: var(--primary-color) !important; }
+.text-primary { color: var(--primary-color) !important; }
+.bg-primary-soft { background-color: rgba(30, 58, 138, 0.1); }
+.bg-accent { background-color: var(--accent-color) !important; color: white; }
+.bg-accent:hover { background-color: var(--accent-light) !important; color: white; }
+.text-accent { color: var(--accent-color) !important; }
+.bg-accent-soft { background-color: rgba(16, 185, 129, 0.1); }
+.border-accent { border-color: var(--accent-color) !important; }
+.text-white-75 { color: rgba(255, 255, 255, 0.75) !important; }
+
+/* Navbar Animations */
+.navbar {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+.transition-all { transition: all 0.3s ease; }
+.nav-link {
+    position: relative;
+    color: rgba(255,255,255,0.85) !important;
+}
+.nav-link:hover, .nav-link.active {
+    color: #fff !important;
+}
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background-color: var(--accent-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-50%);
+}
+.nav-link:hover::after, .nav-link.active::after {
+    width: 100%;
+}
+
+/* Buttons */
+.btn-accent {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-accent:hover {
+    background-color: var(--accent-light);
+    border-color: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Hover Lift Effect */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    min-height: 100vh;
+    padding-top: 80px;
+    position: relative;
+}
+.hero-bg-shapes {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    z-index: 0;
+}
+.z-index-1 {
+    position: relative;
+    z-index: 1;
+}
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+}
+.shape-1 {
+    width: 400px; height: 400px;
+    background: rgba(59, 130, 246, 0.4);
+    top: -100px; right: -100px;
+}
+.shape-2 {
+    width: 300px; height: 300px;
+    background: rgba(16, 185, 129, 0.3);
+    bottom: -50px; left: -50px;
+}
+
+/* Glassmorphism */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+}
+
+/* Floating Animation */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Dashboard Sidebar */
+.sidebar {
+    width: 280px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+.main-content {
+    margin-left: 280px;
+    padding: 2rem;
+    min-height: 100vh;
+    background-color: var(--bg-light);
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+}
+.sidebar-link:hover, .sidebar-link.active {
+    color: var(--primary-color);
+    background: var(--bg-light);
+    border-left-color: var(--primary-color);
+}
+.sidebar-link i {
+    width: 24px;
+    font-size: 1.1rem;
+}
+
+/* Form Customizations */
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+}
+.form-control {
+    padding: 0.75rem 1rem;
+}
+.form-select {
+    padding: 0.75rem 2.25rem 0.75rem 1rem;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.35em 0.8em;
+    border-radius: 2rem;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+.status-pending { background: #fef3c7; color: #d97706; }
+.status-approved { background: #d1fae5; color: #059669; }
+.status-rejected { background: #fee2e2; color: #dc2626; }
+.status-completed { background: #e0e7ff; color: #4f46e5; }
+.status-cancelled { background: #e2e8f0; color: #475569; }
+
+/* Dashboard Cards */
+.dash-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s;
+}
+.dash-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Calendar/Slot Picker */
+.time-slot {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: #ffffff;
+    color: #1f2937 !important;
+}
+.time-slot:hover {
+    border-color: var(--primary-light);
+    background: #eff6ff;
+    color: var(--primary-color) !important;
+}
+.time-slot.selected {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Loader */
+.spinner-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Responsive / Mobile Styling */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+    }
+    .sidebar.show-sidebar {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 1.25rem !important;
+    }
+    header {
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+    }
+    /* Make tables responsive */
+    .table-responsive {
+        border-radius: 0.5rem;
+        overflow-x: auto;
+    }
+    .table th, .table td {
+        white-space: nowrap;
+    }
+}
+
+/* Extra small mobile screens tweak */
+@media (max-width: 575.98px) {
+    .dash-card {
+        margin-bottom: 1rem;
+    }
+    header h2 {
+        font-size: 1.5rem !important;
+    }
+    header p {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Print / Export Report Styles */
+@media print {
+    .sidebar, header, .btn, #toastContainer, canvas, .dash-card.bg-primary-custom {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    .dash-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+    }
+    body { background: white !important; }
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    --bg-light: #0f172a;
+    --text-dark: #f8fafc;
+    --text-muted: #cbd5e1;
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .bg-white {
+    background-color: #1e293b !important;
+}
+body.dark-mode .card, body.dark-mode .sidebar, body.dark-mode .dash-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* Universal Text visibility in Dark Mode */
+body.dark-mode h1:not([class*="text-"]), 
+body.dark-mode h2:not([class*="text-"]), 
+body.dark-mode h3:not([class*="text-"]), 
+body.dark-mode h4:not([class*="text-"]), 
+body.dark-mode h5:not([class*="text-"]), 
+body.dark-mode h6:not([class*="text-"]), 
+body.dark-mode p:not([class*="text-"]), 
+body.dark-mode span:not([class*="text-"]):not(.badge), 
+body.dark-mode label,
+body.dark-mode th,
+body.dark-mode td {
+    color: #f8fafc !important;
+}
+
+/* High-priority override for Bootstrap's text-dark and text-muted */
+body.dark-mode [class*="text-dark"] {
+    color: #f8fafc !important;
+}
+body.dark-mode [class*="text-muted"],
+body.dark-mode .text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* Sidebar and Links */
+body.dark-mode .sidebar-link {
+    color: #cbd5e1 !important;
+}
+body.dark-mode .sidebar-link i {
+    color: #cbd5e1 !important;
+}
+body.dark-mode .sidebar-link:hover, body.dark-mode .sidebar-link.active {
+    background: #0f172a !important;
+    color: #3b82f6 !important;
+    border-left-color: #3b82f6 !important;
+}
+body.dark-mode .sidebar-link:hover i, body.dark-mode .sidebar-link.active i {
+    color: #3b82f6 !important;
+}
+
+/* Table Styles */
+body.dark-mode .table,
+body.dark-mode .table > :not(caption) > * > *,
+body.dark-mode .table td,
+body.dark-mode .table th {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .table-light, 
+body.dark-mode .table-light th {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+body.dark-mode .table-hover tbody tr:hover > * {
+    background-color: #334155 !important;
+}
+
+/* Form Controls & Modal */
+body.dark-mode .form-control, 
+body.dark-mode .form-select, 
+body.dark-mode select, 
+body.dark-mode input, 
+body.dark-mode textarea, 
+body.dark-mode .modal-content {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+body.dark-mode select option,
+body.dark-mode .form-select option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .bg-light {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-input,
+body.dark-mode input[readonly] {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .time-slot {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+body.dark-mode .time-slot:hover {
+    background-color: #1e293b !important;
+    color: var(--primary-light) !important;
+    border-color: var(--primary-light) !important;
+}
+body.dark-mode .time-slot.selected {
+    background-color: var(--primary-light) !important;
+    color: #ffffff !important;
+    border-color: var(--primary-light) !important;
+}
+
+/* Dropdown Menu */
+body.dark-mode .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+body.dark-mode .dropdown-item {
+    color: #f8fafc !important;
+}
+body.dark-mode .dropdown-item:hover {
+    background-color: #334155 !important;
+}
+
+/* Buttons in Dark Mode */
+body.dark-mode button.btn-light, 
+body.dark-mode .btn-light {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+body.dark-mode button.btn-light:hover, 
+body.dark-mode .btn-light:hover {
+    background-color: #475569 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .btn-outline-primary {
+    color: #60a5fa !important;
+    border-color: #3b82f6 !important;
+}
+body.dark-mode .btn-outline-primary:hover {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .btn-outline-secondary {
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+}
+body.dark-mode .btn-outline-secondary:hover {
+    background-color: #475569 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .btn-outline-danger {
+    color: #fca5a5 !important;
+    border-color: #ef4444 !important;
+}
+body.dark-mode .btn-outline-danger:hover {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .fa-bell {
+    color: #f8fafc !important;
+}
+
+/* Chatbot Dark Mode Styles */
+body.dark-mode #chatbotWindow {
+    background-color: #1e293b !important;
+}
+body.dark-mode #chatbotMessages {
+    background-color: #0f172a !important;
+}
+body.dark-mode #chatbotMessages .bg-white {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+body.dark-mode #chatbotOptionsContainer {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* Flatpickr Dark Mode Styles */
+body.dark-mode .flatpickr-calendar {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+}
+body.dark-mode .flatpickr-months,
+body.dark-mode .flatpickr-month {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-prev-month,
+body.dark-mode .flatpickr-next-month {
+    color: #f8fafc !important;
+    fill: #f8fafc !important;
+}
+body.dark-mode .flatpickr-prev-month:hover,
+body.dark-mode .flatpickr-next-month:hover {
+    color: var(--primary-light) !important;
+}
+body.dark-mode .flatpickr-current-month,
+body.dark-mode .flatpickr-current-month span,
+body.dark-mode .flatpickr-current-month input {
+    color: #f8fafc !important;
+}
+body.dark-mode .flatpickr-weekday {
+    color: #cbd5e1 !important;
+    background-color: #1e293b !important;
+}
+body.dark-mode .flatpickr-day {
+    color: #cbd5e1 !important;
+}
+body.dark-mode .flatpickr-day:hover,
+body.dark-mode .flatpickr-day:focus {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+body.dark-mode .flatpickr-day.selected {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+body.dark-mode .flatpickr-day.flatpickr-disabled,
+body.dark-mode .flatpickr-day.flatpickr-disabled:hover {
+    color: #475569 !important;
+    background-color: transparent !important;
+}
+body.dark-mode .flatpickr-day.prevMonthDay,
+body.dark-mode .flatpickr-day.nextMonthDay {
+    color: #475569 !important;
+}
+body.dark-mode .flatpickr-prev-month svg,
+body.dark-mode .flatpickr-next-month svg {
+    fill: #f8fafc !important;
+}
+
+/* Day check badges for multi-select availability */
+.day-check-badge {
+    cursor: pointer;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    background-color: #f8fafc;
+    border-radius: 9999px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: inline-block;
+}
+.day-check-badge:hover {
+    border-color: var(--primary-light);
+    color: var(--primary-color);
+    background-color: #eff6ff;
+}
+.btn-check:checked + .day-check-badge {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: #ffffff !important;
+}
+body.dark-mode .day-check-badge {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+body.dark-mode .day-check-badge:hover {
+    border-color: var(--primary-light);
+    color: #ffffff;
+    background-color: #0f172a;
+}
+body.dark-mode .btn-check:checked + .day-check-badge {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: #ffffff !important;
+}
+
+/* Quick Time Slots active styling */
+.quick-time-btn.active {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: #ffffff !important;
+}
+
+/* Faculty select card styling */
+.faculty-card {
+    position: relative;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    max-width: 220px;
+    width: 100%;
+}
+.faculty-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-light);
+    box-shadow: 0 12px 20px rgba(59, 130, 246, 0.1) !important;
+}
+.faculty-card.active {
+    border-color: var(--accent-color) !important;
+    border-width: 2px !important;
+    background-color: rgba(16, 185, 129, 0.04) !important;
+    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.12) !important;
+}
+.faculty-card::after {
+    content: '✓';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+.faculty-card.active::after {
+    opacity: 1;
+    transform: scale(1);
+}
+body.dark-mode .faculty-card {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+body.dark-mode .faculty-card:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3) !important;
+}
+body.dark-mode .faculty-card.active {
+    background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Department filter buttons styling */
+.dept-filter-btn {
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-weight: 500;
+    font-size: 13px;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+}
+.dept-filter-btn:hover {
+    background-color: var(--primary-light) !important;
+    border-color: var(--primary-light) !important;
+    color: white !important;
+}
+.dept-filter-btn.active {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(26, 59, 92, 0.25);
+}
+body.dark-mode .dept-filter-btn {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+body.dark-mode .dept-filter-btn:hover {
+    background-color: var(--primary-light) !important;
+    border-color: var(--primary-light) !important;
+    color: white !important;
+}
+body.dark-mode .dept-filter-btn.active {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+}

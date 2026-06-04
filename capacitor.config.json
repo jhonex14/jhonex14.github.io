@@ -1,0 +1,9 @@
+{
+  "appId": "com.jhone.consultime",
+  "appName": "ConsulTime",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

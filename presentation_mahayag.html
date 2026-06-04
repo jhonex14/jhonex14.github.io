@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConsulTime - Mahayag NHS Capstone Defense Presentation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e3a8a; /* Navy */
+            --primary-light: #3b82f6; /* Blue */
+            --accent-color: #10b981; /* Emerald */
+            --accent-light: #34d399; /* Mint */
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --bg-light: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #e5e7eb;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --slide-transition-speed: 0.4s;
+        }
+
+        body.dark-mode {
+            --bg-light: #0f172a; /* Slate 900 */
+            --text-dark: #f8fafc;
+            --text-muted: #cbd5e1;
+            --card-bg: #1e293b; /* Slate 800 */
+            --card-border: #334155;
+            --glass-bg: rgba(15, 23, 42, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Navbar Controls */
+        .presentation-controls {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.5rem 1.5rem;
+            z-index: 1050;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .nav-brand-title {
+            font-weight: 800;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        body.dark-mode .nav-brand-title {
+            color: var(--primary-light);
+        }
+
+        /* Slide Viewport */
+        .slide-viewport {
+            flex-grow: 1;
+            position: relative;
+            perspective: 1200px;
+            overflow: hidden;
+        }
+
+        /* Slide Container */
+        .slide-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        /* Custom Slide styling */
+        .slide {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            max-height: 650px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            display: none;
+            flex-direction: column;
+            padding: 2.5rem;
+            position: relative;
+            overflow-y: auto;
+            transform-style: preserve-3d;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: slideIn var(--slide-transition-speed) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateY(30px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Slide Accents */
+        .dark-slide {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+
+        .dark-slide h1, .dark-slide h2, .dark-slide h3, .dark-slide p, .dark-slide li {
+            color: #ffffff !important;
+        }
+
+        /* Slide Header */
+        .slide-header {
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary-light);
+            padding-left: 1rem;
+        }
+        .dark-slide .slide-header {
+            border-left-color: var(--accent-light);
+        }
+
+        .slide-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .dark-slide .slide-title {
+            color: #ffffff;
+        }
+
+        .slide-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin: 0.25rem 0 0 0;
+        }
+        .dark-slide .slide-subtitle {
+            color: var(--accent-light);
+        }
+
+        /* Slide Content Cards */
+        .content-card {
+            background-color: var(--bg-light);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            height: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+        .dark-slide .content-card {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-accent-red { border-left: 5px solid #ef4444 !important; }
+        .card-accent-blue { border-left: 5px solid var(--primary-light) !important; }
+        .card-accent-emerald { border-left: 5px solid var(--accent-color) !important; }
+
+        /* Floating background shapes for dark slides */
+        .slide-bg-shapes {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+        }
+        .slide-shape-1 { width: 300px; height: 300px; bg-color: var(--primary-light); top: -50px; right: -50px; background: var(--primary-light); }
+        .slide-shape-2 { width: 250px; height: 250px; bg-color: var(--accent-color); bottom: -50px; left: -50px; background: var(--accent-color); }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: var(--card-border);
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary-light);
+            width: 0%;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.dark-mode .progress-container {
+            background-color: #334155;
+        }
+
+        /* Navigation Buttons */
+        .nav-btn {
+            border: 1px solid var(--card-border);
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover {
+            background-color: var(--primary-light);
+            color: white;
+            border-color: var(--primary-light);
+        }
+
+        /* Collapsible Slide Index Sidebar */
+        .sidebar-drawer {
+            position: fixed;
+            top: 0; left: -320px;
+            width: 320px; height: 100vh;
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            z-index: 1100;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-drawer.open {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .index-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+        }
+        .index-link:hover, .index-link.active {
+            background-color: var(--bg-light);
+            color: var(--primary-light);
+            border-left-color: var(--primary-light);
+        }
+        .index-num {
+            width: 28px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+        .index-link.active .index-num {
+            color: var(--primary-light);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1090;
+            display: none;
+        }
+        .overlay.open {
+            display: block;
+        }
+
+        /* Mockup screens styles */
+        .browser-mockup {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--card-border);
+            background-color: var(--card-bg);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .browser-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.4rem 1rem;
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            gap: 0.5rem;
+        }
+        .browser-header .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .browser-content {
+            background-color: var(--bg-light);
+            padding: 1rem;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+
+        .app-row {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Keyboard Legend */
+        .keyboard-legend {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background-color: var(--bg-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            .presentation-controls, .sidebar-drawer, .overlay, .keyboard-legend {
+                display: none !important;
+            }
+            body {
+                overflow: visible !important;
+                height: auto !important;
+                background-color: white !important;
+            }
+            .slide-viewport {
+                overflow: visible !important;
+                height: auto !important;
+            }
+            .slide-container {
+                position: static !important;
+                display: block !important;
+                padding: 0 !important;
+            }
+            .slide {
+                display: flex !important;
+                page-break-after: always !important;
+                margin-bottom: 3rem !important;
+                max-height: none !important;
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Collapsible Index Sidebar -->
+    <div class="sidebar-drawer" id="sidebar">
+        <div class="sidebar-header">
+            <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-list-ul me-2"></i>Slides Index</h5>
+            <button class="btn-close" onclick="toggleSidebar()"></button>
+        </div>
+        <div class="sidebar-content" id="sidebarContent">
+            <!-- Sidebar links generated dynamically -->
+        </div>
+    </div>
+
+    <!-- Top Navigation Controls -->
+    <div class="presentation-controls">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-outline-secondary btn-sm rounded-circle" onclick="toggleSidebar()" title="Show Index">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <span class="nav-brand-title">
+                <i class="fa-solid fa-clock text-primary"></i> ConsulTime
+            </span>
+            <span class="badge bg-primary-soft text-primary rounded-pill px-2.5 py-1 text-xs fw-bold">Capstone 2 Defense</span>
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            <div class="keyboard-legend d-none d-md-flex">
+                <span>Nav: <kbd>←</kbd> <kbd>→</kbd></span>
+                <span>Dark: <kbd>D</kbd></span>
+            </div>
+            
+            <button class="nav-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode" id="themeToggleBtn">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            
+            <button class="nav-btn" onclick="toggleFullscreen()" title="Fullscreen Mode">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+            
+            <div class="d-flex align-items-center gap-1 border-start ps-3">
+                <button class="btn btn-sm btn-light rounded-circle" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+                <span class="fs-7 fw-bold px-2" id="slideIndicator">1 / 20</span>
+                <button class="btn btn-sm btn-light rounded-circle" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Presentation Viewport -->
+    <div class="slide-viewport">
+        <div class="slide-container">
+
+            <!-- ================== SLIDE 1: TITLE SLIDE ================== -->
+            <div class="slide dark-slide active" data-title="Title Slide">
+                <div class="slide-bg-shapes">
+                    <div class="slide-shape slide-shape-1"></div>
+                    <div class="slide-shape slide-shape-2"></div>
+                </div>
+                <div class="h-100 d-flex flex-column justify-content-center text-start position-relative z-index-1">
+                    <span class="badge bg-success-soft text-accent mb-3 px-3 py-2 rounded-pill fw-bold border border-accent d-inline-block align-self-start" style="font-size: 11px;">Capstone Project Defense</span>
+                    <h1 class="display-4 fw-800 text-white mb-3" style="letter-spacing: -0.02em;">CONSULTIME</h1>
+                    <h2 class="h3 fw-light text-white-50 mb-5 leading-normal">A Cross-Platform Consultation and Appointment Management System for Mahayag National High School</h2>
+                    
+                    <div class="border-top border-white border-opacity-25 pt-4 mt-2">
+                        <p class="mb-1 text-white fw-bold"><i class="fa-solid fa-users me-2 text-accent"></i>Philipp Edward Sapalicio, Ednell Sapalicio</p>
+                        <p class="mb-0 text-white-50 small"><i class="fa-solid fa-graduation-cap me-2 text-accent"></i>ITE Department, Philippine College of Technology  |  May 2026</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 2: PROBLEM STATEMENT ================== -->
+            <div class="slide" data-title="Problem Statement">
+                <div class="slide-header">
+                    <h2 class="slide-title">Problem Statement</h2>
+                    <p class="slide-subtitle">Challenges in manual scheduling and communication at Mahayag NHS</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-4">
+                        <div class="content-card dark-slide d-flex flex-column justify-content-center p-4">
+                            <h4 class="fw-bold text-accent mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>The Scheduling friction</h4>
+                            <p class="text-white-50 leading-relaxed">Academic scheduling at Mahayag National High School remains largely manual, relying on paper logbooks, physical bulletin boards, and uncoordinated verbal updates.</p>
+                            <p class="text-white-50 mb-0 small">This leads to inefficient time management, missed consultation slots, and coordination gaps between students and faculty members.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row g-3 h-100">
+                            <div class="col-6">
+                                <div class="content-card card-accent-red">
+                                    <h5 class="fw-bold text-danger"><i class="fa-solid fa-hourglass-empty me-2"></i>No Real-Time Sync</h5>
+                                    <p class="text-muted small mb-0">Static scheduling leads to consultation block conflicts and double-bookings.</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="content-card card-accent-red">
+                                    <h5 class="fw-bold text-danger"><i class="fa-solid fa-bell-slash me-2"></i>Communication Gaps</h5>
+                                    <p class="text-muted small mb-0">No immediate notification channels exist for sudden timetable revisions.</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="content-card card-accent-red">
+                                    <h5 class="fw-bold text-danger"><i class="fa-solid fa-user-shield me-2"></i>Verification Risks</h5>
+                                    <p class="text-muted small mb-0">No vetting mechanisms exist, leaving registration tables open to unverified users.</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="content-card card-accent-red">
+                                    <h5 class="fw-bold text-danger"><i class="fa-solid fa-mobile-screen-button me-2"></i>Low Mobile Footprint</h5>
+                                    <p class="text-muted small mb-0">Static systems ignore responsive screen configurations, restricting mobile access.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 3: OBJECTIVES ================== -->
+            <div class="slide" data-title="Objectives of the Study">
+                <div class="slide-header">
+                    <h2 class="slide-title">Objectives of the Study</h2>
+                    <p class="slide-subtitle">Digital targets designed to optimize academic scheduling and security</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-5">
+                        <div class="content-card card-accent-blue p-4 d-flex flex-column justify-content-center">
+                            <span class="text-primary fw-bold text-xs uppercase tracking-wide">Primary Target</span>
+                            <h4 class="fw-bold mt-2 mb-3">Bridge Coordination Gap</h4>
+                            <p class="text-muted leading-relaxed">Design, develop, and implement ConsulTime: a real-time consultation and appointment system for Mahayag National High School.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="content-card p-4">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-list-check me-2"></i>Specific Objectives:</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Secure Login:</strong> Secure authentication systems for Student, Faculty, and Admin.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Dynamic Slots:</strong> Dynamic slot and availability management tools.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Responsive Interface:</strong> Responsive appointment booking layouts for students.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Verification Toggles:</strong> Admin panels to verify and approve accounts.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Cross-Platform Deployment:</strong> Deploy system as PWA and Android package (.APK).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 4: SCOPE AND LIMITATIONS ================== -->
+            <div class="slide" data-title="Scope & Limitations">
+                <div class="slide-header">
+                    <h2 class="slide-title">Scope and Limitations</h2>
+                    <p class="slide-subtitle">Operational boundaries of the ConsulTime platform</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-blue p-4">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-expand me-2"></i>System Scope</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Academic consultation scheduling operations only.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Three roles: Students, Faculty Members, and Administrators.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Appointment requests tracking, scheduling updates, vetting approvals.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-red p-4">
+                            <h5 class="fw-bold text-danger mb-3"><i class="fa-solid fa-circle-minus me-2"></i>System Limitations</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                <li><i class="fa-solid fa-circle-xmark text-danger me-2"></i>No built-in video conferencing layout.</li>
+                                <li><i class="fa-solid fa-circle-xmark text-danger me-2"></i>Compilation wraps to Android (.APK) only; no Apple iOS wrapper.</li>
+                                <li><i class="fa-solid fa-circle-xmark text-danger me-2"></i>Requires internet connection for database-level real-time updates.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 5: SIGNIFICANCE OF THE STUDY ================== -->
+            <div class="slide" data-title="Significance of the Study">
+                <div class="slide-header">
+                    <h2 class="slide-title">Significance of the Study</h2>
+                    <p class="slide-subtitle">Value created for Mahayag National High School stakeholders</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-blue">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-graduate me-2"></i>To Students</h5>
+                            <p class="text-muted small leading-relaxed">Enables quick reservation of slots, visibility of dynamic changes, and transparent tracking of booking responses, minimizing queue times.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-emerald">
+                            <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-chalkboard-user me-2"></i>To Faculty</h5>
+                            <p class="text-muted small leading-relaxed">Enables dynamic calendar creation, instant updates to availability windows, and easy approval mechanics without paperwork log jams.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-blue">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-gear me-2"></i>To Administrators</h5>
+                            <p class="text-muted small leading-relaxed">Provides diagnostic panels to approve accounts, monitor server database uptime, and maintain reliable audit histories of consultations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 6: SYSTEM ARCHITECTURE ================== -->
+            <div class="slide dark-slide" data-title="System Architecture">
+                <div class="slide-header">
+                    <h2 class="slide-title text-white">System Architecture</h2>
+                    <p class="slide-subtitle text-white-50">Integration between PWA client, Supabase cloud gateway, and admin panels</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-center justify-content-center z-index-1">
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-blue text-white bg-opacity-10 border-white border-opacity-15 p-4 text-center">
+                            <div class="fs-1 text-accent mb-3"><i class="fa-solid fa-mobile-screen"></i></div>
+                            <h5 class="fw-bold text-white mb-2">1. Client Layer</h5>
+                            <p class="text-white-50 small mb-0">Progressive Web Application (HTML5, Vanilla CSS3, ES6 JS) with offline local caching assets via `sw.js` and packaged inside a Capacitor Android native wrapper.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-emerald text-white bg-opacity-10 border-white border-opacity-15 p-4 text-center">
+                            <div class="fs-1 text-accent mb-3"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                            <h5 class="fw-bold text-white mb-2">2. Database & Auth Layer</h5>
+                            <p class="text-white-50 small mb-0">Supabase cloud stack PostgreSQL relational tables (profiles, availabilities, bookings) secured directly by Row Level Security (RLS) rules.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-blue text-white bg-opacity-10 border-white border-opacity-15 p-4 text-center">
+                            <div class="fs-1 text-accent mb-3"><i class="fa-solid fa-user-lock"></i></div>
+                            <h5 class="fw-bold text-white mb-2">3. Admin Layer</h5>
+                            <p class="text-white-50 small mb-0">Vetting pipeline reviews document submissions and toggles `is_approved` flags, enabling active session permissions on DB tables.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 7: DATABASE SCHEMA I ================== -->
+            <div class="slide" data-title="Database Schema I">
+                <div class="slide-header">
+                    <h2 class="slide-title">Database Schema Design I</h2>
+                    <p class="slide-subtitle">Structural configuration of User Profiles and Faculty Availabilities</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-blue p-4">
+                            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user me-2"></i>User Profiles Schema (profiles)</h6>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-key text-primary me-2"></i><strong>uuid id:</strong> Primary Key referenced to cloud auth identity.</li>
+                                <li><i class="fa-solid fa-check text-primary me-2"></i><strong>text role:</strong> Role category (student / faculty / admin).</li>
+                                <li><i class="fa-solid fa-check text-primary me-2"></i><strong>text department & id_number:</strong> Institutional alignment.</li>
+                                <li><i class="fa-solid fa-check text-primary me-2"></i><strong>boolean is_approved:</strong> Gatekeeper approval flag for faculty vetting.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-emerald p-4">
+                            <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-calendar-days me-2"></i>Faculty Availabilities (availabilities)</h6>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-link text-success me-2"></i><strong>uuid faculty_id:</strong> Foreign Key pointing to profiles.id.</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>int4 day_of_week:</strong> Maps recurring days (1 to 5 for Mon to Fri).</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>time start_time & end_time:</strong> Boundaries for consultation blocks.</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>date specific_date:</strong> Overrides recurring templates.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 8: DATABASE SCHEMA II ================== -->
+            <div class="slide" data-title="Database Schema II">
+                <div class="slide-header">
+                    <h2 class="slide-title">Database Schema Design II</h2>
+                    <p class="slide-subtitle">The bookings junction table structure managing transaction loops</p>
+                </div>
+                <div class="content-card card-accent-blue p-4 flex-grow-1 d-flex flex-column justify-content-center">
+                    <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-database me-2"></i>Consultation Bookings relation (bookings)</h5>
+                    <ul class="d-flex flex-column gap-3 mb-0" style="font-size: 1.05rem;">
+                        <li><i class="fa-solid fa-square-check text-primary me-2"></i><strong>Junction Nodes:</strong> dual Foreign Keys (`student_id` & `faculty_id`) linking user identities.</li>
+                        <li><i class="fa-solid fa-square-check text-primary me-2"></i><strong>Temporal Blocks:</strong> maps dates (`appointment_date`) and timing windows (`start_time`/`end_time`).</li>
+                        <li><i class="fa-solid fa-square-check text-primary me-2"></i><strong>State Constraints:</strong> status text inputs limited strictly to `pending`, `approved`, or `rejected`.</li>
+                        <li><i class="fa-solid fa-square-check text-primary me-2"></i><strong>Dynamic Broadcasts:</strong> modifications trigger direct websocket updates to client viewports.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 9: DATABASE RELATIONAL TABLES ================== -->
+            <div class="slide" data-title="Database Relational Tables">
+                <div class="slide-header">
+                    <h2 class="slide-title">Database Relational Tables</h2>
+                    <p class="slide-subtitle">Live database table records hosted on Supabase Cloud</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">profiles Table</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="db_profiles_screenshot.png" alt="Profiles Table" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Supabase profiles schema showing role distribution, credentials mapping, and user vetting statuses.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">faculty_availability Table</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="db_availability_screenshot.png" alt="Availabilities Table" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Faculty availability slots table with dynamic timestamps, day-of-week markers, and recurring boundaries.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">appointments Table</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="db_bookings_screenshot.png" alt="Bookings Table" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Transactional bookings junction table mapping student/advisor requests and status state transitions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 10: SHOWCASE: ACCESS & REGISTRATION ================== -->
+            <div class="slide" data-title="Showcase: Access & Registration">
+                <div class="slide-header">
+                    <h2 class="slide-title">Showcase: Access & Registration</h2>
+                    <p class="slide-subtitle">Secure sign in and sign up interfaces</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Login Console</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="login_screenshot.png" alt="Login Screen" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Create Account</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="register_screenshot.png" alt="Register Screen" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 11: SHOWCASE: STUDENT DASHBOARD ================== -->
+            <div class="slide" data-title="Showcase: Student View">
+                <div class="slide-header">
+                    <h2 class="slide-title">Showcase: Student View</h2>
+                    <p class="slide-subtitle">Dynamic student dashboard and APK download channel</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-5">
+                        <div class="content-card card-accent-emerald d-flex flex-column justify-content-center">
+                            <h5 class="fw-bold text-primary mb-3">Key Features:</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>Consultation Tracking:</strong> Shows upcoming and pending requests.</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>APK Download:</strong> Direct link to download compiled Android mobile packages.</li>
+                                <li><i class="fa-solid fa-check text-success me-2"></i><strong>Alerts Panel:</strong> Highlights status revisions in real time.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Student Area</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="student_screenshot.png" alt="Student Dashboard" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 12: SHOWCASE: FACULTY & ADMIN ================== -->
+            <div class="slide" data-title="Showcase: Faculty & Admin">
+                <div class="slide-header">
+                    <h2 class="slide-title">Showcase: Faculty & Admin Portals</h2>
+                    <p class="slide-subtitle">Management panels for instructors and system administrators</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Faculty Console</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="faculty_screenshot.png" alt="Faculty Dashboard" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Admin Console</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="admin_screenshot.png" alt="Admin Portal" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 13: ADMIN CONTROLS & VETTING PIPELINE ================== -->
+            <div class="slide" data-title="Admin Controls & Vetting Pipeline">
+                <div class="slide-header">
+                    <h2 class="slide-title">Admin Controls & Vetting Pipeline</h2>
+                    <p class="slide-subtitle">Vetting interfaces to verify faculty credentials and monitor server status</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Admin Overview</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="admin_overview_screenshot.png" alt="Admin Overview Dashboard" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Figure 3.1: Admin Dashboard. Shows user statistics and quick actions to manage system state.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Faculty Approvals</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="admin_vetting_screenshot.png" alt="Admin Vetting Console" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Figure 3.2: Faculty Approvals. Admin interface to approve or reject pending faculty registrations.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 14: APK MOBILE PACKAGING & DIRECT DOWNLOAD ================== -->
+            <div class="slide" data-title="APK Mobile Packaging & Direct Download">
+                <div class="slide-header">
+                    <h2 class="slide-title">APK Mobile Packaging & Direct Download</h2>
+                    <p class="slide-subtitle">Capacitor hybrid native wrapper and file server deployment</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-4">
+                        <div class="content-card card-accent-emerald p-4 d-flex flex-column justify-content-center">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-mobile-screen-button me-2"></i>Why the Mobile App Matters:</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Capacitor Runtime:</strong> Compiles web codebase into lightweight native Android APK wrapper package.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Offline Caching:</strong> Service workers preserve layout assets to operate without high mobile bandwidth.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Bypass App Stores:</strong> Direct download button bypasses verification delays for quick campus deployment.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Budget Friendly:</strong> 3.69MB package size ensures compatibility with low-end devices (e.g. Vivo Y17s).</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - Direct Download Button</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="apk_download_button.png" alt="Direct APK Download Button" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Figure 5.1: Direct Android App (.APK) download action button integrated on Login and Register forms.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">ConsulTime - MediaFire Download</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="apk_mediafire_download.png" alt="MediaFire Host Page" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Figure 5.2: Hosted MediaFire server page distributing compiled direct application package (consultime.apk).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 15: SYSTEM EVALUATION METHODOLOGY ================== -->
+            <div class="slide" data-title="Evaluation Methodology">
+                <div class="slide-header">
+                    <h2 class="slide-title">System Evaluation Methodology</h2>
+                    <p class="slide-subtitle">Standardized testing model and participant demographics</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-blue p-4">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-clipboard-question me-2"></i>ISO/IEC 25010 Model</h5>
+                            <p class="text-muted small">Usability trials evaluated system quality according to 5 characteristics:</p>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Functional Suitability:</strong> Correct task completions.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Usability:</strong> Navigability and interface clarity.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Reliability & Security:</strong> Access protection via RLS.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Performance Efficiency:</strong> Server speed and response times.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-emerald p-4">
+                            <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-users me-2"></i>Testing Focus Group (N = 26)</h5>
+                            <p class="text-muted small">The focus group composed of 26 respondents from Mahayag NHS:</p>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-circle text-primary me-2"></i><strong>Students:</strong> 15 respondents tested booking forms.</li>
+                                <li><i class="fa-solid fa-circle text-primary me-2"></i><strong>Faculty Members:</strong> 8 respondents tested availabilities creation.</li>
+                                <li><i class="fa-solid fa-circle text-primary me-2"></i><strong>School Admins:</strong> 3 respondents tested approvals panel.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 16: SYSTEM EVALUATION RESULTS ================== -->
+            <div class="slide" data-title="Evaluation Results">
+                <div class="slide-header">
+                    <h2 class="slide-title">System Evaluation Results</h2>
+                    <p class="slide-subtitle">ISO/IEC 25010 software quality trial scores</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-center">
+                    <div class="col-md-4 d-flex flex-column gap-3">
+                        <div class="content-card card-accent-emerald text-center py-4">
+                            <span class="text-muted small fw-bold">Overall Mean Rating</span>
+                            <h3 class="display-5 fw-bold text-success my-2">4.71</h3>
+                            <p class="text-muted small mb-0">Interpreted as Excellent overall rating by the 26 focus group respondents.</p>
+                        </div>
+                        <div class="content-card card-accent-blue text-center py-4">
+                            <span class="text-muted small fw-bold">Highest Scoring Criteria</span>
+                            <h3 class="display-6 fw-bold text-primary my-2">4.81</h3>
+                            <p class="text-muted small mb-0">Performance Efficiency scored highest, showing strong satisfaction with cloud database sync speeds.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="content-card p-3">
+                            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-square-poll-vertical me-2"></i>ISO/IEC 25010 Evaluation Scores Breakdown</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-hover text-center mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Quality Characteristic</th>
+                                            <th>Mean Rating</th>
+                                            <th>Interpretation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Functionality</td><td>4.72</td><td class="text-success fw-bold">Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Usability</td><td>4.65</td><td class="text-success fw-bold">Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Reliability</td><td>4.69</td><td class="text-success fw-bold">Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Performance Efficiency</td><td>4.81</td><td class="text-success fw-bold">Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Security</td><td>4.69</td><td class="text-success fw-bold">Excellent</td>
+                                        </tr>
+                                        <tr class="table-primary fw-bold">
+                                            <td>Overall Mean</td><td>4.71</td><td class="text-primary">Excellent</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 17: DEVICE COMPATIBILITY ================== -->
+            <div class="slide" data-title="Device Compatibility">
+                <div class="slide-header">
+                    <h2 class="slide-title">Cross-Device Screen Compatibility</h2>
+                    <p class="slide-subtitle">UI responsiveness and grid scaling test results</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-12">
+                        <div class="content-card p-3">
+                            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-mobile-screen-button me-2"></i>Responsive Display Suitability Matrix</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-hover text-center mb-0" style="font-size: 0.8rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Device Model</th>
+                                            <th>Screen Size & Resolution</th>
+                                            <th>Tested OS & Browser</th>
+                                            <th>Display Suitability Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Vivo Y17s</td><td>6.56" (720x1612 px)</td><td>Android / Chrome Mobile</td><td class="text-success fw-bold">PASSED (100%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Samsung Galaxy S9</td><td>5.8" (1440x2960 px)</td><td>Android / Chrome Mobile</td><td class="text-success fw-bold">PASSED (100%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>iPad Air Pro</td><td>11" (2360x1640 px)</td><td>iOS / Chrome Tablet</td><td class="text-success fw-bold">PASSED (100%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>MSI GF65 Thin</td><td>15.6" (1920x1080 px)</td><td>Windows / Chrome Laptop</td><td class="text-success fw-bold">PASSED (100%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Desktop Computer</td><td>24" (1920x1080 px)</td><td>Windows / Chrome Desktop</td><td class="text-success fw-bold">PASSED (100%)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 18: CROSS-DEVICE RESPONSIVENESS MOCKUPS ================== -->
+            <div class="slide" data-title="Cross-Device Responsiveness Mockups">
+                <div class="slide-header">
+                    <h2 class="slide-title">Cross-Device Responsiveness Mockups</h2>
+                    <p class="slide-subtitle">System layout adapting dynamically across different device viewports</p>
+                </div>
+                <div class="row g-4 flex-grow-1 align-items-stretch">
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">Mobile Viewport</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="consultime_mobile_mockup.png" alt="Mobile Mockup" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Mobile Viewport. Optimizes touch layouts for small phone screens (e.g. Vivo Y17s & Samsung S9).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">Tablet Viewport</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="consultime_tablet_mockup.png" alt="Tablet Mockup" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Tablet Viewport. Adapts sidebar controls and card grids for medium screens (e.g. iPad Air Pro).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="browser-mockup h-100">
+                            <div class="browser-header">
+                                <div class="dot bg-danger"></div><div class="dot bg-warning"></div><div class="dot bg-success"></div>
+                                <span class="mx-auto">Desktop Viewport</span>
+                            </div>
+                            <div class="browser-content p-0" style="overflow-y: auto; background-color: #f1f5f9;">
+                                <img src="consultime_desktop_mockup.png" alt="Desktop Mockup" class="w-100 d-block" style="object-fit: contain;">
+                            </div>
+                            <div class="p-3 bg-white border-top text-center text-muted small">
+                                Desktop Viewport. Maximizes display density and full telemetry views for laptop and desktop workstation resolutions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 19: IMPLICATIONS & RECOMMENDATIONS ================== -->
+            <div class="slide" data-title="Implications & Recommendations">
+                <div class="slide-header">
+                    <h2 class="slide-title">Implications & Recommendations</h2>
+                    <p class="slide-subtitle">Avenues for academic digital transition</p>
+                </div>
+                <div class="row g-4 flex-grow-1">
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-blue p-4">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-flag me-2"></i>Implications for Practice</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Academic Efficiency:</strong> Shifting schedules online eliminates appointment conflicts and queue time blocks.</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i><strong>Design Standards:</strong> Row Level Security (RLS) policies establish secure guidelines for educational portals.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="content-card card-accent-emerald p-4">
+                            <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Recommendations</h5>
+                            <ul class="list-unstyled d-flex flex-column gap-2 mb-0 small">
+                                <li><i class="fa-solid fa-arrow-right-long text-success me-2"></i><strong>Chat Channels:</strong> Integrate immediate messaging features adjacent to availability calendars.</li>
+                                <li><i class="fa-solid fa-arrow-right-long text-success me-2"></i><strong>iOS Packages:</strong> Configure compilation wrapper templates for Apple systems.</li>
+                                <li><i class="fa-solid fa-arrow-right-long text-success me-2"></i><strong>Video API Bridges:</strong> Embed direct video frameworks inside dashboards.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================== SLIDE 20: THANK YOU ================== -->
+            <div class="slide dark-slide" data-title="Thank You">
+                <div class="slide-bg-shapes">
+                    <div class="slide-shape slide-shape-1"></div>
+                    <div class="slide-shape slide-shape-2"></div>
+                </div>
+                <div class="h-100 d-flex flex-column justify-content-center text-center position-relative z-index-1">
+                    <h1 class="display-2 fw-800 text-accent mb-3">THANK YOU!</h1>
+                    <h2 class="h4 text-white mb-4">ConsulTime: A Cross-Platform Consultation and Appointment Management System</h2>
+                    <p class="text-white-50 leading-relaxed max-w-600 mx-auto mb-5">Open for Questions, Answers, and Recommendations from the Panelists</p>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <span class="badge bg-white bg-opacity-10 text-white border border-white border-opacity-20 px-3 py-2 rounded-pill font-monospace" style="font-size: 11px;">Sapalicio</span>
+                        <span class="badge bg-white bg-opacity-10 text-white border border-white border-opacity-20 px-3 py-2 rounded-pill font-monospace" style="font-size: 11px;">Sapalicio</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Simulator & Deck Control Script -->
+    <script>
+        let currentSlideIdx = 0;
+        const slides = document.querySelectorAll('.slide');
+        const slideIndicator = document.getElementById('slideIndicator');
+        const progressFill = document.getElementById('progressFill');
+        const sidebarContent = document.getElementById('sidebarContent');
+
+        // Initialize Slideshow
+        function initSlideshow() {
+            slides.forEach((slide, idx) => {
+                slide.style.display = idx === currentSlideIdx ? 'flex' : 'none';
+            });
+            updateIndicators();
+            buildSidebarIndex();
+        }
+
+        // Build Sidebar Index Links
+        function buildSidebarIndex() {
+            sidebarContent.innerHTML = '';
+            slides.forEach((slide, idx) => {
+                const title = slide.getAttribute('data-title') || `Slide ${idx + 1}`;
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = `index-link ${idx === currentSlideIdx ? 'active' : ''}`;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    goToSlide(idx);
+                    toggleSidebar();
+                };
+                link.innerHTML = `
+                    <span class="index-num">${idx + 1}</span>
+                    <span>${title}</span>
+                `;
+                sidebarContent.appendChild(link);
+            });
+        }
+
+        // Go to specific slide
+        function goToSlide(idx) {
+            if (idx >= 0 && idx < slides.length) {
+                slides[currentSlideIdx].classList.remove('active');
+                slides[currentSlideIdx].style.display = 'none';
+                
+                currentSlideIdx = idx;
+                
+                slides[currentSlideIdx].style.display = 'flex';
+                slides[currentSlideIdx].classList.add('active');
+                
+                updateIndicators();
+                
+                // Update active index link
+                document.querySelectorAll('.index-link').forEach((link, lidx) => {
+                    if (lidx === currentSlideIdx) link.classList.add('active');
+                    else link.classList.remove('active');
+                });
+            }
+        }
+
+        // Next Slide
+        function nextSlide() {
+            if (currentSlideIdx < slides.length - 1) {
+                goToSlide(currentSlideIdx + 1);
+            }
+        }
+
+        // Previous Slide
+        function prevSlide() {
+            if (currentSlideIdx > 0) {
+                goToSlide(currentSlideIdx - 1);
+            }
+        }
+
+        // Update Indicators & Progress Bar
+        function updateIndicators() {
+            slideIndicator.innerText = `${currentSlideIdx + 1} / ${slides.length}`;
+            const percentage = ((currentSlideIdx + 1) / slides.length) * 100;
+            progressFill.style.width = `${percentage}%`;
+        }
+
+        // Toggle Sidebar Index
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.querySelector('#themeToggleBtn i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // Toggle Fullscreen Mode
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard navigation hooks
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key.toLowerCase() === 'd') {
+                toggleDarkMode();
+            }
+        });
+
+        // Initialize presentation
+        window.onload = initSlideshow;
+    </script>
+</body>
+</html>

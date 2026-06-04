@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // Protocol and Domain normalization (Canonical Redirect)
+        (function() {
+            let targetHref = null;
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // Redirect HTTP to HTTPS unless testing locally
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+            if (protocol === 'http:' && !isLocal) {
+                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            // Redirect www.consultime.me to consultime.me
+            if (hostname === 'www.consultime.me') {
+                const proto = targetHref ? 'https://' : protocol + '//';
+                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
+            }
+            
+            if (targetHref) {
+                window.location.replace(targetHref);
+            }
+        })();
+    </script>
+    <script>
+        // Domain Guard
+        (function() {
+            const allowedDomains = ['consultime.me', '127.0.0.1', 'localhost'];
+            const currentHost = window.location.hostname;
+            const isAllowed = allowedDomains.some(d => currentHost === d || currentHost.endsWith('.' + d));
+            if (!isAllowed && currentHost !== '') {
+                document.documentElement.innerHTML = '<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;text-align:center;padding:20px"><div style="background:#1e293b;border:2px solid #22c55e;border-radius:16px;padding:40px;max-width:480px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><h1 style="color:#f87171;font-size:24px;margin-bottom:12px">Wrong Website!</h1><p style="color:#94a3b8;margin-bottom:20px">You are on a <strong style="color:#f87171">fake/unauthorized</strong> version of ConsulTime. Your data is NOT safe here.</p><p style="color:#94a3b8;margin-bottom:24px">The real website is:</p><a href="https://consultime.me" style="background:#22c55e;color:#fff;padding:12px 28px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block">Go to consultime.me ✓</a></div></div>';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - ConsulTime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="styles.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar shadow-sm d-flex flex-column" style="overflow-y: auto;">
+        <div class="p-4 border-bottom d-flex align-items-center flex-shrink-0">
+            <i class="fa-solid fa-clock text-accent fs-3 me-2"></i>
+            <h4 class="fw-bold mb-0 text-primary">ConsulTime</h4>
+        </div>
+        
+        <!-- Profile Card in Sidebar (Now at the top) -->
+        <div class="px-3 w-100 mt-3 mb-2 flex-shrink-0">
+            <div class="card bg-white p-0 text-center border-0 shadow-sm overflow-hidden rounded-4">
+                <div class="pt-3 pb-4" style="background-color: #1a3b5c;"></div>
+                <div class="position-relative d-inline-block mx-auto mb-1" style="margin-top: -35px;">
+                    <div id="sidebarUserInitials" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-3 border-white mx-auto" style="width: 65px; height: 65px; font-size: 24px; font-weight: bold;">
+                        ST
+                    </div>
+                </div>
+                <div class="card-body pt-0 pb-3 px-2">
+                    <h6 class="fw-bold text-dark mb-0" id="sidebarUserName" style="font-size: 13px;">Loading...</h6>
+                    <p class="text-muted mb-2 text-truncate" id="sidebarUserEmail" style="font-size: 10px;">Loading...</p>
+                    <span class="badge bg-success rounded-pill px-2 py-1 fw-bold w-100 text-uppercase mb-0" style="font-size: 10px;" id="sidebarUserRole">STUDENT</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Section (Now below profile card) -->
+        <div class="p-3 flex-grow-1 flex-shrink-0">
+            <p class="text-xs fw-bold text-muted text-uppercase tracking-wide mb-2 px-3">Menu</p>
+            <nav class="nav flex-column gap-1">
+                <a class="sidebar-link active" href="#" id="nav-dashboard"><i class="fa-solid fa-house"></i> Dashboard</a>
+                <a class="sidebar-link" href="#" id="nav-book"><i class="fa-solid fa-calendar-plus"></i> Book Appointment</a>
+                <a class="sidebar-link" href="#" id="nav-history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a class="sidebar-link" href="#" id="nav-profile"><i class="fa-solid fa-gear"></i> Settings</a>
+                <a class="sidebar-link" href="#" id="nav-about" onclick="App.showAboutModal()"><i class="fa-solid fa-circle-info"></i> About</a>
+            </nav>
+        </div>
+
+        <div class="p-3 border-top w-100 bg-white z-index-1 mt-auto flex-shrink-0">
+            <button class="btn btn-light w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 mb-2 border" onclick="App.toggleDarkMode()">
+                <i class="fa-solid fa-moon"></i> Dark Mode
+            </button>
+            <button class="btn btn-outline-danger w-100 rounded-pill d-flex align-items-center justify-content-center gap-2" id="logoutBtn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none rounded-3 p-2 shadow-sm" id="sidebarToggle" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-bars fs-5"></i>
+                </button>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" id="pageTitle">My Dashboard</h2>
+                    <p class="text-muted mb-0">Welcome back! Here's your consultation overview.</p>
+                </div>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <!-- Real-time Clock and Calendar Widget -->
+                <div class="d-none d-md-flex align-items-center gap-2 bg-light border rounded-pill px-3 py-1.5 shadow-sm text-dark" style="font-size: 13px; font-weight: 500;">
+                    <i class="fa-regular fa-calendar-days text-primary"></i>
+                    <span id="headerDate">Loading date...</span>
+                    <span class="mx-1 text-muted">|</span>
+                    <i class="fa-regular fa-clock text-primary"></i>
+                    <span id="headerTime" class="fw-bold">00:00:00 AM</span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-light rounded-circle position-relative p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
+                        <i class="fa-regular fa-bell fs-5 text-dark"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" id="notifBadge" style="display:none; font-size: 0.65rem;">
+                            0
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" style="width: 300px; max-height: 400px; overflow-y: auto;" id="notificationList">
+                        <li><h6 class="dropdown-header fw-bold">Notifications</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item text-center text-muted small">No new notifications</span></li>
+                    </ul>
+                </div>
+                <a href="profile.html" class="btn btn-outline-primary rounded-pill px-3 fw-semibold d-none d-md-flex align-items-center gap-2" style="font-size:13px;">
+                    <i class="fa-solid fa-circle-user"></i> My Profile
+                </a>
+                <button class="btn btn-accent rounded-pill px-4 fw-bold shadow-sm d-none d-md-block" onclick="document.getElementById('nav-book').click()">
+                    <i class="fa-solid fa-plus me-1"></i> New Appointment
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <div id="view-dashboard">
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-primary-custom text-white h-100">
+                        <div class="card-body p-4 position-relative overflow-hidden">
+                            <i class="fa-regular fa-calendar-check position-absolute opacity-25" style="font-size: 5rem; right: -10px; bottom: -10px;"></i>
+                            <h6 class="fw-medium text-white-75 mb-3">Upcoming Consultations</h6>
+                            <h2 class="fw-bold display-5 mb-0" id="stat-upcoming">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-3">Pending Requests</h6>
+                            <h2 class="fw-bold display-5 text-warning mb-0" id="stat-pending">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white h-100">
+                        <div class="card-body p-4">
+                            <h6 class="fw-medium text-muted mb-3">Completed Consultations</h6>
+                            <h2 class="fw-bold display-5 text-success mb-0" id="stat-completed">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 text-dark">Your Schedule</h5>
+            <div class="card dash-card bg-white">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4">Faculty</th>
+                                    <th class="py-3">Date & Time</th>
+                                    <th class="py-3">Purpose</th>
+                                    <th class="py-3">Status</th>
+                                    <th class="py-3 text-end px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcomingTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Appointment View -->
+        <div id="view-book" class="d-none">
+            <div class="card dash-card bg-white p-4">
+                <h5 class="fw-bold mb-4">Book a New Appointment</h5>
+                <form id="bookForm">
+                    <!-- Step 1: Select Faculty Grid -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark fs-6 mb-2">Step 1: Select Faculty / Teacher</label>
+                        <p class="text-muted small mb-3">Choose a department and click on the teacher you want to consult with.</p>
+                        
+                        <!-- Keep select hidden for full app compatibility -->
+                        <select class="d-none" id="facultySelect" required>
+                            <option value="" disabled selected>Select a faculty...</option>
+                        </select>
+                        <!-- Department Filter Pills -->
+                        <div class="mb-3">
+                            <div class="d-flex flex-wrap gap-2" id="facultyDeptFilters"></div>
+                        </div>
+                        
+                        <div id="facultyGridContainer">
+                            <div class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading faculty list...
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Step 2: Select Date & Time -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark fs-6 mb-2">Step 2: Select Date</label>
+                            <input type="text" class="form-control bg-light" id="appointmentDate" required placeholder="Select a faculty member first" disabled>
+                            <div id="facultyAvailabilitySummary" class="mt-2 text-muted small" style="display: none;"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="availabilityContainer" style="display:none;">
+                                <label class="form-label fw-bold text-dark fs-6 mb-2">Step 3: Available Time Slots</label>
+                                <div class="row g-2" id="timeSlotsContainer">
+                                    <!-- Populated by JS -->
+                                </div>
+                                <input type="hidden" id="selectedStartTime" required>
+                                <input type="hidden" id="selectedEndTime" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Step 3: Purpose of Consultation -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark fs-6 mb-2">Step 4: Purpose of Consultation <span class="text-danger">*</span></label>
+                        <select class="form-select bg-light mb-3" id="purposeSelect" required style="border-radius: 12px; height: 50px; font-size: 14px;">
+                            <option value="" disabled selected>Select purpose of consultation...</option>
+                            <optgroup label="📚 Academic Concerns">
+                                <option value="Grades">Grades</option>
+                                <option value="Projects">Projects</option>
+                                <option value="Assignments">Assignments</option>
+                                <option value="Task">Task</option>
+                            </optgroup>
+                            <optgroup label="🛡️ Student Welfare &amp; Safety">
+                                <option value="Bullying / Harassment (Physical)">Bullying / Harassment — Physical</option>
+                                <option value="Bullying / Harassment (Verbal)">Bullying / Harassment — Verbal</option>
+                                <option value="Bullying / Harassment (Cyberbullying)">Bullying / Harassment — Cyberbullying</option>
+                                <option value="Bullying / Harassment (Repeated / Ongoing)">Bullying / Harassment — Repeated / Ongoing</option>
+                                <option value="Emotional or Mental Health Concern">Emotional / Mental Health Concern</option>
+                                <option value="Peer Conflict / Dispute">Peer Conflict / Dispute</option>
+                            </optgroup>
+                            <optgroup label="📋 Others">
+                                <option value="Others concern">Others concern</option>
+                            </optgroup>
+                        </select>
+                        <textarea class="form-control bg-light d-none mb-2" id="purposeCustom" rows="2" placeholder="Please specify your custom concern..." style="border-radius: 12px; font-size: 14px; transition: all 0.2s ease;"></textarea>
+                        <!-- Hidden input to hold the final compiled value so it is fully compatible with app.js and database schema -->
+                        <input type="hidden" id="purpose" required>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-accent px-5 py-2 rounded-pill fw-bold" id="submitBookBtn">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="d-none">
+            <h5 class="fw-bold mb-3 text-dark">Consultation History</h5>
+            <div class="card dash-card bg-white p-4">
+                <p class="text-muted">All your past and present consultation requests are tracked on your main Dashboard.</p>
+                <button class="btn btn-primary rounded-pill px-4 mt-2" style="width:fit-content;" onclick="document.getElementById('nav-dashboard').click()">Go to Dashboard</button>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="view-profile" class="d-none">
+            <h5 class="fw-bold mb-3 text-dark">Settings</h5>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card dash-card bg-white p-0 text-center border-0 shadow-sm overflow-hidden">
+                        <!-- Blue Header Background -->
+                        <div class="pt-4 pb-5 position-relative" style="background-color: #1a3b5c;">
+                            <label for="avatarUpload" class="btn btn-sm btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="fa-solid fa-pen text-primary"></i>
+                            </label>
+                            <input type="file" id="avatarUpload" class="d-none" accept="image/*">
+                        </div>
+                        
+                        <!-- Overlapping Avatar -->
+                        <div class="position-relative d-inline-block mx-auto mb-2" style="margin-top: -50px;">
+                            <img id="profileAvatarPreview" src="" class="rounded-circle shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #fff; display: none;">
+                            <div id="profileAvatarInitials" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto" style="width: 100px; height: 100px; font-size: 35px; border: 4px solid #fff;">
+                                ST
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="card-body pt-0 pb-4">
+                            <h5 class="fw-bold text-dark mb-1" id="profileNameDisplay">Loading...</h5>
+                            <p class="text-muted small mb-3" id="profileEmailDisplay">Loading...</p>
+                            <span class="badge bg-success rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;" id="profileRoleBadge">STUDENT</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm">
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <input type="text" class="form-control bg-light" id="profileName" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">ID Number</label>
+                                    <input type="text" class="form-control bg-light" id="profileIdNumber">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Course / Department</label>
+                                    <select class="form-select bg-light" id="profileDept" required>
+                                        <option value="" disabled selected>Select Course / Department</option>
+                                        <option value="STEM">Senior High: STEM (Science, Technology, Engineering, & Mathematics)</option>
+                                        <option value="ABM">Senior High: ABM (Accountancy, Business, & Management)</option>
+                                        <option value="HUMSS">Senior High: HUMSS (Humanities & Social Sciences)</option>
+                                        <option value="GAS">Senior High: GAS (General Academic Strand)</option>
+                                        <option value="TVL - ICT">Senior High: TVL - ICT (Info. & Comm. Technology)</option>
+                                        <option value="TVL - HE">Senior High: TVL - HE (Home Economics)</option>
+                                        <option value="TVL - IA">Senior High: TVL - IA (Industrial Arts)</option>
+                                        <option value="Grade 7">Junior High: Grade 7</option>
+                                        <option value="Grade 8">Junior High: Grade 8</option>
+                                        <option value="Grade 9">Junior High: Grade 9</option>
+                                        <option value="Grade 10">Junior High: Grade 10</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                                <!-- Cascading Address Selector Container -->
+                                <div id="profileAddressSelectContainer">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Region</label>
+                                            <select class="form-select bg-light" id="profileRegion" required>
+                                                <option value="" disabled selected>Loading Regions...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="profileProvinceWrapper">
+                                            <label class="form-label fw-medium">Province</label>
+                                            <select class="form-select bg-light" id="profileProvince" required>
+                                                <option value="" disabled selected>Select Region first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">City / Municipality</label>
+                                            <select class="form-select bg-light" id="profileCity" required>
+                                                <option value="" disabled selected>Select Province first</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">Barangay</label>
+                                            <select class="form-select bg-light" id="profileBarangay" required>
+                                                <option value="" disabled selected>Select City first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label fw-medium">Street / Purok / Subdivision</label>
+                                            <input type="text" class="form-control bg-light" id="profileStreet" placeholder="e.g. Purok 9, Luardo Compound">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileManualAddress" class="text-muted small text-decoration-none"><i class="fa-solid fa-keyboard me-1"></i>Having trouble? Enter address manually</a>
+                                    </div>
+                                </div>
+
+                                <!-- Manual Address Entry Container -->
+                                <div id="profileAddressManualContainer" class="d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">Full Address (Manual Entry)</label>
+                                        <input type="text" class="form-control bg-light" id="profileManual" placeholder="e.g. Purok 9, Luardo Compound, Panacan, Davao City">
+                                    </div>
+                                    <div class="mb-3">
+                                        <a href="#" id="toggleProfileSelectAddress" class="text-primary small text-decoration-none"><i class="fa-solid fa-list me-1"></i>Use automated dropdowns</a>
+                                    </div>
+                                </div>
+
+                                <!-- Age, School Year & Section Input -->
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-medium">Age</label>
+                                        <input type="number" class="form-control bg-light" id="profileAge" min="15">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-medium">School Year <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control bg-light" id="profileSchoolYear" placeholder="e.g. 2025-2026" readonly required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-medium">Section <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control bg-light" id="profileSection" placeholder="e.g. Grade 11 - STEM A" required>
+                                    </div>
+                                </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-medium">Email Address</label>
+                                <input type="email" class="form-control bg-light text-muted" id="profileEmail" disabled>
+                                <small class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-lock me-1"></i>Email address cannot be changed.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold" id="saveProfileBtn">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Change Password (Dashboard Settings View) -->
+                    <div class="card dash-card bg-white p-4 border-0 shadow-sm mt-4">
+                        <h6 class="fw-bold text-dark mb-3">Change Password</h6>
+                        <form id="passwordForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">New Password</label>
+                                    <input type="password" class="form-control bg-light" id="newPassword" minlength="6" placeholder="Min. 6 characters">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-medium">Confirm New Password</label>
+                                    <input type="password" class="form-control bg-light" id="confirmNewPassword" placeholder="Repeat password">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold" id="changePasswordBtn">
+                                <i class="fa-solid fa-key me-1"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="app.js?v=17"></script>
+</body>
+</html>
+
+
+
+

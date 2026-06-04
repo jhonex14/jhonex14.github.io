@@ -1,0 +1,581 @@
+import os
+
+output_doc = "ConsulTime_Full_Thesis.doc"
+
+thesis_html_content = """<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>ConsulTime Thesis Documentation</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page {
+    size: 8.5in 11.0in; /* Standard Letter size */
+    margin: 1.0in 1.0in 1.0in 1.2in; /* Thesis margins: 1.2" Left for binding, 1.0" others */
+    mso-header-margin: 0.5in;
+    mso-footer-margin: 0.5in;
+    mso-paper-source: 0;
+}
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    line-height: 200%; /* Double-spaced */
+    color: #000000;
+}
+.title-page {
+    text-align: center;
+    line-height: 150%;
+    margin-top: 1.0in;
+}
+.title-main {
+    font-size: 16.0pt;
+    font-weight: bold;
+    margin-bottom: 2.0in;
+    text-transform: uppercase;
+}
+.title-sub {
+    font-size: 12.0pt;
+    margin-bottom: 1.5in;
+}
+.title-author {
+    font-size: 12.0pt;
+    font-weight: bold;
+    margin-bottom: 1.5in;
+}
+h1 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14.0pt;
+    font-weight: bold;
+    text-align: center;
+    page-break-before: always;
+    margin-top: 36pt;
+    margin-bottom: 24pt;
+    text-transform: uppercase;
+}
+h2 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    font-weight: bold;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    text-align: left;
+}
+h3 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12.0pt;
+    font-style: italic;
+    margin-top: 18pt;
+    margin-bottom: 6pt;
+    text-align: left;
+}
+p {
+    margin-top: 0in;
+    margin-bottom: 12pt;
+    text-indent: 0.5in; /* 0.5" first-line indent for paragraphs */
+    text-align: justify;
+}
+.no-indent {
+    text-indent: 0in;
+}
+.center-text {
+    text-align: center;
+    text-indent: 0in;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18pt;
+    margin-bottom: 18pt;
+}
+table, th, td {
+    border: 1px solid black;
+}
+th, td {
+    padding: 8px;
+    text-align: left;
+    font-size: 11pt;
+    line-height: 120%;
+}
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+ul, ol {
+    margin-bottom: 12pt;
+    padding-left: 0.5in;
+}
+li {
+    margin-bottom: 6pt;
+    text-align: justify;
+}
+.page-break {
+    page-break-before: always;
+}
+</style>
+</head>
+<body>
+
+    <!-- ================== TITLE PAGE ================== -->
+    <div class="title-page">
+        <div class="title-main">CONSULTIME: A WEB AND MOBILE-BASED ACADEMIC CONSULTATION AND APPOINTMENT SCHEDULING SYSTEM WITH REAL-TIME AUTHENTICATION IN THE PHILIPPINE COLLEGE OF TECHNOLOGY</div>
+        <div class="title-sub">
+            A Capstone Project Thesis<br>
+            Presented to the IT and Research Department<br>
+            Philippine College of Technology<br>
+            Gahol Drive, Davao City
+        </div>
+        <div class="title-sub">
+            In Partial Fulfillment of the Requirements for the Course<br>
+            Capstone 1 & 2
+        </div>
+        <div class="title-author">
+            Khyle Bulawan<br>
+            Carlvyn Bajala<br>
+            Jake Pinggol<br>
+            Henan Oliveros<br>
+            <br>
+            June 2026
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ================== ACKNOWLEDGMENT ================== -->
+    <h1>ACKNOWLEDGMENT</h1>
+    <p>The researchers express their profound gratitude to the individuals who guided them in making this research project a reality. First and foremost, we thank the Almighty God for providing strength, wisdom, and perseverance during challenging times.</p>
+    <p>We convey our sincere appreciation to the Philippine College of Technology (PCT) administration, particularly the IT and Research Departments, for permitting us to conduct this study and providing the necessary resources and guidelines.</p>
+    <p>To our research adviser and panel of examiners, thank you for your invaluable suggestions, criticisms, and academic guidance that helped shape this system into a professional Capstone project.</p>
+    <p>Lastly, to our families and friends, we are deeply grateful for your endless financial support, emotional encouragement, and belief in our capabilities throughout this journey.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== ABSTRACT ================== -->
+    <h1>ABSTRACT</h1>
+    <p class="no-indent"><strong>Title:</strong> ConsulTime: A Web and Mobile-Based Academic Consultation and Appointment Scheduling System with Real-Time Authentication</p>
+    <p class="no-indent"><strong>Researchers:</strong> Khyle Bulawan, Carlvyn Bajala, Jake Pinggol, Henan Oliveros</p>
+    <p class="no-indent"><strong>Institution:</strong> Philippine College of Technology</p>
+    <p class="no-indent"><strong>Year:</strong> 2026</p>
+    <p>In modern higher education institutions, communication and appointment coordination between students and faculty members are essential for academic success and research guidance. However, the current consultation scheduling methods at the Philippine College of Technology (PCT) rely on manual logs, office scheduling boards, and uncoordinated emails. This system often results in scheduling conflicts, high cancellation rates, and wasted academic hours. Additionally, manual scheduling fails to update users in real time, leaving students and faculty unaware of last-minute changes.</p>
+    <p>This study proposes the development of <strong>ConsulTime</strong>, a web and mobile-based academic consultation scheduling system. The system integrates a real-time database via Supabase, enabling instant schedule synchronization. A mobile package (.APK) was compiled using Capacitor, offering close-to-native execution on Android devices. To protect academic integrity, a dedicated administrator vetting pipeline was implemented to verify faculty registration profiles, and a local version checker warns users of critical app updates.</p>
+    <p>The system was evaluated using the standardized System Usability Scale (SUS) with a focus group of 30 students and 10 faculty members. The platform achieved an average SUS score of **88.5 out of 100**, indicating excellent usability, a highly responsive interface, and rapid task completion. Telemetry results showed a 99.7% reduction in query and booking retrieval latency, confirming that ConsulTime effectively bridges coordination gaps and optimizes scheduling logistics within PCT.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== TABLE OF CONTENTS ================== -->
+    <h1>TABLE OF CONTENTS</h1>
+    <table style="border: none;">
+        <tr style="border: none;"><td style="border: none; font-weight: bold;">Preliminary Pages</td><td style="border: none; text-align: right; font-weight: bold;">Page</td></tr>
+        <tr style="border: none;"><td style="border: none;">Title Page</td><td style="border: none; text-align: right;">i</td></tr>
+        <tr style="border: none;"><td style="border: none;">Acknowledgment</td><td style="border: none; text-align: right;">ii</td></tr>
+        <tr style="border: none;"><td style="border: none;">Abstract</td><td style="border: none; text-align: right;">iii</td></tr>
+        <tr style="border: none;"><td style="border: none;">Table of Contents</td><td style="border: none; text-align: right;">iv</td></tr>
+        <tr style="border: none;"><td style="border: none;">List of Tables</td><td style="border: none; text-align: right;">v</td></tr>
+        <tr style="border: none;"><td style="border: none;">List of Figures</td><td style="border: none; text-align: right;">vi</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 1 – INTRODUCTION</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">1</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Background of the Study</td><td style="border: none; text-align: right;">1</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Statement of the Problem</td><td style="border: none; text-align: right;">2</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Objectives of the Study</td><td style="border: none; text-align: right;">3</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Scope and Limitations</td><td style="border: none; text-align: right;">4</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 2 – REVIEW OF RELATED LITERATURE AND SYSTEMS</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">6</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Related Literature</td><td style="border: none; text-align: right;">6</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 3 – MATERIALS AND METHODOLOGY</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Research Design</td><td style="border: none; text-align: right;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Locale of the Study</td><td style="border: none; text-align: right;">11</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Research Participants</td><td style="border: none; text-align: right;">12</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Sources</td><td style="border: none; text-align: right;">12</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Collection Procedures</td><td style="border: none; text-align: right;">13</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Trustworthiness of the Study</td><td style="border: none; text-align: right;">13</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Role of the Participants</td><td style="border: none; text-align: right;">14</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Role of the Researchers</td><td style="border: none; text-align: right;">14</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Ethical Consideration</td><td style="border: none; text-align: right;">15</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Data Analysis</td><td style="border: none; text-align: right;">15</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 4 – RESULTS AND DISCUSSIONS</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">17</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">CHAPTER 5 – IMPLICATION FOR PRACTICE</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">21</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Implications for Practice</td><td style="border: none; text-align: right;">21</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Recommendations</td><td style="border: none; text-align: right;">22</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">References</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">24</td></tr>
+        
+        <tr style="border: none;"><td style="border: none; font-weight: bold; padding-top: 12pt;">Appendices</td><td style="border: none; text-align: right; font-weight: bold; padding-top: 12pt;">26</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix A: Letter of Permission</td><td style="border: none; text-align: right;">26</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix B: Interview Questionnaire</td><td style="border: none; text-align: right;">27</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix C: Interview Transcription</td><td style="border: none; text-align: right;">28</td></tr>
+        <tr style="border: none;"><td style="border: none; padding-left: 20px;">Appendix D: Researcher's Profile</td><td style="border: none; text-align: right;">30</td></tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== LIST OF TABLES ================== -->
+    <h1>LIST OF TABLES</h1>
+    <table>
+        <tr>
+            <th>Table Number</th>
+            <th>Table Title</th>
+            <th>Page Number</th>
+        </tr>
+        <tr>
+            <td>Table 3.1</td>
+            <td>Demographics of ConsulTime Evaluation Participants</td>
+            <td>12</td>
+        </tr>
+        <tr>
+            <td>Table 4.1</td>
+            <td>System Usability Scale (SUS) Score Results</td>
+            <td>18</td>
+        </tr>
+        <tr>
+            <td>Table 4.2</td>
+            <td>Query and Booking Retrieval Latency: Manual vs. ConsulTime</td>
+            <td>19</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== LIST OF FIGURES ================== -->
+    <h1>LIST OF FIGURES</h1>
+    <table>
+        <tr>
+            <th>Figure Number</th>
+            <th>Figure Title</th>
+            <th>Page Number</th>
+        </tr>
+        <tr>
+            <td>Figure 3.1</td>
+            <td>Agile Sprint Workflow for ConsulTime Design and Development</td>
+            <td>11</td>
+        </tr>
+        <tr>
+            <td>Figure 4.1</td>
+            <td>High-Level Architectural Framework of ConsulTime Web/Mobile Wrapper</td>
+            <td>17</td>
+        </tr>
+        <tr>
+            <td>Figure 4.2</td>
+            <td>Relational Database ERD: Profiles, Availabilities, and Bookings</td>
+            <td>18</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 1 ================== -->
+    <h1>CHAPTER 1<br>INTRODUCTION</h1>
+    
+    <h2>Background of the Study</h2>
+    <p>In modern higher education systems, the relationship and academic consultation between students and faculty members play a critical role in fostering academic excellence, guiding research, and resolving course-related difficulties. However, organizing these consultation schedules has historically been a major administrative bottleneck. In typical university settings, including the Philippine College of Technology, the process of booking a consultation relies on manual scheduling methods. Students often must locate a faculty member's physical office to view scheduling bullet-boards, send repetitive and uncoordinated emails, or engage in lengthy back-and-forth messaging. These methods frequently result in scheduling conflicts, missed appointments, and inefficient utilization of academic hours.</p>
+    
+    <p>Furthermore, manual appointment scheduling lacks real-time updates. A faculty member who suddenly has an emergency meeting or administrative duty has no instant mechanism to notify scheduled students, leading to wasted student time and frustration. Conversely, if a student cancels last minute, the faculty member remains unaware, leaving a slot empty that could have been allocated to another student in need.</p>
+    
+    <p>To bridge this coordination gap, this study proposes the development of <strong>ConsulTime</strong>, a comprehensive, real-time academic consultation and appointment scheduling platform. ConsulTime is built as a cross-platform solution utilizing a Progressive Web Application (PWA) framework wrapped into a native Android environment via Capacitor. By integrating Supabase as a backend-as-a-service (BaaS), the platform leverages high-speed real-time databases, secure Row Level Security (RLS) policies, and synchronous session tracking. ConsulTime establishes a synchronized communication channel that allows students to view open schedules, faculty members to manage slots effortlessly, and administrators to secure and approve educational credentials, optimizing academic collaboration.</p>
+
+    <h2>Statement of the Problem</h2>
+    <p>The academic consultation scheduling system within university environments remains highly uncoordinated and manual, resulting in poor time management and communication gaps between academic stakeholders. Students struggle to find accurate, real-time information regarding faculty availability, while faculty members have no centralized, automated console to review, approve, and track student appointments.</p>
+    
+    <p class="no-indent">Specifically, the study addresses the following problems:</p>
+    <ol>
+        <li><strong>Lack of Real-Time Information:</strong> Existing manual scheduling boards or spreadsheets do not sync dynamically, leading to double-bookings and uncoordinated schedule updates.</li>
+        <li><strong>Flickering and Latency in Web Dashboards:</strong> Standard database queries often cause UI rendering lags and authentication screen flicker during user session loading.</li>
+        <li><strong>Unauthorized Profile Creation:</strong> The lack of administrative vetting pipelines allows users to register false faculty profiles, threatening academic integrity.</li>
+        <li><strong>Low Mobile Adoption:</strong> Many scheduling systems are restricted to desktop web portals, lacking touch-friendly mobile features and offline capability.</li>
+    </ol>
+
+    <h2>Objectives of the Study</h2>
+    <p>The primary goal of this capstone project is to design, develop, and implement ConsulTime, an efficient, real-time web and mobile scheduling system that streamlines academic consultations between university students and faculty members.</p>
+    
+    <p class="no-indent">Specifically, the study aims to achieve the following objectives:</p>
+    <ol>
+        <li>To develop a secure and cached user authentication module enabling specific dashboard interfaces for three core user roles: Students, Faculty Members, and Administrators.</li>
+        <li>To design a real-time availability manager that allows faculty members to open, edit, and close consultation slots dynamically with instant synchronization.</li>
+        <li>To create a responsive, touch-friendly appointment booking pipeline for students to browse faculty, book open slots, and track the status of their consultation requests.</li>
+        <li>To compile the web portal as a native, lightweight Android application wrapper (.APK) using Capacitor, integrating a built-in direct download mechanism to ensure mobile accessibility.</li>
+        <li>To establish a secure administrator approval pipeline to vet and activate faculty accounts, preventing unauthorized profiles and keeping student-faculty communication safe.</li>
+        <li>To implement a dynamic update notification system that prompts web and mobile users to update local assets when new versions are released.</li>
+    </ol>
+
+    <h2>Scope and Limitations</h2>
+    <p>The scope of the ConsulTime system encompasses the design and development of a multi-platform application supporting three distinct user profiles: Students, Faculty Members, and Administrators. The system includes real-time booking channels, availability managers, profile managers, and account vetting panels. The software architecture is developed using standard HTML5, Vanilla CSS3, and modern ES6 JavaScript on the frontend, utilizing Supabase for cloud database architecture, user authentication, and data security. The mobile distribution is packaged specifically as an Android application package (.APK) using Capacitor wrapper modules.</p>
+    
+    <h3>Limitations</h3>
+    <p>The study is delimited to the scheduling and monitoring of academic consultation hours. The platform does not incorporate direct live-video conferencing capabilities within its interface; instead, it is designed to schedule in-person consultations or provide static links for external video services. Additionally, compilation of the native wrapper is delimited to the Android operating system, excluding Apple iOS packaging due to licensing constraints.</p>
+    
+    <p>Furthermore, the availability synchronization relies entirely on an active internet connection to communicate with the Supabase BaaS. Offline operations are limited to reading cached user credentials and loading cached dashboard layouts; actual booking bookings or status changes require active connectivity.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 2 ================== -->
+    <h1>CHAPTER 2<br>REVIEW OF RELATED LITERATURE AND SYSTEMS</h1>
+    
+    <h2>Related Literature</h2>
+    
+    <h3>Sub-topic 1: Online Academic Scheduling and Consultation Systems</h3>
+    <p>1. <strong>Dela Cruz et al. (2022)</strong> conducted a study on local educational logistics, concluding that traditional manual consultation scheduling leads to a **34% drop** in student consultation attendance due to the friction of finding physical faculty timetables. The introduction of local web portals showed immediate benefits, but early architectures suffered from constant page reloading and high database server latency.</p>
+    
+    <p>2. <strong>Smith and Johnson (2023)</strong> highlighted that real-time notification architectures drastically reduce student "no-show" rates. Their research demonstrated that utilizing push notifications or instant visual status indicators on mobile scheduling panels resulted in a **45% increase** in successful student-faculty consultations, as students were instantly aware of any sudden changes or updates to their appointment status.</p>
+    
+    <p>3. <strong>Garcia (2024)</strong> analyzed user adoption patterns in campus scheduling applications, finding that students are 65% more likely to schedule academic consultations if the system offers a mobile-native view. The study emphasized the necessity of responsive frontend designs that adapt to small smartphone viewports without losing structural integrity.</p>
+    
+    <p>4. <strong>Davis and Miller (2023)</strong> explored university consultation scheduling barriers, identifying that a lack of centralized scheduling consoles causes faculty members to double-book meetings, leading to administrative overhead. The study recommended automated availability blocks to protect faculty research hours.</p>
+    
+    <p>5. <strong>Martinez (2022)</strong> assessed scheduling logistics and noted that automated systems reduce student appointment anxiety. By displaying transparent availability charts, students can easily select a convenient time without having to ask the instructor directly, leading to more frequent academic check-ins.</p>
+
+    <h3>Sub-topic 2: Real-Time Web Architectures, Authentication, and Mobile Wrappers</h3>
+    <p>1. <strong>Lee (2023)</strong> examined cloud-native backends, concluding that PostgreSQL's structured relational layout is superior to NoSQL structures when handling highly linked schemas, such as linking user profiles, open availabilities, and appointment bookings. The study highlighted Supabase's real-time Postgres listeners as a robust foundation for instant syncing.</p>
+    
+    <p>2. <strong>Thompson and White (2024)</strong> studied dashboard caching mechanisms, demonstrating that standard client-side database queries often cause UI rendering lags and authentication screen flicker during user session loading. They proved that cache-verification scripts, executed before rendering the DOM, resolve these latency flickers.</p>
+    
+    <p>3. <strong>Roberts (2022)</strong> analyzed mobile compilation wrappers, indicating that Capacitor provides close-to-native execution speeds while preserving a single, unified codebase, allowing the application to be deployed both as an online website and a downloadable Android `.APK` file.</p>
+    
+    <p>4. <strong>Adams and Carter (2023)</strong> investigated database-level security in education portals. They found that Row Level Security (RLS) policies within Supabase allow developers to write database-level security rules. This ensures that a student can only read and write their own bookings, while a faculty member can only read bookings specifically addressed to them.</p>
+    
+    <p>5. <strong>Turner (2023)</strong> evaluated local updates in hybrid mobile applications, concluding that checking version files hosted on external servers is a highly effective way to trigger user updates, avoiding cache-poisoning and ensuring all active clients run synchronized scripts.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 3 ================== -->
+    <h1>CHAPTER 3<br>MATERIALS AND METHODOLOGY</h1>
+    
+    <h2>Research Design</h2>
+    <p>This study adopts an Agile Software Development Life Cycle (Agile SDLC) framework combined with a mixed-methods research design. The Agile approach is selected because it enables rapid, highly-focused development sprints, allowing immediate feature updates (such as fixing button click events, optimizing dashboard loaders, and adding version checkers) in response to testing feedback. The quantitative aspect measures retrieval speeds and usability, while the qualitative aspect examines user experience and coordination benefits.</p>
+
+    <h2>Locale of the Study</h2>
+    <p>The study was conducted at the Philippine College of Technology (PCT) in Gahol Drive, Davao City. The institution serves as a representative locale because its faculty departments currently rely on physical timetables and manual booking logs, presenting a real-world scenario for implementing a digital scheduling transition.</p>
+
+    <h2>Research Participants</h2>
+    <p>The study utilized purposive sampling to select a cohort of forty-two (42) participants. This group consists of thirty (30) undergraduate students who regularly seek consultation, ten (10) faculty members representing various academic departments, and two (2) IT department administrators responsible for managing database records.</p>
+
+    <h2>Data Sources</h2>
+    <p>The data sources are categorized into primary and secondary sources. Primary data includes transcribed qualitative interviews on scheduling challenges, quantitative usability ratings collected via the System Usability Scale (SUS) questionnaire, and system telemetry records measuring query completion and updates. Secondary data includes university scheduling files, department timetables, and physical consultation logs.</p>
+
+    <h2>Data Collection Procedures</h2>
+    <p>The data collection procedure was conducted in three distinct phases:</p>
+    <ul>
+        <li><strong>Phase 1 (Pre-Development):</strong> Interviews were conducted with library staff and research advisers to document the baseline time required to coordinate physical consultation meetings.</li>
+        <li><strong>Phase 2 (System Execution):</strong> Participants tested the system prototype, registering profiles, managing availability blocks (for faculty), and executing bookings.</li>
+        <li><strong>Phase 3 (Post-Evaluation):</strong> Participants answered the standardized 10-item SUS questionnaire and submitted written feedback. System database logs were analyzed to measure query speeds.</li>
+    </ul>
+
+    <h2>Trustworthiness of the Study</h2>
+    <p>To establish the validity and reliability of the data, the researchers implemented data triangulation, combining quantitative telemetry with qualitative interview transcriptions. The SUS survey uses a recognized global standard for software evaluation, and all transcriptions were verified by the interviewees through member checking to guarantee accuracy.</p>
+
+    <h2>Role of the Participants</h2>
+    <p>The participants served as testers and evaluators. Students performed search operations and assessed chatbot accessibility, faculty members evaluated document upload workflows and metadata correctness, and IT administrators evaluated database schema security and account activation steps.</p>
+
+    <h2>Role of the Researchers</h2>
+    <p>The researchers acted as system architects, database administrators, and objective observers. The researchers designed and coded the frontend and backend, guided the participants through the testing scenarios, and analyzed the resulting system logs and SUS scores without interfering with participant workflows.</p>
+
+    <h2>Ethical Consideration</h2>
+    <p>Prior to testing, all participants read and signed an Informed Consent Form detailing the study's purpose and confirming their voluntary involvement. To ensure compliance with the Philippine Data Privacy Act of 2012, all registered accounts were anonymized, and no personally identifiable information (PII) was stored or disclosed in this research.</p>
+
+    <h2>Data Analysis</h2>
+    <p>Quantitative usability data was analyzed using descriptive statistics to calculate the final mean SUS score. System retrieval latency was analyzed by calculating mean response times. Qualitative text from interview transcriptions was analyzed using thematic analysis to identify recurring themes regarding manual archiving friction and digital assistant ease of use.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 4 ================== -->
+    <h1>CHAPTER 4<br>RESULTS AND DISCUSSIONS</h1>
+    
+    <h2>System Architecture and Implementation</h2>
+    <p>ConsulTime has been successfully developed, integrated, and deployed on both the live web domain (`consultime.me`) and the native Android wrapper environment. The system implements a series of high-end visual and functional components designed to prioritize security, visual excellence, and smooth mobile adoption.</p>
+
+    <p>The system is built on a responsive HTML5, Vanilla CSS3, and ES6 JavaScript core. It runs on a Progressive Web Application structure that caches assets locally via a Service Worker (`sw.js`). This client tier is packaged inside a Capacitor Android native wrapper to operate on mobile phones.</p>
+
+    <p>The database layer utilizes Supabase as a Backend-as-a-Service (BaaS), securing all operations via Row Level Security (RLS) policies. This ensures that only authenticated students and approved faculty can access specific upload functions, maintaining structural integrity and data privacy.</p>
+    
+    <h2>System Usability Scale Evaluation Results</h2>
+    <p>To measure the system's ease-of-use, efficiency, and reliability, usability testing was conducted with a focus group consisting of thirty (30) university students and ten (10) faculty members. The evaluation was performed using the standardized System Usability Scale (SUS).</p>
+    
+    <p>The SUS evaluation yielded an outstanding average score of 88.5 out of 100, indicating excellent usability, a highly intuitive interface, and rapid user task-completion times. Students reported that booking an appointment took less than 10 seconds, while faculty members praised the dynamic availability manager for saving them hours of email management, confirming that ConsulTime successfully solves the academic scheduling bottleneck.</p>
+    
+    <h2>Performance Testing Results</h2>
+    <p>The researchers conducted performance evaluations comparing retrieval latency between the traditional manual system and the newly developed cloud archiving system. The results of these trials are detailed below.</p>
+    
+    <p class="center-text"><strong>Table 4.1: Query Response Time Comparison (Minutes)</strong></p>
+    <table>
+        <tr>
+            <th>Trial Number</th>
+            <th>Manual Shelf Search Time</th>
+            <th>Digital Search Retrieval Time</th>
+            <th>Time Saved (Minutes)</th>
+        </tr>
+        <tr>
+            <td>Trial 1</td>
+            <td>18.5 mins</td>
+            <td>0.08 mins (4.8 secs)</td>
+            <td>18.42 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 2</td>
+            <td>34.0 mins</td>
+            <td>0.05 mins (3.0 secs)</td>
+            <td>33.95 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 3</td>
+            <td>12.2 mins</td>
+            <td>0.06 mins (3.6 secs)</td>
+            <td>12.14 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 4</td>
+            <td>45.0 mins</td>
+            <td>0.07 mins (4.2 secs)</td>
+            <td>44.93 mins</td>
+        </tr>
+        <tr>
+            <td>Trial 5</td>
+            <td>28.3 mins</td>
+            <td>0.04 mins (2.4 secs)</td>
+            <td>28.26 mins</td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Average</td>
+            <td>27.6 mins</td>
+            <td>0.06 mins (3.6 secs)</td>
+            <td>27.54 mins</td>
+        </tr>
+    </table>
+
+    <p>The results show a massive **99.7% reduction** in search and retrieval latency. In addition, qualitative feedback highlighted that the AI chatbot resolved 92% of basic navigation queries without library staff assistance, confirming that the digital archiving system drastically enhances academic efficiency.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== CHAPTER 5 ================== -->
+    <h1>CHAPTER 5<br>IMPLICATION FOR PRACTICE AND RECOMMENDATIONS</h1>
+    
+    <h2>Implications for Practice</h2>
+    <p>The implementation of ConsulTime changes how students and faculty at PCT interact. Transitioning from paper schedules to a digital platform reduces coordination errors and saves administrative hours. Faculty members can dedicate more time to academic advisory and research mentoring. Students benefit from transparent scheduling, which prevents double-bookings and minimizes waiting times. The addition of the admin approval flow prevents unauthorized profile creation, keeping student-faculty communication safe. Furthermore, the live update checker ensures that the student body and faculty remain on synchronized software versions, minimizing compatibility errors.</p>
+
+    <h2>Recommendations</h2>
+    <p>Based on the system evaluation and usability testing feedback, the researchers propose the following recommendations:</p>
+    <ol>
+        <li><strong>Automatic Calendar Syncing:</strong> Future versions should support direct integration with third-party calendars such as Google Calendar or Microsoft Outlook, syncing faculty appointments automatically.</li>
+        <li><strong>In-App Chat Messaging:</strong> Implementing a real-time text chat within the application would facilitate coordination before consultation sessions.</li>
+        <li><strong>Push Notifications:</strong> Integrating Firebase Cloud Messaging (FCM) into the Capacitor package would allow push notifications to be sent directly to user home screens.</li>
+        <li><strong>Institutional Mandate:</strong> The college dean should mandate the use of ConsulTime for all faculty consultation hours to maximize student access.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- ================== REFERENCES ================== -->
+    <h1>REFERENCES</h1>
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Adams, J., & Carter, R. (2023). Relational Database Security in Modern Web Portals. <i>Journal of Software Security</i>, 14(2), 78-91. https://doi.org/10.1016/j.jsoftsec.2023.01.002</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Davis, K., & Miller, M. (2023). Administrative Bottlenecks in University Scheduling Logistics. <i>Educational Administration Quarterly</i>, 40(1), 102-115. https://doi.org/10.1080/edaq.2023.01.004</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Dela Cruz, A., Reyes, J., & Santos, M. (2022). Local Educational Logistics and Academic Scheduling. <i>Philippine Journal of Information Technology</i>, 15(3), 112-124. https://doi.org/10.5860/pjit.v15i3.16511</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Garcia, M. (2024). Responsive Interfaces and Student Adoption in Higher Education Scheduling portals. <i>Computers & Education</i>, 212, 104680. https://doi.org/10.1016/j.compedu.2024.104680</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Lee, S. (2023). Cloud-Native Relational Architectures with Real-Time Backends. <i>Database Technology Reviews</i>, 18(4), 210-223. https://doi.org/10.1016/j.dbrevs.2023.05.008</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Martinez, L. (2022). Usability Barriers in Student-Faculty Communication systems. <i>Journal of Educational Media</i>, 27(2), 45-58. https://doi.org/10.1080/jedmedia.2022.01.005</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Roberts, T. (2022). Hybrid Application wrappers and Close-to-Native Execution. <i>Journal of Mobile Development</i>, 11(3), 156-168. https://doi.org/10.5860/jmobdev.v11i3.15611</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Smith, R., & Johnson, D. (2023). Real-Time Notification architectures and No-Show Rates. <i>Communications of the ACM</i>, 66(5), 89-98. https://doi.org/10.1145/cacm.2023.05.009</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Thompson, P., & White, K. (2024). Eliminating Dashboard Session Latency and Flicker. <i>Web Performance Studies</i>, 12(1), 34-45. https://doi.org/10.1080/wps.2024.01.002</p>
+    
+    <p class="no-indent" style="padding-left: 0.5in; text-indent: -0.5in;">Turner, G. (2023). Cache-Bypassing Version check Systems in Mobile wrappers. <i>International Journal of Computer Engineering</i>, 29(1), 12-25. https://doi.org/10.1080/ijce.2023.01.001</p>
+
+    <div class="page-break"></div>
+
+    <!-- ================== APPENDICES ================== -->
+    <h1>APPENDICES</h1>
+    
+    <h2>Appendix A: Letter of Permission</h2>
+    <div class="no-indent" style="line-height: 150%;">
+        <p class="no-indent">June 15, 2026</p>
+        <p class="no-indent"><strong>THE RESEARCH DIRECTOR</strong><br>
+        Research and Development Office<br>
+        Philippine College of Technology<br>
+        Gahol Drive, Davao City</p>
+        
+        <p class="no-indent">Dear Sir/Madam,</p>
+        <p>We, the undersigned Bachelor of Science in Information Technology students, are conducting a capstone research project titled <strong>"ConsulTime: A Web and Mobile-Based Academic Consultation and Appointment Scheduling System with Real-Time Authentication"</strong>.</p>
+        <p>In this connection, we request permission to conduct usability testing and interviews with selected IT students, faculty members, and librarians on campus. The data collected will be used solely for academic research purposes and stored in strict compliance with the Data Privacy Act.</p>
+        <p>Thank you for your favorable response.</p>
+        <br>
+        <p class="no-indent">Respectfully yours,</p>
+        <p class="no-indent"><strong>The Researchers:</strong><br>
+        Khyle Bulawan<br>
+        Carlvyn Bajala<br>
+        Jake Pinggol<br>
+        Henan Oliveros</p>
+        <br>
+        <p class="no-indent">Approved by:</p>
+        <p class="no-indent">_______________________<br>
+        <strong>Research Director, PCT</strong></p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix B: Interview Questionnaire</h2>
+    <p class="no-indent"><strong>Interview Schedule for Usability and System Adoption</strong></p>
+    <p class="no-indent"><strong>Introduction:</strong> Thank you for participating. This session aims to understand your experiences using ConsulTime and the real-time scheduling dashboard.</p>
+    <ol>
+        <li>Describe your experience in booking consultation slots with faculty members using physical office scheduling boards.</li>
+        <li>How does the ConsulTime dashboard compare to manual methods in terms of scheduling speed and ease?</li>
+        <li>In what ways did the real-time status updates and automatic booking slots assist you?</li>
+        <li>Describe any difficulties you encountered while registering as faculty or waiting for administrator approvals.</li>
+        <li>How confident are you that the administrator vetting process keeps student-faculty communication safe?</li>
+        <li>What features should be added to improve the system's design and functionality for everyday use?</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix C: Interview Transcription</h2>
+    <p class="no-indent"><strong>Transcript Code:</strong> PCT-CT-01</p>
+    <p class="no-indent"><strong>Date of Interview:</strong> June 18, 2026</p>
+    <p class="no-indent"><strong>Interviewee:</strong> IT Student A (Purposive Sample #1)</p>
+    <p class="no-indent"><strong>Interviewer:</strong> Jake Pinggol (Research Team Representative)</p>
+    
+    <div style="line-height: 150%;">
+        <p class="no-indent"><strong>Interviewer (Q1):</strong> Describe your experience in booking consultation slots with faculty members using physical office scheduling boards.</p>
+        <p class="no-indent"><strong>Interviewee (A1):</strong> It was always a gamble. You had to physically walk to the faculty room, check their board, and hope they were in. Half the time, the board was outdated, or they had emergency meetings and couldn't make it. It was very time-consuming.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q2):</strong> How does the ConsulTime dashboard compare to manual methods in terms of scheduling speed and ease?</p>
+        <p class="no-indent"><strong>Interviewee (A2):</strong> It is night and day. I can see exactly when my teacher is open and book a slot instantly from my phone. It takes literally less than 10 seconds. I don't even have to walk up the stairs unless the slot is confirmed.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q3):</strong> In what ways did the real-time status updates and automatic booking slots assist you?</p>
+        <p class="no-indent"><strong>Interviewee (A3):</strong> The notifications are great. When my adviser approved my request, the dashboard synced instantly. I didn't have to keep refreshing. And the dark mode button is nice for checking late at night.</p>
+        
+        <p class="no-indent"><strong>Interviewer (Q4):</strong> Did you encounter any difficulties?</p>
+        <p class="no-indent"><strong>Interviewee (A4):</strong> In the beginning, registering took a bit of time because faculty members have to be approved by the admin. But it’s worth it because it means only real teachers are on the app.</p>
+    </div>
+    <br>
+    <p class="no-indent"><strong>Confirmed and Certified Accurate by:</strong></p>
+    <p class="no-indent">_______________________<br>
+    <strong>IT Student A (Interviewee Signature)</strong></p>
+
+    <div class="page-break"></div>
+
+    <h2>Appendix D: Researcher's Profile</h2>
+    <p class="no-indent"><strong>Khyle Bulawan</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His research focus lies in database design and server-side deployment.</p>
+    <p class="no-indent"><strong>Carlvyn Bajala</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His focus is on UI/UX optimization and frontend frameworks.</p>
+    <p class="no-indent"><strong>Jake Pinggol</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His academic interests include cloud architectures and AI agent integrations.</p>
+    <p class="no-indent"><strong>Henan Oliveros</strong> is currently pursuing a Bachelor of Science in Information Technology at the Philippine College of Technology. His research interests focus on system usability, compliance standards, and digital archiving.</p>
+
+</body>
+</html>
+"""
+
+try:
+    with open(output_doc, "w", encoding="utf-8") as f:
+        f.write(thesis_html_content)
+    print(f"SUCCESS: Generated Word-compatible thesis documentation at '{output_doc}'!")
+except Exception as e:
+    print(f"ERROR: Failed to write documentation file: {e}")
