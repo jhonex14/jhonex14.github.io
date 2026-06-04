@@ -5926,6 +5926,46 @@ const App = {
         document.getElementById('btnJoinAlarm').addEventListener('click', dismissHandler);
     },
 
+    requestNotificationPermission: async function() {
+        if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
+            try {
+                const { LocalNotifications } = window.Capacitor.Plugins;
+                const permStatus = await LocalNotifications.checkPermissions();
+                if (permStatus.display !== 'granted') {
+                    await LocalNotifications.requestPermissions();
+                }
+            } catch (err) {
+                console.error("Local notifications permission request failed:", err);
+            }
+        } else if ('Notification' in window) {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        }
+    },
+
+    sendLocalNotification: async function(title, body, id) {
+        if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
+            try {
+                const { LocalNotifications } = window.Capacitor.Plugins;
+                await LocalNotifications.schedule({
+                    notifications: [
+                        {
+                            title: title,
+                            body: body,
+                            id: id,
+                            schedule: { at: new Date(Date.now() + 1000) },
+                            actionTypeId: "",
+                            extra: null
+                        }
+                    ]
+                });
+            } catch (err) {
+                console.error("Failed to send local notification:", err);
+            }
+        }
+    },
+
     checkConsultationAlarms: async function() {
         if (!this.user || !this.profile) return;
         try {
@@ -5938,20 +5978,46 @@ const App = {
                 .eq('status', 'approved')
                 .eq('appointment_date', dateStr);
             if (error || !data) return;
+            
             const dismissed = JSON.parse(localStorage.getItem('dismissedAlarms') || '{}');
+            const sentPushNotifs = JSON.parse(localStorage.getItem('sentPushNotifs') || '{}');
+            
             data.forEach(appt => {
-                if (dismissed[appt.id]) return;
                 const [startH, startM] = appt.start_time.split(':').map(Number);
                 const [endH, endM] = appt.end_time.split(':').map(Number);
                 const currentMinutes = hour * 60 + minute;
                 const startMinutes = startH * 60 + startM;
                 const endMinutes = endH * 60 + endM;
-                if (currentMinutes >= (startMinutes - 5) && currentMinutes <= endMinutes) {
-                    const partner = isStudent ? appt.faculty : appt.student;
-                    const partnerName = partner ? partner.full_name : (isStudent ? 'Faculty Member' : 'Student');
+                
+                const minutesUntilStart = startMinutes - currentMinutes;
+                const partner = isStudent ? appt.faculty : appt.student;
+                const partnerName = partner ? partner.full_name : (isStudent ? 'Faculty Member' : 'Student');
+                
+                // Web Overlay Alarm (5 mins prior until end)
+                if (!dismissed[appt.id] && currentMinutes >= (startMinutes - 5) && currentMinutes <= endMinutes) {
                     this.showConsultationAlarmOverlay({
                         id: appt.id, appointment_date: appt.appointment_date, start_time: appt.start_time, purpose: appt.purpose, partner_name: partnerName
                     });
+                }
+                
+                // Capacitor Local Notifications (15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 mins prior)
+                const pushTargetMinutes = [15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+                if (minutesUntilStart > 0 && pushTargetMinutes.includes(minutesUntilStart)) {
+                    const notifKey = `${appt.id}_${minutesUntilStart}`;
+                    if (!sentPushNotifs[notifKey]) {
+                        sentPushNotifs[notifKey] = true;
+                        localStorage.setItem('sentPushNotifs', JSON.stringify(sentPushNotifs));
+                        
+                        const title = 'Upcoming Consultation';
+                        const body = `Your appointment with ${sanitizeHTML(partnerName)} starts in ${minutesUntilStart} minute${minutesUntilStart > 1 ? 's' : ''}.`;
+                        
+                        // Generate a simple positive integer ID for the local notification
+                        const idHash = Math.abs(notifKey.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)) % 2147483647;
+                        
+                        if (this.sendLocalNotification) {
+                            this.sendLocalNotification(title, body, idHash || 1);
+                        }
+                    }
                 }
             });
         } catch (err) { console.error("Alarm check error:", err); }
