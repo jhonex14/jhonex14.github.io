@@ -3070,6 +3070,18 @@ const App = {
             alert("Failed to book: " + error.message);
         } else {
             alert("Appointment request submitted successfully!");
+            
+            // Send local native notification
+            try {
+                const [h, m] = startTime.split(':');
+                const hNum = parseInt(h);
+                const ampm = hNum >= 12 ? 'PM' : 'AM';
+                const h12 = hNum % 12 || 12;
+                const timeFormatted = `${h12}:${m} ${ampm}`;
+                this.sendNativeNotification("Schedule Requested", `You have a schedule requested on ${apptDate} at ${timeFormatted}!`);
+            } catch (e) {
+                console.warn(e);
+            }
             document.getElementById('bookForm').reset();
             const summaryDiv = document.getElementById('facultyAvailabilitySummary');
             if (summaryDiv) {
