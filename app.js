@@ -1,5 +1,11 @@
 // Supabase Configuration
 // Replace with your actual Supabase URL and Key
+const GOOGLE_CLIENT_ID = '354413155894-3j42tctmks8o90vpt56mlln7l3tms44f.apps.googleusercontent.com';
+
+// Update Notification Config
+const REQUIRED_APK_VERSION = "1.0.1"; // Change this whenever you want to force users to download a new APK
+const MEDIAFIRE_LINK = "https://www.mediafire.com/"; // Replace with actual MediaFire link
+const GOOGLE_DRIVE_LINK = "https://drive.google.com/"; // Replace with actual Google Drive link
 const supabaseUrl = 'https://uximseyeqkhoghsrksds.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4aW1zZXllcWtob2doc3Jrc2RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNjYwODksImV4cCI6MjA5NDY0MjA4OX0.5BdspRtw7IBI201E-RrqXiDJ-MDQFBpKhJlaujP-i6w';
 
@@ -149,6 +155,7 @@ const App = {
         });
         
         this.initRealtime();
+        this.checkAppVersion(); // Check if APK needs updating
         this.startAppointmentMonitor(); // Start background interval for alerts and auto-reject
         this.requestNotificationPermission(); // Ask for OS notification permission
         if (this.profile && this.profile.role === 'student') {
@@ -4306,6 +4313,76 @@ const App = {
             if (this.profile.role === 'student') this.fetchStudentAppointments();
             if (this.profile.role === 'faculty') this.fetchFacultyRequests();
         }
+    },
+
+    checkAppVersion: async function() {
+        if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform()) {
+            try {
+                const info = await Capacitor.Plugins.App.getInfo();
+                const currentVersion = info.version;
+                
+                // Compare semantic versions (e.g. "1.0.0" vs "1.0.1")
+                if (this._compareVersions(currentVersion, REQUIRED_APK_VERSION) < 0) {
+                    this._showUpdateModal(currentVersion);
+                }
+            } catch (error) {
+                console.error("Could not fetch app version:", error);
+            }
+        }
+    },
+
+    _compareVersions: function(v1, v2) {
+        const parts1 = v1.split('.').map(Number);
+        const parts2 = v2.split('.').map(Number);
+        for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            const p1 = parts1[i] || 0;
+            const p2 = parts2[i] || 0;
+            if (p1 < p2) return -1;
+            if (p1 > p2) return 1;
+        }
+        return 0;
+    },
+
+    _showUpdateModal: function(currentVersion) {
+        // Prevent multiple modals
+        if (document.getElementById('updateAppModal')) return;
+
+        const modalHtml = `
+            <div class="modal fade" id="updateAppModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateAppModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+                        <div class="modal-header bg-danger text-white border-0" style="border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+                            <h5 class="modal-title w-100 text-center" id="updateAppModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Update Required
+                            </h5>
+                        </div>
+                        <div class="modal-body text-center p-4">
+                            <div class="mb-4">
+                                <i class="fas fa-cloud-download-alt text-danger" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4 class="mb-3">New Version Available!</h4>
+                            <p class="text-muted mb-4">
+                                You are using an outdated version of ConsulTime (v${currentVersion}). 
+                                To continue using the app and access new features, please download and install the latest update (v${REQUIRED_APK_VERSION}).
+                            </p>
+                            <div class="d-flex flex-column gap-3">
+                                <a href="${MEDIAFIRE_LINK}" target="_blank" class="btn btn-primary btn-lg rounded-pill">
+                                    <i class="fas fa-fire me-2"></i>Download from MediaFire
+                                </a>
+                                <a href="${GOOGLE_DRIVE_LINK}" target="_blank" class="btn btn-outline-primary btn-lg rounded-pill">
+                                    <i class="fab fa-google-drive me-2"></i>Download from Google Drive
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modalElement = document.getElementById('updateAppModal');
+        const bsModal = new bootstrap.Modal(modalElement);
+        bsModal.show();
     },
 
     _purposeConfig: {
