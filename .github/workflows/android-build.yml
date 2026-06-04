@@ -33,6 +33,7 @@ jobs:
       - name: Sync Capacitor Android
         run: |
           mkdir -p www
+          cp *.html *.css *.js *.json *.png www/ || true
           npx cap sync android
 
       - name: Make gradlew executable
