@@ -170,6 +170,22 @@ const App = {
         this.checkConsultationAlarms();
         setInterval(() => this.checkConsultationAlarms(), 30000);
 
+        // Start session monitor to forcefully log out if logged in elsewhere (runs every 15s)
+        setInterval(async () => {
+            if (this.user) {
+                const localSessionId = localStorage.getItem('ct_active_session');
+                if (localSessionId) {
+                    const { data: prof } = await supabaseClient.from('profiles').select('active_session_id').eq('id', this.user.id).single();
+                    if (prof && prof.active_session_id && prof.active_session_id !== localSessionId) {
+                        console.log("Session conflict detected in background. Logging out...");
+                        await supabaseClient.auth.signOut();
+                        localStorage.removeItem('ct_active_session');
+                        window.location.replace('login.html?kicked=true');
+                    }
+                }
+            }
+        }, 15000);
+
         // Resume AudioContext on user interaction to bypass autoplay restrictions
         const resumeAudio = () => {
             if (this.audioCtx && this.audioCtx.state === 'suspended') {
