@@ -758,6 +758,9 @@ const App = {
                 // Always redirect logged-in users to their dashboard — no matter where they came from
                 window.location.replace(dash);
             } else if (isProfilePage) {
+                // Track user presence to prevent duplicate concurrent logins
+                this.trackPresence(this.user.id);
+
                 // If they landed on profile.html via browser back button from dashboard, lock them back to the dashboard
                 if (isBackForward) {
                     window.location.replace(dash);
@@ -860,14 +863,39 @@ const App = {
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) throw error;
+
+            // Before navigating to the dashboard, send a broadcast to kick out any existing sessions
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Securing Session...';
             
             // Save login state locally
             localStorage.setItem('consultime_session', data.session.access_token);
             
-            // Allow the user to proceed to the dashboard without checking for active sessions
-            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
-            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
-            window.location.replace(dash);
+            const forceChannel = supabaseClient.channel(`presence_${data.user.id}`, {
+                config: {
+                    presence: {
+                        key: data.user.id
+                    }
+                }
+            });
+            
+            forceChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Send the kickout broadcast
+                    await forceChannel.send({
+                        type: 'broadcast',
+                        event: 'kickout',
+                        payload: {}
+                    });
+                    
+                    // Wait briefly for event propagation, then navigate to dashboard
+                    setTimeout(() => {
+                        forceChannel.unsubscribe();
+                        const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
+                        const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+                        window.location.replace(dash);
+                    }, 800);
+                }
+            });
         } catch (error) {
             alertBox.textContent = error.message;
             alertBox.classList.remove('d-none');
@@ -1063,6 +1091,43 @@ const App = {
     handleLogout: async function () {
         await supabaseClient.auth.signOut();
         window.location.replace('login.html');
+    },
+
+    trackPresence: function(userId) {
+        if (!userId) return;
+        
+        // Subscribe to a unique realtime presence channel for this user
+        this.presenceChannel = supabaseClient.channel(`presence_${userId}`, {
+            config: {
+                presence: {
+                    key: userId
+                }
+            }
+        });
+
+        this.presenceChannel
+            .on('presence', { event: 'sync' }, () => {
+                console.log('Presence sync completed.');
+            })
+            .on('broadcast', { event: 'kickout' }, async () => {
+                console.log('Kickout signal received. Logging out...');
+                await supabaseClient.auth.signOut();
+                window.location.replace('login.html?kicked=true');
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Track this session with a unique session ID in sessionStorage
+                    let tabSessionId = sessionStorage.getItem('ct_session_id');
+                    if (!tabSessionId) {
+                        tabSessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+                        sessionStorage.setItem('ct_session_id', tabSessionId);
+                    }
+                    await this.presenceChannel.track({
+                        session_id: tabSessionId,
+                        online_at: new Date().toISOString()
+                    });
+                }
+            });
     },
 
     promptSettingsPassword: function(onSuccessCallback, onCancelCallback) {
