@@ -4,7 +4,7 @@ const GOOGLE_CLIENT_ID = '354413155894-3j42tctmks8o90vpt56mlln7l3tms44f.apps.goo
 
 // Update Notification Config
 const REQUIRED_APK_VERSION = "1.0"; // Change this whenever you want to force users to download a new APK
-const MEDIAFIRE_LINK = "https://www.mediafire.com/"; // Replace with actual MediaFire link
+const MEDIAFIRE_LINK = "https://www.mediafire.com/file/euvwn6ttzail5qu/consultime.apk/file"; // Replace with actual MediaFire link
 const GOOGLE_DRIVE_LINK = "https://drive.google.com/"; // Replace with actual Google Drive link
 const supabaseUrl = 'https://uximseyeqkhoghsrksds.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4aW1zZXllcWtob2doc3Jrc2RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNjYwODksImV4cCI6MjA5NDY0MjA4OX0.5BdspRtw7IBI201E-RrqXiDJ-MDQFBpKhJlaujP-i6w';
