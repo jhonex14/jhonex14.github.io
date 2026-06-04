@@ -2,28 +2,7 @@
 <html lang="en">
 <head>
     <script>
-        // Protocol and Domain normalization (Canonical Redirect)
-        (function() {
-            let targetHref = null;
-            const hostname = window.location.hostname;
-            const protocol = window.location.protocol;
-            
-            // Redirect HTTP to HTTPS unless testing locally
-            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
-            if (protocol === 'http:' && !isLocal) {
-                targetHref = 'https://' + hostname + window.location.pathname + window.location.search + window.location.hash;
-            }
-            
-            // Redirect www.consultime.me to consultime.me
-            if (hostname === 'www.consultime.me') {
-                const proto = targetHref ? 'https://' : protocol + '//';
-                targetHref = proto + 'consultime.me' + window.location.pathname + window.location.search + window.location.hash;
-            }
-            
-            if (targetHref) {
-                window.location.replace(targetHref);
-            }
-        })();
+        
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -529,6 +508,7 @@
     </div>
 </body>
 </html>
+
 
 
 
