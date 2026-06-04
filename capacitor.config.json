@@ -2,9 +2,5 @@
   "appId": "com.jhone.consultime",
   "appName": "ConsulTime",
   "webDir": "www",
-  "bundledWebRuntime": false,
-  "server": {
-    "url": "https://jhonex14.github.io/",
-    "cleartext": true
-  }
+  "bundledWebRuntime": false
 }
