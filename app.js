@@ -758,9 +758,6 @@ const App = {
                 // Always redirect logged-in users to their dashboard — no matter where they came from
                 window.location.replace(dash);
             } else if (isProfilePage) {
-                // Track user presence to prevent duplicate concurrent logins
-                this.trackPresence(this.user.id);
-
                 // If they landed on profile.html via browser back button from dashboard, lock them back to the dashboard
                 if (isBackForward) {
                     window.location.replace(dash);
@@ -863,110 +860,14 @@ const App = {
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) throw error;
-
-            // Before reloading, check if there's any active presence on another session
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Checking Active Sessions...';
-            const checkChannel = supabaseClient.channel(`presence_${data.user.id}`, {
-                config: {
-                    presence: {
-                        key: data.user.id
-                    }
-                }
-            });
             
-            checkChannel.on('presence', { event: 'sync' }, () => {
-                console.log('Active session presence check synced.');
-            });
-
-            checkChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    // Wait 600ms (down from 1200ms) for presence state to sync from Supabase Realtime
-                    setTimeout(async () => {
-                        const state = checkChannel.presenceState();
-                        const activeSessions = [];
-                        
-                        // Parse presenceState
-                        Object.keys(state).forEach(key => {
-                            if (state[key]) {
-                                state[key].forEach(presence => {
-                                    activeSessions.push(presence);
-                                });
-                            }
-                        });
-
-                        // Unsubscribe check channel
-                        checkChannel.unsubscribe();
-
-                        if (activeSessions.length > 0) {
-                            // Account is already active elsewhere! Restore login button state
-                            btn.innerHTML = originalText;
-                            btn.disabled = false;
-                            
-                            // Display the force logout/login confirmation UI
-                            alertBox.innerHTML = `
-                                <div class="p-1">
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <i class="fa-solid fa-circle-exclamation text-danger fs-5"></i>
-                                        <strong class="text-dark small">Active Session Detected</strong>
-                                    </div>
-                                    <p class="text-muted mb-3" style="font-size: 12px; line-height: 1.4;">
-                                        This account is already logged in on another device or tab. Do you want to sign out the other session and log in here?
-                                    </p>
-                                    <div class="d-flex gap-2">
-                                        <button type="button" id="btnForceLogin" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 fw-bold" style="font-size: 11px;">Yes, Sign Out Other Session</button>
-                                        <button type="button" id="btnCancelForce" class="btn btn-light btn-sm rounded-pill px-3 py-1.5 border fw-medium" style="font-size: 11px;">Cancel</button>
-                                    </div>
-                                </div>
-                            `;
-                            alertBox.classList.remove('d-none');
-
-                            // Add event listener for Yes, Sign Out Other Session
-                            document.getElementById('btnForceLogin').addEventListener('click', async () => {
-                                const forceBtn = document.getElementById('btnForceLogin');
-                                forceBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i>Signing out other...';
-                                forceBtn.disabled = true;
-
-                                // Send broadcast to kick out other tab
-                                const forceChannel = supabaseClient.channel(`presence_${data.user.id}`, {
-                                    config: {
-                                        presence: {
-                                            key: data.user.id
-                                        }
-                                    }
-                                });
-                                await forceChannel.subscribe(async (status) => {
-                                    if (status === 'SUBSCRIBED') {
-                                        await forceChannel.send({
-                                            type: 'broadcast',
-                                            event: 'kickout',
-                                            payload: {}
-                                        });
-                                        // Wait 1 second for event propagation, then navigate to dashboard
-                                        setTimeout(() => {
-                                            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
-                                            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
-                                            window.location.replace(dash);
-                                        }, 1000);
-                                    }
-                                });
-                            });
-
-                            // Add event listener for Cancel
-                            document.getElementById('btnCancelForce').addEventListener('click', async () => {
-                                await supabaseClient.auth.signOut();
-                                alertBox.innerHTML = '';
-                                alertBox.classList.add('d-none');
-                            });
-
-                        } else {
-                            // No conflicting session — navigate directly to dashboard without a page reload
-                            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
-                            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
-                            window.location.replace(dash);
-                        }
-                    }, 600);
-                }
-            });
+            // Save login state locally
+            localStorage.setItem('consultime_session', data.session.access_token);
+            
+            // Allow the user to proceed to the dashboard without checking for active sessions
+            const userRole = (data.user.user_metadata && data.user.user_metadata.role) || 'student';
+            const dash = userRole === 'admin' ? 'admin-dashboard.html' : (userRole === 'faculty' ? 'faculty-dashboard.html' : 'student-dashboard.html');
+            window.location.replace(dash);
         } catch (error) {
             alertBox.textContent = error.message;
             alertBox.classList.remove('d-none');
@@ -1162,43 +1063,6 @@ const App = {
     handleLogout: async function () {
         await supabaseClient.auth.signOut();
         window.location.replace('login.html');
-    },
-
-    trackPresence: function(userId) {
-        if (!userId) return;
-        
-        // Subscribe to a unique realtime presence channel for this user
-        this.presenceChannel = supabaseClient.channel(`presence_${userId}`, {
-            config: {
-                presence: {
-                    key: userId
-                }
-            }
-        });
-
-        this.presenceChannel
-            .on('presence', { event: 'sync' }, () => {
-                console.log('Presence sync completed.');
-            })
-            .on('broadcast', { event: 'kickout' }, async () => {
-                console.log('Kickout signal received. Logging out...');
-                await supabaseClient.auth.signOut();
-                window.location.replace('login.html?kicked=true');
-            })
-            .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    // Track this session with a unique session ID in sessionStorage
-                    let tabSessionId = sessionStorage.getItem('ct_session_id');
-                    if (!tabSessionId) {
-                        tabSessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
-                        sessionStorage.setItem('ct_session_id', tabSessionId);
-                    }
-                    await this.presenceChannel.track({
-                        session_id: tabSessionId,
-                        online_at: new Date().toISOString()
-                    });
-                }
-            });
     },
 
     promptSettingsPassword: function(onSuccessCallback, onCancelCallback) {
