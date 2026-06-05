@@ -5934,13 +5934,88 @@ const App = {
                 if (permStatus.display !== 'granted') {
                     await LocalNotifications.requestPermissions();
                 }
+                
+                // Create channel for sound and vibration on Android
+                try {
+                    await LocalNotifications.createChannel({
+                        id: 'consultime_alerts',
+                        name: 'ConsulTime Alerts',
+                        description: 'Notifications for consultations',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true,
+                        lights: true
+                    });
+                } catch(e) { console.warn("Channel creation issue", e); }
             } catch (err) {
                 console.error("Local notifications permission request failed:", err);
             }
+            
+            // Push Notifications
+            if (window.Capacitor.Plugins.PushNotifications) {
+                this.registerPushNotifications();
+            }
+            
         } else if ('Notification' in window) {
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
                 Notification.requestPermission();
             }
+        }
+    },
+
+    registerPushNotifications: async function() {
+        if (!window.Capacitor || !window.Capacitor.Plugins.PushNotifications) return;
+        const { PushNotifications } = window.Capacitor.Plugins;
+
+        try {
+            const permStatus = await PushNotifications.checkPermissions();
+            if (permStatus.receive === 'prompt') {
+                await PushNotifications.requestPermissions();
+            }
+
+            if (permStatus.receive !== 'denied') {
+                await PushNotifications.register();
+            }
+
+            // Listeners
+            PushNotifications.addListener('registration', async (token) => {
+                console.log('Push registration success, token: ' + token.value);
+                if (this.user) {
+                    const { error } = await supabaseClient
+                        .from('profiles')
+                        .update({ fcm_token: token.value })
+                        .eq('id', this.user.id);
+                    if (error) console.error("Failed to save FCM token to Supabase", error);
+                }
+            });
+
+            PushNotifications.addListener('registrationError', (error) => {
+                console.error('Error on push registration: ', JSON.stringify(error));
+            });
+
+            PushNotifications.addListener('pushNotificationReceived', (notification) => {
+                console.log('Push received: ', JSON.stringify(notification));
+                // Optional: Play sound or show custom toast while app is in foreground
+            });
+
+            PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+                console.log('Push action performed: ', JSON.stringify(notification));
+            });
+            
+            try {
+                await PushNotifications.createChannel({
+                    id: 'consultime_push',
+                    name: 'ConsulTime Push Alerts',
+                    description: 'Real-time push notifications',
+                    importance: 5,
+                    visibility: 1,
+                    vibration: true,
+                    lights: true
+                });
+            } catch(e) { console.warn("Push channel creation issue", e); }
+
+        } catch (e) {
+            console.error("Push Notifications init failed", e);
         }
     },
 
@@ -5954,7 +6029,8 @@ const App = {
                             title: title,
                             body: body,
                             id: id,
-                            schedule: { at: scheduleAt || new Date(Date.now() + 1000) },
+                            channelId: 'consultime_alerts',
+                            schedule: { at: scheduleAt || new Date(Date.now() + 1000), allowWhileIdle: true },
                             actionTypeId: "",
                             extra: null
                         }

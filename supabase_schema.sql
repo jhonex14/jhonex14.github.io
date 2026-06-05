@@ -15,6 +15,7 @@ CREATE TABLE public.profiles (
     school_year TEXT,
     section TEXT,
     active_session_id TEXT,
+    fcm_token TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
