@@ -5944,7 +5944,7 @@ const App = {
         }
     },
 
-    sendLocalNotification: async function(title, body, id) {
+    sendLocalNotification: async function(title, body, id, scheduleAt = null) {
         if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
             try {
                 const { LocalNotifications } = window.Capacitor.Plugins;
@@ -5954,7 +5954,7 @@ const App = {
                             title: title,
                             body: body,
                             id: id,
-                            schedule: { at: new Date(Date.now() + 1000) },
+                            schedule: { at: scheduleAt || new Date(Date.now() + 1000) },
                             actionTypeId: "",
                             extra: null
                         }
@@ -6000,25 +6000,51 @@ const App = {
                     });
                 }
                 
-                // Capacitor Local Notifications (15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 mins prior)
+                // Capacitor Local Notifications & Web Notifications (15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 mins prior)
                 const pushTargetMinutes = [15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-                if (minutesUntilStart > 0 && pushTargetMinutes.includes(minutesUntilStart)) {
-                    const notifKey = `${appt.id}_${minutesUntilStart}`;
+                pushTargetMinutes.forEach(mins => {
+                    const notifKey = `${appt.id}_${mins}`;
                     if (!sentPushNotifs[notifKey]) {
-                        sentPushNotifs[notifKey] = true;
-                        localStorage.setItem('sentPushNotifs', JSON.stringify(sentPushNotifs));
-                        
-                        const title = 'Upcoming Consultation';
-                        const body = `Your appointment with ${sanitizeHTML(partnerName)} starts in ${minutesUntilStart} minute${minutesUntilStart > 1 ? 's' : ''}.`;
-                        
-                        // Generate a simple positive integer ID for the local notification
-                        const idHash = Math.abs(notifKey.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)) % 2147483647;
-                        
-                        if (this.sendLocalNotification) {
-                            this.sendLocalNotification(title, body, idHash || 1);
+                        const targetMinutes = startMinutes - mins;
+                        const minutesAhead = targetMinutes - currentMinutes;
+
+                        if (window.Capacitor) {
+                            // For APK: Pre-schedule everything in the future so it works even if closed!
+                            if (targetMinutes >= currentMinutes) {
+                                sentPushNotifs[notifKey] = true;
+                                localStorage.setItem('sentPushNotifs', JSON.stringify(sentPushNotifs));
+                                
+                                const title = 'Upcoming Consultation';
+                                const body = `Your appointment with ${sanitizeHTML(partnerName)} starts in ${mins} minute${mins > 1 ? 's' : ''}.`;
+                                const idHash = Math.abs(notifKey.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)) % 2147483647;
+                                
+                                const scheduleTime = new Date(Date.now() + minutesAhead * 60000 - this.getManilaTime().second * 1000);
+                                if (this.sendLocalNotification) {
+                                    this.sendLocalNotification(title, body, idHash || 1, scheduleTime);
+                                }
+                            } else if (currentMinutes >= targetMinutes && currentMinutes <= targetMinutes + 2) {
+                                // If passed but wasn't scheduled (e.g. app just opened), fire immediately
+                                sentPushNotifs[notifKey] = true;
+                                localStorage.setItem('sentPushNotifs', JSON.stringify(sentPushNotifs));
+                                const title = 'Upcoming Consultation';
+                                const body = `Your appointment with ${sanitizeHTML(partnerName)} starts in ${mins} minute${mins > 1 ? 's' : ''}.`;
+                                const idHash = Math.abs(notifKey.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)) % 2147483647;
+                                if (this.sendLocalNotification) {
+                                    this.sendLocalNotification(title, body, idHash || 1, new Date(Date.now() + 1000));
+                                }
+                            }
+                        } else {
+                            // For Web: Trigger immediately when time is reached or slightly passed (handles setInterval throttling in background tabs)
+                            if (currentMinutes >= targetMinutes && currentMinutes <= targetMinutes + 2) {
+                                sentPushNotifs[notifKey] = true;
+                                localStorage.setItem('sentPushNotifs', JSON.stringify(sentPushNotifs));
+                                const title = 'Upcoming Consultation';
+                                const body = `Your appointment with ${sanitizeHTML(partnerName)} starts in ${mins} minute${mins > 1 ? 's' : ''}.`;
+                                this.sendNativeNotification(title, body);
+                            }
                         }
                     }
-                }
+                });
             });
         } catch (err) { console.error("Alarm check error:", err); }
     }
