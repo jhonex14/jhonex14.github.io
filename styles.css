@@ -201,7 +201,7 @@ body.dashboard-bg {
     margin-left: 280px;
     padding: 2rem;
     min-height: 100vh;
-    background-color: var(--bg-light);
+    background-color: transparent;
 }
 
 .sidebar-link {
