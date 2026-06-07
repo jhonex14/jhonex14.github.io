@@ -313,6 +313,13 @@ body {
     .dash-card {
         margin-bottom: 1rem;
     }
+    .mobile-small-text {
+        font-size: 0.75rem !important;
+    }
+    .mobile-small-btn {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.75rem !important;
+    }
     header h2 {
         font-size: 1.5rem !important;
     }
