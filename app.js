@@ -5799,13 +5799,67 @@ const App = {
         }
     },
 
-    toggleCreateUserFields: function() {
-        const role = document.getElementById('createUserRole').value;
-        const approvalContainer = document.getElementById('createFacultyApprovalContainer');
+    toggleModalApprovalSwitch: function() {
+        const role = document.getElementById('editUserRole').value;
+        const approvalContainer = document.getElementById('editFacultyApprovalContainer');
+        const idLabel = document.getElementById('editUserIdLabel');
+        const idInput = document.getElementById('editUserIdNumber');
+        
         if (role === 'faculty') {
             approvalContainer.classList.remove('d-none');
         } else {
             approvalContainer.classList.add('d-none');
+        }
+
+        if (idLabel && idInput) {
+            if (role === 'student') {
+                idLabel.textContent = 'LRN Number';
+                idInput.placeholder = 'e.g. 101234567890';
+                idInput.pattern = '\\d{12}';
+                idInput.title = 'Must be exactly 12 digits';
+            } else if (role === 'faculty') {
+                idLabel.textContent = 'Employee ID Number';
+                idInput.placeholder = 'e.g. 2026-0001';
+                idInput.removeAttribute('pattern');
+                idInput.removeAttribute('title');
+            } else {
+                idLabel.textContent = 'ID Number';
+                idInput.placeholder = 'e.g. 2026-0001';
+                idInput.removeAttribute('pattern');
+                idInput.removeAttribute('title');
+            }
+        }
+    },
+
+    toggleCreateUserFields: function() {
+        const role = document.getElementById('createUserRole').value;
+        const approvalContainer = document.getElementById('createFacultyApprovalContainer');
+        const idLabel = document.getElementById('createUserIdLabel');
+        const idInput = document.getElementById('createUserIdNumber');
+        
+        if (role === 'faculty') {
+            approvalContainer.classList.remove('d-none');
+        } else {
+            approvalContainer.classList.add('d-none');
+        }
+
+        if (idLabel && idInput) {
+            if (role === 'student') {
+                idLabel.textContent = 'LRN Number';
+                idInput.placeholder = 'e.g. 101234567890';
+                idInput.pattern = '\\d{12}';
+                idInput.title = 'Must be exactly 12 digits';
+            } else if (role === 'faculty') {
+                idLabel.textContent = 'Employee ID Number';
+                idInput.placeholder = 'e.g. 2026-0001';
+                idInput.removeAttribute('pattern');
+                idInput.removeAttribute('title');
+            } else {
+                idLabel.textContent = 'ID Number';
+                idInput.placeholder = 'e.g. 2026-0001';
+                idInput.removeAttribute('pattern');
+                idInput.removeAttribute('title');
+            }
         }
     },
 
