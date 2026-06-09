@@ -361,12 +361,18 @@
                 if (roleVal === 'student') {
                     idLabel.textContent = 'LRN Number';
                     idInput.placeholder = 'e.g. 101234567890';
+                    idInput.pattern = '\\d{12}';
+                    idInput.title = 'Must be exactly 12 digits';
                 } else if (roleVal === 'faculty') {
                     idLabel.textContent = 'Employee ID Number';
                     idInput.placeholder = 'e.g. 2026-0001';
+                    idInput.removeAttribute('pattern');
+                    idInput.removeAttribute('title');
                 } else {
                     idLabel.textContent = 'ID Number';
                     idInput.placeholder = 'e.g. 2026-0001';
+                    idInput.removeAttribute('pattern');
+                    idInput.removeAttribute('title');
                 }
             }
 
