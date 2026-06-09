@@ -438,31 +438,24 @@ const App = {
             const purposeHidden = document.getElementById('purpose');
             
             if (purposeSelect && purposeCustom && purposeHidden) {
-                purposeSelect.addEventListener('change', function() {
-                    const val = purposeSelect.value;
+                const updatePurpose = function() {
+                    const val = purposeSelect.value || '';
+                    const customVal = purposeCustom.value.trim();
                     if (val === 'Others concern') {
-                        purposeCustom.classList.remove('d-none');
                         purposeCustom.setAttribute('required', 'required');
-                        purposeHidden.value = purposeCustom.value.trim();
-                        purposeCustom.focus();
+                        purposeHidden.value = customVal || val;
                     } else {
-                        purposeCustom.classList.add('d-none');
                         purposeCustom.removeAttribute('required');
-                        purposeCustom.value = '';
-                        purposeHidden.value = val;
+                        purposeHidden.value = customVal ? `${val} - ${customVal}` : val;
                     }
-                });
-                
-                purposeCustom.addEventListener('input', function() {
-                    if (purposeSelect.value === 'Others concern') {
-                        purposeHidden.value = purposeCustom.value.trim();
-                    }
-                });
+                };
+
+                purposeSelect.addEventListener('change', updatePurpose);
+                purposeCustom.addEventListener('input', updatePurpose);
             }
 
             bookForm.addEventListener('reset', () => {
                 if (purposeCustom) {
-                    purposeCustom.classList.add('d-none');
                     purposeCustom.removeAttribute('required');
                     purposeCustom.value = '';
                 }
