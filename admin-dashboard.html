@@ -466,8 +466,8 @@
                             <input type="text" class="form-control bg-light border-0" id="editUserFullName" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">ID Number</label>
-                            <input type="text" class="form-control bg-light border-0" id="editUserIdNumber">
+                            <label class="form-label fw-semibold" id="editUserIdLabel">ID Number</label>
+                            <input type="text" class="form-control bg-light border-0" id="editUserIdNumber" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Course / Department</label>
@@ -533,8 +533,8 @@
                             <input type="password" class="form-control bg-light border-0" id="createUserPassword" required minlength="6" placeholder="At least 6 characters">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">ID Number (Optional)</label>
-                            <input type="text" class="form-control bg-light border-0" id="createUserIdNumber" placeholder="e.g. 2023-0001">
+                            <label class="form-label fw-semibold" id="createUserIdLabel">LRN Number</label>
+                            <input type="text" class="form-control bg-light border-0" id="createUserIdNumber" required pattern="\d{12}" title="Must be exactly 12 digits" placeholder="e.g. 101234567890">
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Access Role</label>
