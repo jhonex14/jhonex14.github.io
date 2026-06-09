@@ -5817,16 +5817,21 @@ const App = {
                 idInput.placeholder = 'e.g. 101234567890';
                 idInput.pattern = '\\d{12}';
                 idInput.title = 'Must be exactly 12 digits';
+                idInput.oninput = function() {
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);
+                };
             } else if (role === 'faculty') {
                 idLabel.textContent = 'Employee ID Number';
                 idInput.placeholder = 'e.g. 2026-0001';
                 idInput.removeAttribute('pattern');
                 idInput.removeAttribute('title');
+                idInput.oninput = null;
             } else {
                 idLabel.textContent = 'ID Number';
                 idInput.placeholder = 'e.g. 2026-0001';
                 idInput.removeAttribute('pattern');
                 idInput.removeAttribute('title');
+                idInput.oninput = null;
             }
         }
     },
@@ -5849,16 +5854,21 @@ const App = {
                 idInput.placeholder = 'e.g. 101234567890';
                 idInput.pattern = '\\d{12}';
                 idInput.title = 'Must be exactly 12 digits';
+                idInput.oninput = function() {
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);
+                };
             } else if (role === 'faculty') {
                 idLabel.textContent = 'Employee ID Number';
                 idInput.placeholder = 'e.g. 2026-0001';
                 idInput.removeAttribute('pattern');
                 idInput.removeAttribute('title');
+                idInput.oninput = null;
             } else {
                 idLabel.textContent = 'ID Number';
                 idInput.placeholder = 'e.g. 2026-0001';
                 idInput.removeAttribute('pattern');
                 idInput.removeAttribute('title');
+                idInput.oninput = null;
             }
         }
     },
