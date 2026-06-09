@@ -441,16 +441,35 @@ const App = {
                 const updatePurpose = function() {
                     const val = purposeSelect.value || '';
                     const customVal = purposeCustom.value.trim();
+
+                    if (!val) {
+                        // Nothing selected — hide textarea
+                        purposeCustom.classList.add('d-none');
+                        purposeCustom.removeAttribute('required');
+                        purposeCustom.value = '';
+                        purposeHidden.value = '';
+                        return;
+                    }
+
+                    // Any option selected — show textarea
+                    purposeCustom.classList.remove('d-none');
+
                     if (val === 'Others concern') {
                         purposeCustom.setAttribute('required', 'required');
-                        purposeHidden.value = customVal || val;
+                        purposeCustom.placeholder = 'Please specify your concern (Required)...';
+                        purposeHidden.value = customVal || '';
                     } else {
                         purposeCustom.removeAttribute('required');
+                        purposeCustom.placeholder = 'Please specify your custom concern (Optional)...';
                         purposeHidden.value = customVal ? `${val} - ${customVal}` : val;
                     }
                 };
 
-                purposeSelect.addEventListener('change', updatePurpose);
+                purposeSelect.addEventListener('change', function() {
+                    purposeCustom.value = '';
+                    updatePurpose();
+                    if (purposeSelect.value) purposeCustom.focus();
+                });
                 purposeCustom.addEventListener('input', updatePurpose);
             }
 
