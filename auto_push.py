@@ -53,12 +53,21 @@ def build_apk():
     if not os.path.exists(gradlew):
         print("  -> gradlew.bat not found, skipping local APK build.")
         return False
+
+    # Use Android Studio's bundled JDK (Java 21) to avoid version issues
+    android_studio_jdk = r"C:\Program Files\Android\Android Studio\jbr"
+    env = os.environ.copy()
+    if os.path.exists(android_studio_jdk):
+        env["JAVA_HOME"] = android_studio_jdk
+        print(f"  -> Using Android Studio JDK: {android_studio_jdk}")
+
     try:
         print("  -> Building APK with Gradle (this may take a minute)...")
         result = subprocess.run(
             [gradlew, 'assembleDebug', '--quiet', '--no-daemon'],
             cwd=ANDROID_DIR, check=True,
-            capture_output=True, text=True, timeout=300
+            capture_output=True, text=True, timeout=300,
+            env=env
         )
         if os.path.exists(APK_SOURCE):
             shutil.copy2(APK_SOURCE, APK_DEST)
