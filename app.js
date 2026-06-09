@@ -5799,6 +5799,70 @@ const App = {
         }
     },
 
+    toggleCreateUserFields: function() {
+        const role = document.getElementById('createUserRole').value;
+        const approvalContainer = document.getElementById('createFacultyApprovalContainer');
+        if (role === 'faculty') {
+            approvalContainer.classList.remove('d-none');
+        } else {
+            approvalContainer.classList.add('d-none');
+        }
+    },
+
+    handleCreateUser: async function(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('createUserName').value;
+        const email = document.getElementById('createUserEmail').value;
+        const password = document.getElementById('createUserPassword').value;
+        const idNumber = document.getElementById('createUserIdNumber').value;
+        const role = document.getElementById('createUserRole').value;
+        const department = document.getElementById('createUserDepartment').value;
+        const isApproved = role === 'faculty' ? document.getElementById('createUserIsApproved').checked : true;
+
+        const btn = document.getElementById('createUserBtn');
+        const oldText = btn.innerHTML;
+
+        try {
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i>Creating...';
+            btn.disabled = true;
+
+            // Call Edge Function to create user
+            const { data, error } = await supabaseClient.functions.invoke('create-user', {
+                body: {
+                    email,
+                    password,
+                    full_name: fullName,
+                    id_number: idNumber,
+                    role,
+                    department,
+                    is_approved: isApproved
+                }
+            });
+
+            if (error) throw error;
+            if (data && data.error) throw new Error(data.error);
+
+            this.showProfileToast(`User ${fullName} created successfully!`, "success");
+            
+            // Hide modal and reset form
+            const modalEl = document.getElementById('createUserModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            document.getElementById('createUserForm').reset();
+            this.toggleCreateUserFields();
+
+            // Refresh dashboard lists
+            this.loadAdminDashboard();
+
+        } catch (error) {
+            console.error("Create user error:", error);
+            this.showProfileToast("Failed to create user: " + error.message, "danger");
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    },
+
     alarmAudioInterval: null,
     audioCtx: null,
 
