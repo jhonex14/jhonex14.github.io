@@ -5902,21 +5902,54 @@ const App = {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i>Creating...';
             btn.disabled = true;
 
-            // Call Edge Function to create user
-            const { data, error } = await supabaseClient.functions.invoke('create-user', {
-                body: {
-                    email,
-                    password,
-                    full_name: fullName,
-                    id_number: idNumber,
-                    role,
-                    department,
-                    is_approved: isApproved
+            // Use a temporary client to sign up the new user without affecting the admin's session
+            const tempClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+            });
+
+            // Check if email already exists
+            const { data: emailExists } = await supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .single();
+
+            if (emailExists) {
+                throw new Error('Email address is already registered.');
+            }
+
+            // Check if ID number already exists
+            if (idNumber) {
+                const { data: idExists } = await supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('id_number', idNumber)
+                    .single();
+
+                if (idExists) {
+                    throw new Error('ID Number is already registered.');
+                }
+            }
+
+            const { data, error } = await tempClient.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
+                        id_number: idNumber,
+                        role,
+                        department,
+                        is_approved: isApproved
+                    }
                 }
             });
 
             if (error) throw error;
             if (data && data.error) throw new Error(data.error);
+
+            // Wait briefly for Supabase triggers to insert the profile before refreshing lists
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             this.showProfileToast(`User ${fullName} created successfully!`, "success");
             
